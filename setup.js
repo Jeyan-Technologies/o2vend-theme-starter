@@ -35,14 +35,15 @@ try {
 // Install VS Code Extension
 console.log('🔌 Installing VS Code Extension...');
 try {
-  execSync('code --install-extension o2vend.language-support', { stdio: 'inherit' });
+  execSync('code --install-extension O2VEND.o2vend-liquid', { stdio: 'inherit' });
   console.log('✅ Extension installed successfully!\n');
 } catch (error) {
   console.warn('⚠️  Failed to install extension. Install manually:');
   console.warn('   1. Open VS Code');
   console.warn('   2. Go to Extensions (Ctrl+Shift+X)');
-  console.warn('   3. Search for "O2VEND Language Support"');
-  console.warn('   4. Click Install\n');
+  console.warn('   3. Search for "O2VEND Liquid"');
+  console.warn('   4. Click Install');
+  console.warn('   Or visit: https://marketplace.visualstudio.com/items?itemName=O2VEND.o2vend-liquid\n');
 }
 
 // Copy .env.example to .env if it doesn't exist
@@ -88,10 +89,6 @@ OPEN_BROWSER=true
 
 console.log('✨ Setup complete!\n');
 console.log('📝 Next steps:');
-console.log('   1. cd theme');
-console.log('   2. o2vend theme serve');
-console.log('');
-console.log('💡 Quick start:');
 console.log('   o2vend serve');
 console.log('');
 console.log('📖 See README.md for full documentation');

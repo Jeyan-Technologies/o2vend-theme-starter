@@ -369,7 +369,7 @@ See [THEME_PACKAGING.md](./THEME_PACKAGING.md) for detailed packaging instructio
 ## Resources
 
 - **[O2VEND Developer Documentation](https://o2vend.com/developer/)** - Complete API documentation and guides
-- [Liquid Documentation](https://shopify.github.io/liquid/) - Shopify-compatible Liquid syntax reference
+- **[O2VEND Liquid VS Code Extension](https://marketplace.visualstudio.com/items?itemName=O2VEND.o2vend-liquid)** - Syntax highlighting and IntelliSense for O2VEND Liquid templates
 
 ## Support & Resources
 
