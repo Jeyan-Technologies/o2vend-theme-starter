@@ -1,0 +1,278 @@
+{% comment %}
+  Footer Section with Below-Footer
+  
+  Main footer displays navigation widgets
+  Below-footer shows copyright and optional social links
+  
+  FIXED: Ensures footer is always rendered even if menus fail to load
+{% endcomment %}
+
+{% assign footer_widgets = widgets.footer %}
+
+{%- comment -%}
+  Prepare footer widgets:
+  - Extract a single FooterMenu widget (if present)
+  - Collect all other widgets (including the main footer widget) separately
+{%- endcomment -%}
+{% assign footer_menu_widget = nil %}
+
+{% if footer_widgets and footer_widgets.size > 0 %}
+  {% for widget in footer_widgets %}
+    {% assign widget_type = widget.type | default: '' | strip | downcase %}
+    {% if widget_type == 'footermenu' and footer_menu_widget == nil %}
+      {% assign footer_menu_widget = widget %}
+    {% endif %}
+  {% endfor %}
+{% endif %}
+
+{%- comment -%} Debug: Log widget rendering information {%- endcomment -%}
+<script>
+  (function() {
+    console.log('[FooterSection] Footer section rendering');
+    console.log('[FooterSection] Footer widgets count:', {{ footer_widgets.size | default: 0 }});
+    console.log('[FooterSection] Footer menu widget found:', {{ footer_menu_widget | default: nil | json }});
+    {% if footer_menu_widget %}
+    console.log('[FooterSection] FooterMenu widget details:', {
+      id: '{{ footer_menu_widget.id }}',
+      type: '{{ footer_menu_widget.type }}',
+      template_path: '{{ footer_menu_widget.template_path | default: "widgets/footer-menu" }}'
+    });
+    {% else %}
+    console.warn('[FooterSection] No FooterMenu widget found in footer widgets');
+    {% if footer_widgets and footer_widgets.size > 0 %}
+    console.log('[FooterSection] Available widget types:', [
+      {% for widget in footer_widgets %}
+        '{{ widget.type | default: "unknown" }}'{% unless forloop.last %},{% endunless %}
+      {% endfor %}
+    ]);
+    {% endif %}
+    {% endif %}
+  })();
+</script>
+
+{%- comment -%}
+  Main Footer Section - ALWAYS RENDERED
+  Never conditionally hide. Even without menu data, basic footer UI appears.
+{%- endcomment -%}
+<footer class="theme-section theme-section--footer" data-section="footer" data-section-id="{{ section.id }}">
+  <div class="footer-container">
+    
+    {%- comment -%} 
+      Always render the Footer Menu - footer section should always be visible
+      If FooterMenu widget exists, use it; otherwise render footer menu container that will fetch menus automatically
+    {%- endcomment -%}
+    {% if footer_menu_widget %}
+      <!-- FooterMenu widget rendering: ID={{ footer_menu_widget.id }}, Type={{ footer_menu_widget.type }} -->
+      <div class="theme-widget-wrapper"
+           data-widget-id="{{ footer_menu_widget.id }}"
+           data-widget-type="FooterMenu"
+           data-footer-menu-wrapper="true">
+        {% render footer_menu_widget.template_path | default: 'widgets/footer-menu', widget: footer_menu_widget, settings: settings %}
+      </div>
+      <script>
+        console.log('[FooterSection] FooterMenu widget rendered with ID: {{ footer_menu_widget.id }}');
+      </script>
+    {% else %}
+      <!-- FooterMenu widget: NOT FOUND - Rendering footer menu container that will auto-fetch menus -->
+      <div class="theme-widget-wrapper"
+           data-widget-type="FooterMenu"
+           data-footer-menu-wrapper="true">
+        {% render 'widgets/footer-menu', widget: nil, settings: settings %}
+      </div>
+      <script>
+        console.warn('[FooterSection] FooterMenu widget not found in widgets, but footer menu container is rendered to auto-fetch menus');
+      </script>
+    {% endif %}
+
+    {%- comment -%} 
+      Render remaining footer widgets (e.g. main footer widget)
+      Skip FooterMenu widgets as they're rendered above
+    {%- endcomment -%}
+    {% if footer_widgets and footer_widgets.size > 0 %}
+      {% for widget in footer_widgets %}
+        {% assign widget_type = widget.type | default: '' | strip | downcase %}
+        {% if widget_type != 'footermenu' %}
+          <div class="theme-widget-wrapper" 
+               data-widget-id="{{ widget.id }}" 
+               data-widget-type="{{ widget.type }}"
+               data-widget-position="{{ widget.Position | default: widget.position | default: forloop.index }}">
+            {% if widget and widget.template_path %}
+              {% render widget.template_path, widget: widget, settings: settings %}
+            {% else %}
+              <div class="widget-error" data-widget-error>
+                <p>Widget template not found</p>
+              </div>
+            {% endif %}
+          </div>
+        {% endif %}
+      {% endfor %}
+    {% endif %}
+    
+  </div>
+</footer>
+
+{%- comment -%} Below Footer Section - ALWAYS RENDERED {%- endcomment -%}
+<div class="theme-section theme-section--below-footer">
+  <div class="below-footer-container">
+    <div class="below-footer-content">
+      <p class="below-footer-text">
+        {% if section.settings.footer_text and section.settings.footer_text != '' %}
+          {{ section.settings.footer_text }}
+        {% else %}
+          © {{ 'now' | date: '%Y' }} {{ shop.domain }}. All rights reserved.
+        {% endif %}
+      </p>
+      
+      {% if section.settings.show_social_links %}
+        <div class="below-footer-social">
+          <a href="#" class="social-link" aria-label="Facebook">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path>
+            </svg>
+          </a>
+          <a href="#" class="social-link" aria-label="Twitter">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M23 3a10.9 10.9 0 0 1-3.14 1.53 4.48 4.48 0 0 0-7.86 3v1A10.66 10.66 0 0 1 3 4s-4 9 5 13a11.64 11.64 0 0 1-7 2c9 5 20 0 20-11.5a4.5 4.5 0 0 0-.08-.83A7.72 7.72 0 0 0 23 3z"></path>
+            </svg>
+          </a>
+          <a href="#" class="social-link" aria-label="Instagram">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+              <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+              <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+            </svg>
+          </a>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<style>
+  /* Main Footer */
+  .theme-section--footer {
+    background: #1a1f2c;
+    color: #ffffff;
+    padding: 3rem 2rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    min-height: 120px; /* Ensures footer has visible height even if menu fails */
+  }
+  
+  .footer-container {
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  
+  .theme-widget-wrapper {
+    display: block;
+  }
+  
+  /* Below Footer */
+  .theme-section--below-footer {
+    background: #141823;
+    color: #9ca3af;
+    padding: 1.5rem 2rem;
+    font-size: 0.875rem;
+  }
+  
+  .below-footer-container {
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  
+  .below-footer-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 2rem;
+  }
+  
+  .below-footer-text {
+    margin: 0;
+    color: #9ca3af;
+  }
+  
+  .below-footer-social {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+  }
+  
+  .social-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.05);
+    color: #9ca3af;
+    text-decoration: none;
+    transition: all 0.2s ease;
+  }
+  
+  .social-link:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+    transform: translateY(-2px);
+  }
+  
+  .widget-error {
+    padding: 1rem;
+    background: #fee2e2;
+    border: 1px solid #fecaca;
+    border-radius: 0.5rem;
+    color: #991b1b;
+    font-size: 0.875rem;
+  }
+  
+  /* Responsive */
+  @media (max-width: 768px) {
+    .theme-section--footer {
+      padding: 2rem 1.5rem;
+    }
+    
+    .theme-section--below-footer {
+      padding: 1.25rem 1.5rem;
+    }
+    
+    .below-footer-content {
+      flex-direction: column;
+      text-align: center;
+      gap: 1rem;
+    }
+    
+    .below-footer-social {
+      justify-content: center;
+    }
+  }
+</style>
+
+{% schema %}
+{
+  "name": "Footer",
+  "settings": [
+    {
+      "type": "paragraph",
+      "content": "This section displays widgets from the 'footer' section with a professional below-footer area."
+    },
+    {
+      "type": "text",
+      "id": "footer_text",
+      "label": "Copyright Text",
+      "default": ""
+    },
+    {
+      "type": "checkbox",
+      "id": "show_social_links",
+      "label": "Show Social Links",
+      "default": true
+    }
+  ],
+  "presets": [
+    {
+      "name": "Footer"
+    }
+  ]
+}
+{% endschema %}

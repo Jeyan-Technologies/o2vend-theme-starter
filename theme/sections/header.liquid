@@ -1,0 +1,1145 @@
+{% comment %}
+  Header Section - Fixed Layout Issues
+  
+  Key fixes:
+  1. Hamburger menu now properly visible on mobile
+  2. Improved responsive layout
+  3. Better cart button styling
+  4. Fixed search bar positioning
+  5. Proper mobile/desktop breakpoints
+{% endcomment %}
+
+{% assign header_widgets = widgets.header %}
+{% assign header_menu_widget = null %}
+{% if header_widgets and header_widgets.size > 0 %}
+  {% for widget in header_widgets %}
+    {% assign widget_type = widget.type | default: '' | strip %}
+    {% if widget_type == 'HeaderMenu' %}
+      {% assign header_menu_widget = widget %}
+      {% break %}
+    {% endif %}
+  {% endfor %}
+{% endif %}
+
+{% liquid
+  assign widget_settings = header_menu_widget.settings | default: section.settings
+  assign widget_data = header_menu_widget.data | default: null
+  
+  assign content_data = widget_data.content | default: null
+  if content_data and content_data.size > 0
+    assign header_config = content_data.first
+  else
+    assign header_config = content_data
+  endif
+
+  assign logo_url = nil
+  if widget_settings.logo and widget_settings.logo != blank
+    assign logo_url = widget_settings.logo
+  elsif shop.logo and shop.logo != blank
+    assign logo_url = shop.logo
+  else
+    assign logo_url = '/themes/default/assets/logo.png'
+  endif
+  assign logo_alt = widget_settings.logoAlt | default: shop.name
+  assign logo_link = widget_settings.logoLink | default: '/'
+
+  assign show_search = widget_settings.showSearch
+  if show_search == nil and header_config and header_config.ShowSearch != nil
+    assign show_search = header_config.ShowSearch
+  endif
+  if show_search == nil
+    assign show_search = true
+  endif
+
+  assign show_cart = widget_settings.showCart
+  if show_cart == nil and header_config and header_config.ShowCart != nil
+    assign show_cart = header_config.ShowCart
+  endif
+  if show_cart == nil
+    assign show_cart = true
+  endif
+
+  assign show_account = widget_settings.showAccount
+  if show_account == nil and header_config and header_config.ShowAccount != nil
+    assign show_account = header_config.ShowAccount
+  endif
+  if show_account == nil
+    assign show_account = true
+  endif
+%}
+
+<header class="site-header" data-section-id="{{ section.id }}">
+  <div class="site-header__container">
+    {% comment %}HeaderWidget widgets (announcement bar, etc.){% endcomment %}
+    {% if header_widgets and header_widgets.size > 0 %}
+      {% for widget in header_widgets %}
+        {% assign widget_type = widget.type | default: '' | downcase %}
+        {% assign widget_type_normalized = widget_type | strip %}
+        {% if widget_type_normalized == 'headerwidget' or widget_type_normalized == 'header' %}
+          <div class="theme-widget-wrapper theme-widget-wrapper--header-widget" 
+               data-widget-id="{{ widget.id }}" 
+               data-widget-type="{{ widget.type }}"
+               data-widget-position="{{ widget.Position | default: widget.position | default: forloop.index }}">
+            {% if widget and widget.template_path %}
+              {% render widget.template_path, widget: widget, settings: settings %}
+            {% else %}
+              <div class="widget-error" data-widget-error>
+                <p>Widget template not found: {{ widget.template_path | default: 'unknown' }}</p>
+              </div>
+            {% endif %}
+          </div>
+        {% endif %}
+      {% endfor %}
+    {% endif %}
+
+    {% comment %}Top Row: Logo, Search, Account/Cart{% endcomment %}
+    <div class="site-header__top-row">
+      {% comment %}Hamburger Menu - Mobile Only{% endcomment %}
+      <button class="site-header__toggle" aria-label="Toggle navigation" data-header-menu-toggle type="button">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+
+      <div class="site-header__logo">
+        <a href="{{ logo_link }}" aria-label="{{ logo_alt }}">
+          {% if logo_url %}
+            <img src="{{ logo_url }}" alt="{{ logo_alt }}" width="200" height="28" class="site-header__logo-image">
+          {% else %}
+            <span class="site-header__brand">{{ shop.name }}</span>
+          {% endif %}
+        </a>
+      </div>
+
+      {% comment %}Desktop Search{% endcomment %}
+      <div class="site-header__search-wrapper">
+        {% if show_search %}
+        <div class="site-header__search-container" data-search-container>
+          <form class="site-header__search-form" action="/search" method="get" role="search">
+            <div class="site-header__search-input-wrapper">
+              <svg class="site-header__search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <circle cx="11" cy="11" r="8"></circle>
+                <path d="m21 21-4.35-4.35"></path>
+              </svg>
+              <input 
+                type="search"
+                name="q"
+                class="site-header__search-input"
+                placeholder="{{ widget_settings.search_placeholder | default: 'Search for...' }}"
+                aria-label="Search products"
+                autocomplete="off"
+                data-search-input>
+              <button type="button" class="site-header__search-clear" aria-label="Clear search" data-search-clear style="display: none;">
+                <svg class="site-header__search-clear-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
+          </form>
+          <div class="site-header__search-dropdown" data-search-dropdown style="display: none;">
+            <div class="site-header__search-loading" data-search-loading style="display: none;">
+              <div class="site-header__search-spinner"></div>
+              <span>Searching...</span>
+            </div>
+            <div class="site-header__search-results" data-search-results></div>
+            <div class="site-header__search-empty" data-search-empty style="display: none;">
+              <p>No products found</p>
+            </div>
+          </div>
+        </div>
+        {% endif %}
+      </div>
+
+      <div class="site-header__actions">
+        {% if show_account %}
+          {% comment %}Debug: customer={{ customer | json }}{% endcomment %}
+          {% if customer and customer.isAuthenticated %}
+            <a href="/account" class="site-header__action site-header__action--account" aria-label="Account">
+              <svg class="site-header__account-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+              </svg>
+            </a>
+            <form method="post" action="/webstoreapi/customer/logout" class="site-header__logout-form">
+              <button type="submit" class="site-header__action site-header__action--logout" aria-label="Logout">
+                <svg class="site-header__logout-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                  <polyline points="16 17 21 12 16 7"></polyline>
+                  <line x1="21" y1="12" x2="9" y2="12"></line>
+                </svg>
+              </button>
+            </form>
+          {% else %}
+            <a href="#" class="site-header__action site-header__action--login" aria-label="Login" data-login-modal-trigger>
+              <svg class="site-header__login-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <circle cx="12" cy="8" r="4"></circle>
+                <path d="M6 20a6 6 0 0 1 12 0"></path>
+              </svg>
+            </a>
+          {% endif %}
+        {% endif %}
+
+        {% if show_cart %}
+          <button class="site-header__action site-header__action--cart" aria-label="Shopping cart" data-cart-toggle type="button">
+            <svg class="site-header__cart-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <circle cx="9" cy="21" r="1"></circle>
+              <circle cx="20" cy="21" r="1"></circle>
+              <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+            </svg>
+            <span class="site-header__cart-text" style="display: none;"></span>
+            <span class="site-header__cart-count" data-cart-count="{% if cart.itemCount and cart.itemCount > 0 %}{{ cart.itemCount }}{% else %}0{% endif %}" {% unless cart.itemCount and cart.itemCount > 0 %}style="display: none;"{% endunless %}>{% if cart.itemCount and cart.itemCount > 0 %}{{ cart.itemCount }}{% else %}0{% endif %}</span>
+          </button>
+        {% endif %}
+      </div>
+    </div>
+
+    {% comment %}Mobile Search Row{% endcomment %}
+    {% if show_search %}
+    <div class="site-header__mobile-search-row">
+      <div class="site-header__mobile-search">
+        <form class="site-header__mobile-search-form" action="/search" method="get" role="search">
+          <div class="site-header__mobile-search-input-wrapper">
+            <svg class="site-header__mobile-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="8"></circle>
+              <path d="m21 21-4.35-4.35"></path>
+            </svg>
+            <input 
+              type="search" 
+              name="q" 
+              class="site-header__mobile-search-input" 
+              placeholder="{{ widget_settings.search_placeholder | default: 'Search for...' }}" 
+              aria-label="Search products" 
+              autocomplete="off"
+              data-mobile-search-input>
+          </div>
+        </form>
+        <div class="site-header__mobile-search-dropdown" data-mobile-search-dropdown style="display: none;">
+          <div class="site-header__mobile-search-loading" data-mobile-search-loading style="display: none;">
+            <div class="site-header__mobile-search-spinner"></div>
+            <span>Searching...</span>
+          </div>
+          <div class="site-header__mobile-search-results" data-mobile-search-results></div>
+          <div class="site-header__mobile-search-empty" data-mobile-search-empty style="display: none;">
+            <p>No products found</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    {% comment %}Bottom Row: Navigation Menu{% endcomment %}
+    <div class="site-header__bottom-row">
+      {% if header_menu_widget %}
+        <div class="theme-widget-wrapper theme-widget-wrapper--header-menu" 
+             data-widget-id="{{ header_menu_widget.id }}" 
+             data-widget-type="{{ header_menu_widget.type }}">
+          {% if header_menu_widget and header_menu_widget.template_path %}
+            {% render header_menu_widget.template_path, widget: header_menu_widget, settings: settings %}
+          {% else %}
+            <div class="widget-error">
+              <p>Widget template not found</p>
+            </div>
+          {% endif %}
+        </div>
+        {% else %}
+          {% render 'snippets/mega-menu',  %}
+      {% endif %}
+    </div>
+  </div>
+</header>
+
+<style>
+  :root {
+    --header-bg: #ffffff;
+    --header-text: #000000;
+    --header-border: rgba(0, 0, 0, 0.1);
+    --cart-bg: #2c2c2c;
+    --cart-text: #ffffff;
+    --cart-hover: #1a1a1a;
+    --breakpoint-mobile: 768px;
+  }
+
+  /* Header Container */
+  .site-header {
+    background: var(--header-bg);
+    border-bottom: 1px solid var(--header-border);
+    position: sticky;
+    top: 0;
+    z-index: 1030;
+    width: 100%;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  }
+
+  .site-header__container {
+    max-width: {{ settings.container_width | default: 1200 }}px;
+    margin: 0 auto;
+    padding: 0 20px;
+  }
+
+  /* Top Row Layout */
+  .site-header__top-row {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 20px;
+    padding: 16px 0;
+    min-height: 70px;
+  }
+
+  /* Hamburger Menu - Hidden on desktop, visible on mobile */
+  .site-header__toggle {
+    display: none;
+    flex-direction: column;
+    justify-content: space-between;
+    width: 24px;
+    height: 20px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    padding: 0;
+    grid-column: 1;
+  }
+
+  .site-header__toggle span {
+    display: block;
+    width: 100%;
+    height: 2px;
+    background-color: var(--header-text);
+    transition: all 0.3s ease;
+    border-radius: 2px;
+  }
+
+  .site-header__toggle.is-open span:nth-child(1) {
+    transform: rotate(45deg) translate(6px, 6px);
+  }
+
+  .site-header__toggle.is-open span:nth-child(2) {
+    opacity: 0;
+  }
+
+  .site-header__toggle.is-open span:nth-child(3) {
+    transform: rotate(-45deg) translate(7px, -7px);
+  }
+
+  /* Logo */
+  .site-header__logo {
+    grid-column: 1;
+    display: flex;
+    align-items: center;
+  }
+
+  .site-header__logo a {
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+  }
+
+  .site-header__logo-image {
+    max-height: 40px;
+    width: auto;
+    display: block;
+  }
+
+  .site-header__brand {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--header-text);
+  }
+
+  /* Search Wrapper - Desktop */
+  .site-header__search-wrapper {
+    grid-column: 2;
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    max-width: 600px;
+    margin: 0 auto;
+  }
+
+  .site-header__search-container {
+    width: 100%;
+    position: relative;
+  }
+
+  .site-header__search-form {
+    width: 100%;
+  }
+
+  .site-header__search-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+
+  .site-header__search-icon {
+    position: absolute;
+    left: 16px;
+    width: 20px;
+    height: 20px;
+    color: rgba(0, 0, 0, 0.5);
+    pointer-events: none;
+  }
+
+  .site-header__search-input {
+    width: 100%;
+    height: 48px;
+    padding: 0 50px 0 48px;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    border-radius: 24px;
+    font-size: 15px;
+    background: var(--header-bg);
+    transition: all 0.2s ease;
+  }
+
+  .site-header__search-input:focus {
+    outline: none;
+    border-color: var(--header-text);
+    box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.05);
+  }
+
+  .site-header__search-clear {
+    position: absolute;
+    right: 12px;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    border-radius: 50%;
+    transition: background 0.2s ease;
+  }
+
+  .site-header__search-clear:hover {
+    background: rgba(0, 0, 0, 0.05);
+  }
+
+  .site-header__search-clear-icon {
+    width: 16px;
+    height: 16px;
+  }
+
+  /* Search Dropdown */
+  .site-header__search-dropdown {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    right: 0;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+    max-height: 400px;
+    overflow-y: auto;
+    z-index: 1000;
+  }
+
+  .site-header__search-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 24px;
+  }
+
+  .site-header__search-spinner {
+    width: 20px;
+    height: 20px;
+    border: 2px solid rgba(0, 0, 0, 0.1);
+    border-top-color: var(--header-text);
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  .site-header__search-results {
+    padding: 8px 0;
+  }
+
+  .site-header__search-result {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    text-decoration: none;
+    color: var(--header-text);
+    transition: background 0.2s ease;
+  }
+
+  .site-header__search-result:hover {
+    background: rgba(0, 0, 0, 0.04);
+  }
+
+  .site-header__search-result-image {
+    width: 60px;
+    height: 60px;
+    object-fit: cover;
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.05);
+  }
+
+  .site-header__search-result-info {
+    flex: 1;
+  }
+
+  .site-header__search-result-name {
+    font-weight: 600;
+    font-size: 14px;
+    margin-bottom: 4px;
+  }
+
+  .site-header__search-result-price {
+    font-size: 14px;
+    color: rgba(0, 0, 0, 0.6);
+  }
+
+  .site-header__search-empty {
+    padding: 24px;
+    text-align: center;
+    color: rgba(0, 0, 0, 0.5);
+  }
+
+  /* Actions */
+  .site-header__actions {
+    grid-column: 3;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .site-header__action {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    border: none;
+    background: transparent;
+    color: var(--header-text);
+    text-decoration: none;
+    cursor: pointer;
+    border-radius: 12px;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+  }
+
+  .site-header__action:hover {
+    background: rgba(0, 0, 0, 0.04);
+  }
+
+  .site-header__action--account {
+    border: 1px solid var(--header-border);
+  }
+
+  .site-header__action--cart {
+    background: var(--cart-bg);
+    color: var(--cart-text);
+    padding: 10px 20px;
+    border-radius: 24px;
+    position: relative;
+  }
+
+  .site-header__action--cart:hover {
+    background: var(--cart-hover);
+  }
+
+  .site-header__account-icon,
+  .site-header__login-icon,
+  .site-header__logout-icon,
+  .site-header__cart-icon {
+    width: 20px;
+    height: 20px;
+  }
+
+  .site-header__cart-text {
+    display: none;
+  }
+
+  .site-header__cart-count {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 6px;
+    background: #ff4444;
+    color: white;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .site-header__logout-form {
+    margin: 0;
+  }
+
+  /* Mobile Search Row - Hidden on desktop */
+  .site-header__mobile-search-row {
+    display: none;
+    padding: 12px 0;
+    border-top: 1px solid var(--header-border);
+  }
+
+  .site-header__mobile-search {
+    position: relative;
+  }
+
+  .site-header__mobile-search-input-wrapper {
+    position: relative;
+  }
+
+  .site-header__mobile-search-icon {
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 20px;
+    height: 20px;
+    color: rgba(0, 0, 0, 0.5);
+    pointer-events: none;
+  }
+
+  .site-header__mobile-search-input {
+    width: 100%;
+    height: 44px;
+    padding: 0 16px 0 48px;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    border-radius: 22px;
+    font-size: 15px;
+    background: var(--header-bg);
+  }
+
+  .site-header__mobile-search-input:focus {
+    outline: none;
+    border-color: var(--header-text);
+  }
+
+  .site-header__mobile-search-dropdown {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    right: 0;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+    max-height: 400px;
+    overflow-y: auto;
+    z-index: 1000;
+  }
+
+  .site-header__mobile-search-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 24px;
+  }
+
+  .site-header__mobile-search-spinner {
+    width: 20px;
+    height: 20px;
+    border: 2px solid rgba(0, 0, 0, 0.1);
+    border-top-color: var(--header-text);
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+  }
+
+  .site-header__mobile-search-results {
+    padding: 8px 0;
+  }
+
+  .site-header__mobile-search-result {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    text-decoration: none;
+    color: var(--header-text);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  }
+
+  .site-header__mobile-search-result:hover {
+    background: rgba(0, 0, 0, 0.04);
+  }
+
+  .site-header__mobile-search-result-image {
+    width: 60px;
+    height: 60px;
+    object-fit: cover;
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.05);
+  }
+
+  .site-header__mobile-search-result-info {
+    flex: 1;
+  }
+
+  .site-header__mobile-search-result-name {
+    font-weight: 600;
+    font-size: 14px;
+    margin-bottom: 4px;
+  }
+
+  .site-header__mobile-search-result-price {
+    font-size: 14px;
+    color: rgba(0, 0, 0, 0.6);
+  }
+
+  .site-header__mobile-search-empty {
+    padding: 24px;
+    text-align: center;
+    color: rgba(0, 0, 0, 0.5);
+  }
+
+  /* Bottom Row */
+  .site-header__bottom-row {
+    border-top: 1px solid var(--header-border);
+    padding: 12px 0;
+  }
+
+  /* Mobile Responsive */
+  @media (max-width: 768px) {
+    .site-header__container {
+      padding: 0 16px;
+    }
+
+    .site-header__top-row {
+      grid-template-columns: auto 1fr auto;
+      gap: 12px;
+      padding: 12px 0;
+      min-height: 60px;
+    }
+
+    /* Show hamburger on mobile */
+    .site-header__toggle {
+      display: flex !important;
+    }
+
+    /* Logo moves to center on mobile */
+    .site-header__logo {
+      grid-column: 2;
+      justify-content: center;
+    }
+
+    .site-header__logo-image {
+      max-height: 32px;
+    }
+
+    .site-header__brand {
+      font-size: 18px;
+    }
+
+    /* Hide desktop search on mobile */
+    .site-header__search-wrapper {
+      display: none !important;
+    }
+
+    /* Show mobile search */
+    .site-header__mobile-search-row {
+      display: block;
+    }
+
+    /* Actions on mobile */
+    .site-header__actions {
+      grid-column: 3;
+      gap: 8px;
+    }
+
+    /* Hide cart text on mobile, show icon only */
+    .site-header__cart-text {
+      display: none;
+    }
+
+    .site-header__action--cart {
+      padding: 10px;
+      min-width: 44px;
+      justify-content: center;
+    }
+
+    /* Reduce action padding on mobile */
+    .site-header__action {
+      padding: 10px;
+    }
+
+    .site-header__action--account {
+      padding: 8px;
+    }
+
+    /* Hide bottom row (navigation) on mobile */
+    .site-header__bottom-row {
+      display: none;
+    }
+  }
+
+  /* Tablet adjustments */
+  @media (min-width: 769px) and (max-width: 1024px) {
+    .site-header__search-wrapper {
+      max-width: 400px;
+    }
+
+    .site-header__cart-text {
+      display: none;
+    }
+  }
+</style>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Desktop Search
+    const searchContainer = document.querySelector('[data-search-container]');
+    if (searchContainer) {
+      const searchInput = searchContainer.querySelector('[data-search-input]');
+      const searchClear = searchContainer.querySelector('[data-search-clear]');
+      const searchDropdown = searchContainer.querySelector('[data-search-dropdown]');
+      const searchResults = searchContainer.querySelector('[data-search-results]');
+      const searchLoading = searchContainer.querySelector('[data-search-loading]');
+      const searchEmpty = searchContainer.querySelector('[data-search-empty]');
+      
+      let searchTimeout;
+
+      if (searchInput) {
+        searchInput.addEventListener('input', function() {
+          const query = this.value.trim();
+          
+          if (searchClear) {
+            searchClear.style.display = query ? 'flex' : 'none';
+          }
+
+          if (query.length >= 2) {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => performSearch(query), 300);
+          } else {
+            searchDropdown.style.display = 'none';
+          }
+        });
+      }
+
+      if (searchClear) {
+        searchClear.addEventListener('click', function() {
+          searchInput.value = '';
+          searchClear.style.display = 'none';
+          searchDropdown.style.display = 'none';
+          searchInput.focus();
+        });
+      }
+
+      async function performSearch(query) {
+        searchLoading.style.display = 'flex';
+        searchResults.innerHTML = '';
+        searchEmpty.style.display = 'none';
+        searchDropdown.style.display = 'block';
+
+        try {
+          const response = await fetch(`/webstoreapi/search/autocomplete?q=${encodeURIComponent(query)}`);
+          const data = await response.json();
+
+          searchLoading.style.display = 'none';
+
+          if (data.success && data.products && data.products.length > 0) {
+            displayResults(data.products);
+          } else {
+            searchEmpty.style.display = 'block';
+          }
+        } catch (error) {
+          console.error('Search error:', error);
+          searchLoading.style.display = 'none';
+          searchEmpty.style.display = 'block';
+        }
+      }
+
+      function displayResults(products) {
+        searchResults.innerHTML = '';
+        products.forEach(product => {
+          const resultItem = document.createElement('a');
+          const productSlug = product.slug || product.id;
+          resultItem.href = productSlug ? `/${productSlug}` : '#';
+          resultItem.className = 'site-header__search-result';
+          
+          const imageHtml = product.thumbnailUrl 
+            ? `<img src="${product.thumbnailUrl}" alt="${product.name}" class="site-header__search-result-image" loading="lazy">`
+            : `<div class="site-header__search-result-image" style="background-color: rgba(0,0,0,0.05); display: flex; align-items: center; justify-content: center; color: rgba(0,0,0,0.3); font-size: 0.75rem;">No image</div>`;
+          
+          resultItem.innerHTML = `
+            ${imageHtml}
+            <div class="site-header__search-result-info">
+              <div class="site-header__search-result-name">${escapeHtml(product.name)}</div>
+              <div class="site-header__search-result-price">${product.prices.priceString || 'Price not available'}</div>
+            </div>
+          `;
+
+          searchResults.appendChild(resultItem);
+        });
+      }
+
+      function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+      }
+
+      document.addEventListener('click', function(e) {
+        if (searchContainer && !searchContainer.contains(e.target)) {
+          searchDropdown.style.display = 'none';
+        }
+      });
+    }
+
+    // Mobile Search
+    const mobileSearch = document.querySelector('.site-header__mobile-search');
+    if (mobileSearch) {
+      const mobileSearchInput = mobileSearch.querySelector('[data-mobile-search-input]');
+      const mobileSearchDropdown = mobileSearch.querySelector('[data-mobile-search-dropdown]');
+      const mobileSearchResults = mobileSearch.querySelector('[data-mobile-search-results]');
+      const mobileSearchLoading = mobileSearch.querySelector('[data-mobile-search-loading]');
+      const mobileSearchEmpty = mobileSearch.querySelector('[data-mobile-search-empty]');
+      const mobileSearchForm = mobileSearch.querySelector('.site-header__mobile-search-form');
+      
+      let mobileSearchTimeout;
+
+      if (mobileSearchInput) {
+        mobileSearchInput.addEventListener('input', function() {
+          const query = this.value.trim();
+
+          if (query.length >= 2) {
+            clearTimeout(mobileSearchTimeout);
+            mobileSearchTimeout = setTimeout(() => performMobileSearch(query), 300);
+          } else {
+            mobileSearchDropdown.style.display = 'none';
+          }
+        });
+      }
+
+      if (mobileSearchForm) {
+        mobileSearchForm.addEventListener('submit', function(e) {
+          const query = mobileSearchInput.value.trim();
+          if (!query || query.length < 2) {
+            e.preventDefault();
+          }
+        });
+      }
+
+      async function performMobileSearch(query) {
+        mobileSearchLoading.style.display = 'flex';
+        mobileSearchResults.innerHTML = '';
+        mobileSearchEmpty.style.display = 'none';
+        mobileSearchDropdown.style.display = 'block';
+
+        try {
+          const response = await fetch(`/webstoreapi/search/autocomplete?q=${encodeURIComponent(query)}`);
+          const data = await response.json();
+
+          mobileSearchLoading.style.display = 'none';
+
+          if (data.success && data.products && data.products.length > 0) {
+            displayMobileResults(data.products);
+          } else {
+            mobileSearchEmpty.style.display = 'block';
+          }
+        } catch (error) {
+          console.error('Mobile search error:', error);
+          mobileSearchLoading.style.display = 'none';
+          mobileSearchEmpty.style.display = 'block';
+        }
+      }
+
+      function displayMobileResults(products) {
+        mobileSearchResults.innerHTML = '';
+        products.forEach(product => {
+          const resultItem = document.createElement('a');
+          const productSlug = product.slug || product.id;
+          resultItem.href = productSlug ? `/${productSlug}` : '#';
+          resultItem.className = 'site-header__mobile-search-result';
+          
+          const imageHtml = product.thumbnailUrl 
+            ? `<img src="${product.thumbnailUrl}" alt="${product.name}" class="site-header__mobile-search-result-image" loading="lazy">`
+            : `<div class="site-header__mobile-search-result-image" style="background-color: rgba(0,0,0,0.05); display: flex; align-items: center; justify-content: center; color: rgba(0,0,0,0.3); font-size: 0.75rem;">No image</div>`;
+          
+          resultItem.innerHTML = `
+            ${imageHtml}
+            <div class="site-header__mobile-search-result-info">
+              <div class="site-header__mobile-search-result-name">${escapeHtml(product.name)}</div>
+              <div class="site-header__mobile-search-result-price">${product.prices.priceString || 'Price not available'}</div>
+            </div>
+          `;
+
+          mobileSearchResults.appendChild(resultItem);
+        });
+      }
+
+      function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+      }
+
+      document.addEventListener('click', function(e) {
+        if (mobileSearch && !mobileSearch.contains(e.target)) {
+          mobileSearchDropdown.style.display = 'none';
+        }
+      });
+    }
+
+    // Check authentication state - only check non-httpOnly cookie
+    function isAuthenticated() {
+      // O2VENDUserToken is httpOnly, so we check O2VENDIsUserLoggedin flag cookie
+      const cookies = document.cookie.split(';');
+      for (let cookie of cookies) {
+        const [name, value] = cookie.trim().split('=');
+        if (name === 'O2VENDIsUserLoggedin' && (value === 'true' || value === '1')) {
+          return true;
+        }
+      }
+      return false;
+    }
+
+    // Update UI to show account/logout icons when authenticated
+    function updateAuthUI() {
+      const authenticated = isAuthenticated();
+      const accountIcon = document.querySelector('.site-header__action--account');
+      const logoutForm = document.querySelector('.site-header__logout-form');
+      const loginIcon = document.querySelector('.site-header__action--login');
+
+      if (authenticated) {
+        // User is authenticated - show account and logout icons
+        // Create account icon if it doesn't exist
+        if (!accountIcon && document.querySelector('.site-header__actions')) {
+          const actionsContainer = document.querySelector('.site-header__actions');
+          const accountLink = document.createElement('a');
+          accountLink.href = '/account';
+          accountLink.className = 'site-header__action site-header__action--account';
+          accountLink.setAttribute('aria-label', 'Account');
+          accountLink.innerHTML = '<svg class="site-header__account-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>';
+          actionsContainer.insertBefore(accountLink, actionsContainer.firstChild);
+        }
+        
+        // Create logout form if it doesn't exist
+        if (!logoutForm && document.querySelector('.site-header__actions')) {
+          const actionsContainer = document.querySelector('.site-header__actions');
+          const logoutFormEl = document.createElement('form');
+          logoutFormEl.method = 'post';
+          logoutFormEl.action = '/webstoreapi/customer/logout';
+          logoutFormEl.className = 'site-header__logout-form';
+          logoutFormEl.innerHTML = '<button type="submit" class="site-header__action site-header__action--logout" aria-label="Logout"><svg class="site-header__logout-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg></button>';
+          const accountIconEl = document.querySelector('.site-header__action--account');
+          if (accountIconEl) {
+            accountIconEl.parentNode.insertBefore(logoutFormEl, accountIconEl.nextSibling);
+          } else {
+            actionsContainer.appendChild(logoutFormEl);
+          }
+        }
+        
+        // Show existing elements if they're hidden
+        const accountIconEl = document.querySelector('.site-header__action--account');
+        const logoutFormEl = document.querySelector('.site-header__logout-form');
+        if (accountIconEl && accountIconEl.offsetParent === null) {
+          accountIconEl.style.display = '';
+        }
+        if (logoutFormEl && logoutFormEl.offsetParent === null) {
+          logoutFormEl.style.display = '';
+        }
+        if (loginIcon && loginIcon.offsetParent !== null) {
+          loginIcon.style.display = 'none';
+        }
+      } else {
+        // User is not authenticated - hide account and logout icons
+        if (accountIcon && accountIcon.offsetParent !== null) {
+          accountIcon.style.display = 'none';
+        }
+        if (logoutForm && logoutForm.offsetParent !== null) {
+          logoutForm.style.display = 'none';
+        }
+        if (loginIcon && loginIcon.offsetParent === null) {
+          loginIcon.style.display = '';
+        }
+      }
+    }
+
+    // Run check after a short delay to ensure DOM is ready
+    setTimeout(updateAuthUI, 100);
+    
+    // Also listen for login success events and update UI immediately
+    // This handles cases where login happens without page refresh
+    document.addEventListener('loginSuccess', function() {
+      setTimeout(updateAuthUI, 200);
+    });
+    
+    // Monitor for login modal success view being shown
+    const observer = new MutationObserver(function(mutations) {
+      const successView = document.querySelector('[data-login-view="success"]');
+      if (successView && !successView.hidden) {
+        // Login success detected - update UI
+        setTimeout(updateAuthUI, 300);
+      }
+    });
+    
+    const loginModal = document.getElementById('login-modal');
+    if (loginModal) {
+      observer.observe(loginModal, {
+        attributes: true,
+        attributeFilter: ['hidden'],
+        childList: true,
+        subtree: true
+      });
+    }
+    
+    // Also check periodically (every 2 seconds) if user becomes authenticated
+    // This handles cases where cookies are set but UI hasn't updated
+    setInterval(function() {
+      const authenticated = isAuthenticated();
+      const accountIcon = document.querySelector('.site-header__action--account');
+      const logoutForm = document.querySelector('.site-header__logout-form');
+      
+      // Only update if we detect a mismatch
+      if (authenticated && (!accountIcon || accountIcon.offsetParent === null || !logoutForm || logoutForm.offsetParent === null)) {
+        updateAuthUI();
+      }
+    }, 2000);
+
+    // Handle account icon click - check authentication and open login modal if needed
+    const accountIcon = document.querySelector('.site-header__action--account');
+    if (accountIcon) {
+      accountIcon.addEventListener('click', function(e) {
+        // If not authenticated, prevent navigation and open login modal
+        if (!isAuthenticated()) {
+          e.preventDefault();
+          e.stopPropagation();
+          
+          // Try to open login modal
+          const loginTrigger = document.querySelector('[data-login-modal-trigger]');
+          if (loginTrigger) {
+            loginTrigger.click();
+          } else if (window.Theme && typeof window.Theme.openLoginModal === 'function') {
+            window.Theme.openLoginModal();
+          } else {
+            // Fallback: redirect to login page
+            window.location.href = '/customers/login';
+          }
+        }
+      });
+    }
+  });
+</script>
+
+{% schema %}
+{
+  "name": "Header",
+  "settings": [
+    {
+      "type": "paragraph",
+      "content": "This section displays widgets from the 'header' section. Widgets are automatically ordered by their Position field and can be reordered in the visual editor."
+    }
+  ],
+  "presets": [
+    {
+      "name": "Header"
+    }
+  ]
+}
+{% endschema %}

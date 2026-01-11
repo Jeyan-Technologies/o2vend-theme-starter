@@ -1,0 +1,328 @@
+{% comment %}
+  Footer Fallback Content
+  Used when widgets are not available or widget mode is disabled
+{% endcomment %}
+
+<footer class="site-footer" role="contentinfo">
+  <div class="site-footer__fallback">
+    <div class="site-footer__fallback-inner">
+      <div class="site-footer__brand">
+        <h3>{{ shop.name }}</h3>
+        <p>{{ shop.description | default: 'Your trusted online store for quality products.' }}</p>
+      </div>
+      <div class="site-footer__links">
+        <div>
+          <h4>Shop</h4>
+          <ul>
+            <li><a href="/products">All Products</a></li>
+            <li><a href="/collections">Collections</a></li>
+            <li><a href="/search">Search</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Support</h4>
+          <ul>
+            <li><a href="/pages/contact">Contact</a></li>
+            <li><a href="/pages/shipping">Shipping</a></li>
+            <li><a href="/pages/returns">Returns</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Company</h4>
+          <ul>
+            <li><a href="/pages/about">About</a></li>
+            <li><a href="/pages/careers">Careers</a></li>
+            <li><a href="/pages/press">Press</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    {% comment %}Newsletter - Check section.settings first (merged from global), then global settings{% endcomment %}
+    {% liquid
+      assign newsletter_val = section.settings.show_newsletter
+      if newsletter_val == blank or newsletter_val == null
+        assign newsletter_val = settings.show_newsletter
+      endif
+      if newsletter_val == blank or newsletter_val == null
+        assign newsletter_val = true
+      endif
+    %}
+    {% if newsletter_val or newsletter_val == true or newsletter_val == 'true' or newsletter_val == 1 %}
+      <div class="site-footer__newsletter">
+        <div class="site-footer__newsletter-content">
+          <h4 class="site-footer__newsletter-title">Subscribe to our newsletter</h4>
+          <form class="site-footer__newsletter-form" action="/webstoreapi/newsletter/subscribe" method="post">
+            <div class="site-footer__newsletter-input-wrapper">
+              <input 
+                type="email" 
+                name="email" 
+                class="site-footer__newsletter-input" 
+                placeholder="Enter your email address" 
+                aria-label="Email address"
+                required>
+              <button type="submit" class="site-footer__newsletter-button">
+                <span>Subscribe</span>
+                <svg class="site-footer__newsletter-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M2 8h12M9 3l5 5-5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    {% endif %}
+    {% comment %}Social links - Check section.settings first (merged from global), then global settings{% endcomment %}
+    {% liquid
+      assign social_val = section.settings.show_social_links
+      if social_val == blank or social_val == null
+        assign social_val = settings.show_social_links
+      endif
+      if social_val == blank or social_val == null
+        assign social_val = true
+      endif
+    %}
+    {% if social_val or social_val == true or social_val == 'true' or social_val == 1 %}
+      <div class="site-footer__social">
+        {% if settings.social_facebook and settings.social_facebook != '' %}
+          <a href="{{ settings.social_facebook }}" target="_blank" rel="noopener noreferrer" aria-label="Facebook">Facebook</a>
+        {% endif %}
+        {% if settings.social_instagram and settings.social_instagram != '' %}
+          <a href="{{ settings.social_instagram }}" target="_blank" rel="noopener noreferrer" aria-label="Instagram">Instagram</a>
+        {% endif %}
+        {% if settings.social_twitter and settings.social_twitter != '' %}
+          <a href="{{ settings.social_twitter }}" target="_blank" rel="noopener noreferrer" aria-label="Twitter">Twitter</a>
+        {% endif %}
+        {% if settings.social_youtube and settings.social_youtube != '' %}
+          <a href="{{ settings.social_youtube }}" target="_blank" rel="noopener noreferrer" aria-label="YouTube">YouTube</a>
+        {% endif %}
+        {% if settings.social_pinterest and settings.social_pinterest != '' %}
+          <a href="{{ settings.social_pinterest }}" target="_blank" rel="noopener noreferrer" aria-label="Pinterest">Pinterest</a>
+        {% endif %}
+      </div>
+    {% endif %}
+    <div class="site-footer__bottom">
+      {% assign footer_text_value = settings.footer_text | default: section.settings.footer_text %}
+      {% if footer_text_value and footer_text_value != '' %}
+        <p>{{ footer_text_value }}</p>
+      {% else %}
+        <p>© {{ 'now' | date: '%Y' }} {{ shop.name }}. All rights reserved.</p>
+      {% endif %}
+      <div class="site-footer__bottom-links">
+        <a href="/pages/privacy">Privacy</a>
+        <a href="/pages/terms">Terms</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<style>
+  .site-footer__fallback {
+    background: {{ settings.color_background }};
+    color: {{ settings.color_text }};
+    padding: 3rem 0;
+    border-top: 1px solid rgba(15, 23, 42, 0.08);
+  }
+  .site-footer__fallback-inner {
+    max-width: {{ settings.container_width }}px;
+    margin: 0 auto;
+    padding: 0 1.25rem;
+    display: grid;
+    gap: 2.5rem;
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 2fr);
+  }
+  .site-footer__brand h3 {
+    margin: 0 0 0.5rem;
+  }
+  .site-footer__brand p {
+    margin: 0;
+    line-height: 1.6;
+  }
+  .site-footer__links {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 1.5rem;
+  }
+  .site-footer__links h4 {
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 0.85rem;
+    margin: 0 0 0.75rem;
+  }
+  .site-footer__links ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 0.5rem;
+  }
+  .site-footer__links a {
+    text-decoration: none;
+    color: inherit;
+  }
+  .site-footer__links a:hover {
+    text-decoration: underline;
+  }
+  .site-footer__newsletter {
+    max-width: var(--container-width, {{ settings.container_width }}px);
+    margin: 0 auto;
+    padding: var(--spacing-section, 3rem) var(--spacing-component, 1.25rem) var(--spacing-section, 2rem);
+  }
+  
+  .site-footer__newsletter-content {
+    max-width: 500px;
+    margin: 0 auto;
+    text-align: center;
+  }
+  
+  .site-footer__newsletter-title {
+    margin: 0 0 var(--spacing-component, 1.5rem) 0;
+    font-size: var(--text-lg, 1.125rem);
+    font-weight: var(--font-weight-bold, 600);
+    color: var(--color-text, {{ settings.color_text }});
+    line-height: var(--line-height-heading, 1.2);
+  }
+  
+  .site-footer__newsletter-form {
+    width: 100%;
+  }
+  
+  .site-footer__newsletter-input-wrapper {
+    display: flex;
+    gap: var(--spacing-element, 0.75rem);
+    background: var(--color-surface, rgba(255, 255, 255, 0.05));
+    border: 1px solid var(--color-border, rgba(255, 255, 255, 0.1));
+    border-radius: var(--border-radius-medium, 8px);
+    padding: var(--spacing-element, 0.25rem);
+    transition: border-color var(--transition-fast, 0.2s) var(--ease-out, ease), box-shadow var(--transition-fast, 0.2s) var(--ease-out, ease);
+  }
+  
+  .site-footer__newsletter-input-wrapper:focus-within {
+    border-color: var(--color-primary, {{ settings.color_primary }});
+    box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1);
+    outline: none;
+  }
+  
+  .site-footer__newsletter-input {
+    flex: 1;
+    padding: var(--spacing-element, 0.75rem) var(--spacing-component, 1rem);
+    border: none;
+    border-radius: var(--border-radius-small, 6px);
+    background: transparent;
+    color: var(--color-text, {{ settings.color_text }});
+    font-size: var(--text-base, 1rem);
+    font-family: var(--font-body, inherit);
+    line-height: var(--line-height-base, 1.5);
+    transition: background-color var(--transition-fast, 0.2s) var(--ease-out, ease);
+  }
+  
+  .site-footer__newsletter-input::placeholder {
+    color: var(--color-text-muted, {{ settings.color_text_light }});
+    opacity: 0.7;
+  }
+  
+  .site-footer__newsletter-input:focus {
+    outline: none;
+    background: rgba(255, 255, 255, 0.03);
+  }
+  
+  .site-footer__newsletter-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-element, 0.5rem);
+    padding: var(--spacing-element, 0.75rem) var(--spacing-component, 1.5rem);
+    background: var(--color-primary, {{ settings.color_primary }});
+    color: var(--color-background, {{ settings.color_background }});
+    border: none;
+    border-radius: var(--border-radius-small, 6px);
+    cursor: pointer;
+    font-size: var(--text-base, 1rem);
+    font-weight: var(--font-weight-bold, 600);
+    font-family: var(--font-body, inherit);
+    line-height: 1;
+    white-space: nowrap;
+    transition: background-color var(--transition-fast, 0.2s) var(--ease-out, ease), transform var(--transition-fast, 0.2s) var(--ease-out, ease), box-shadow var(--transition-fast, 0.2s) var(--ease-out, ease);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  .site-footer__newsletter-button:hover {
+    background: var(--color-primary-dark, {{ settings.color_primary_dark }});
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  }
+  
+  .site-footer__newsletter-button:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  .site-footer__newsletter-icon {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    transition: transform var(--transition-fast, 0.2s) var(--ease-out, ease);
+  }
+  
+  .site-footer__newsletter-button:hover .site-footer__newsletter-icon {
+    transform: translateX(2px);
+  }
+  
+  @media (max-width: 640px) {
+    .site-footer__newsletter-input-wrapper {
+      flex-direction: column;
+      padding: var(--spacing-element, 0.5rem);
+    }
+    
+    .site-footer__newsletter-button {
+      width: 100%;
+    }
+  }
+  
+  .site-footer__social {
+    max-width: {{ settings.container_width }}px;
+    margin: 0 auto 2rem;
+    padding: 0 1.25rem;
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+  
+  .site-footer__social a {
+    color: {{ settings.color_text }};
+    text-decoration: none;
+    transition: color 0.2s ease;
+  }
+  
+  .site-footer__social a:hover {
+    color: {{ settings.color_primary }};
+  }
+  
+  .site-footer__bottom {
+    max-width: {{ settings.container_width }}px;
+    margin: 2.5rem auto 0;
+    padding: 0 1.25rem;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 1rem;
+    font-size: 0.85rem;
+    color: {{ settings.color_text_light }};
+  }
+  .site-footer__bottom-links {
+    display: inline-flex;
+    gap: 1rem;
+  }
+  .site-footer__bottom-links a {
+    color: inherit;
+    text-decoration: none;
+  }
+  .site-footer__bottom-links a:hover {
+    text-decoration: underline;
+  }
+  @media (max-width: 768px) {
+    .site-footer__fallback-inner {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+</style>
+

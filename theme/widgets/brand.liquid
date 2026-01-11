@@ -1,0 +1,245 @@
+{% liquid
+  assign widget_settings = widget.settings
+  assign widget_data = widget.data
+
+  comment
+    Dynamic Widget: Brands come from widget_data.brands (enriched by WidgetService)
+    Settings come from widget_settings
+  endcomment
+  assign brands = widget_data.Brands | default: widget_data.brands
+  assign show_container = widget_settings.showContainer
+  assign show_bottom_margin = widget_settings.showWidgetBottomMargin
+  assign show_widget_title_raw = widget_settings.showWidgetTitle | default: 'Yes'
+  if show_widget_title_raw == null or show_widget_title_raw == blank or show_widget_title_raw == 'null'
+    assign show_widget_title = true
+  else
+    if show_widget_title_raw == 'Yes'
+      assign show_widget_title = true
+    elsif show_widget_title_raw == true
+      assign show_widget_title = true
+    else
+      assign show_widget_title = false
+    endif
+  endif
+  assign widget_title_alignment_raw = widget_settings.widgetTitleAlignment | default: 'center'
+  assign widget_title_alignment = widget_title_alignment_raw | downcase
+  if widget_title_alignment != 'left' and widget_title_alignment != 'right' and widget_title_alignment != 'center'
+    assign widget_title_alignment = 'center'
+  endif
+  assign background_color = widget_settings.backgroundColor
+  assign text_color = widget_settings.textColor
+  assign heading = widget_settings.title
+  assign subtitle = widget_settings.subtitle
+%}
+
+<section class="widget widget-brand" data-widget-id="{{ widget.id }}"{% if background_color and background_color != 'null' %} style="background-color: {{ background_color }};"{% endif %}>
+  <div class="widget-brand__inner">
+    {% if show_widget_title %}
+      {% if heading or subtitle %}
+        <header class="widget-header"{% if widget_title_alignment %} style="text-align: {{ widget_title_alignment }};"{% endif %}{% if text_color and text_color != 'null' %} style="color: {{ text_color }};"{% endif %}>
+          {% if heading %}<h2 class="widget-title">{{ heading }}</h2>{% endif %}
+          {% if subtitle %}<p class="widget-subtitle">{{ subtitle }}</p>{% endif %}
+        </header>
+      {% endif %}
+    {% endif %}
+
+    {% if brands and brands.size > 0 %}
+      <div class="widget-brand__grid">
+        {% for brand in brands %}
+          {% assign brand_id = brand.Id | default: brand.id | default: brand.brandId %}
+          {% assign brand_name = brand.Name | default: brand.name %}
+          {% assign brand_slug = brand.Slug | default: brand.slug %}
+          {% assign brand_url = brand.Url | default: brand.url | default: brand.link %}
+          {% if brand_url == blank %}
+            {% if brand_slug and brand_slug != blank %}
+              {% assign brand_url = brand_slug %}
+            {% else %}
+              {% assign brand_url = '#' %}
+            {% endif %}
+          {% endif %}
+          
+          {% comment %} Image fallback: thumbnailImage.url > Logo > logo > image {% endcomment %}
+          {% assign brand_image = nil %}
+          {% if brand.thumbnailImage and brand.thumbnailImage.url %}
+            {% assign brand_image = brand.thumbnailImage.url %}
+          {% elsif brand.ThumbnailImage and brand.ThumbnailImage.Url %}
+            {% assign brand_image = brand.ThumbnailImage.Url %}
+          {% elsif brand.Logo %}
+            {% assign brand_image = brand.Logo %}
+          {% elsif brand.logo %}
+            {% assign brand_image = brand.logo %}
+          {% elsif brand.image %}
+            {% assign brand_image = brand.image %}
+          {% elsif brand.Image %}
+            {% assign brand_image = brand.Image %}
+          {% endif %}
+          
+          <a href="{{ brand_url }}" class="widget-brand__item" aria-label="{{ brand_name }}">
+            {% if brand_image != blank and brand_image != '' and brand_image != 'null' %}
+              {% if brand_image contains 'http://' or brand_image contains 'https://' %}
+                {% assign brand_image_src = brand_image %}
+              {% else %}
+                {% assign brand_image_src = brand_image | asset_url %}
+              {% endif %}
+              <img src="{{ brand_image_src }}" alt="{{ brand_name }}" width="200" height="60" loading="lazy" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+              <span class="widget-brand__name widget-brand__name--fallback" style="display: none;">{{ brand_name }}</span>
+            {% else %}
+              <span class="widget-brand__name">{{ brand_name }}</span>
+            {% endif %}
+          </a>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="widget-empty">
+        <p>{{ widget_settings.empty_state | default: 'No brands to display yet.' }}</p>
+      </div>
+    {% endif %}
+  </div>
+
+  <style>
+    .widget-brand {
+      {% if show_bottom_margin == 'Yes' %}
+      padding: 2.5rem 0;
+      {% elsif show_bottom_margin == 'No' %}
+      padding: 2.5rem 0 0;
+      {% else %}
+      padding: 2.5rem 0;
+      {% endif %}
+      background: {{ background_color | default: widget_settings.background_color | default: 'transparent' }};
+    }
+   .widget-brand__inner {
+        {% if show_container == 'Yes' %}
+          max-width: 1400px;
+          margin-left: auto;
+          margin-right: auto;
+        {% endif %}
+        padding-left: 24px;
+        padding-right: 24px;
+    }
+
+    .widget-brand .widget-header {
+      margin-bottom: 32px;
+      position: static;
+      z-index: auto;
+    }
+    .widget-brand .widget-title {
+      font-size: 1.4rem;
+      font-weight: 500;
+      line-height: 1.3;
+      color: #111;
+      margin: 0 0 8px 0;
+      letter-spacing: -0.01em;
+    }
+    .widget-brand .widget-subtitle {
+      font-size: 14px;
+      color: #6b7280;
+      margin: 0;
+    }
+    .widget-brand__grid {
+      display: grid;
+      gap: 24px;
+      grid-template-columns: repeat(6, 1fr);
+      align-items: stretch;
+    }
+    .widget-brand__item {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 12px;
+      border-radius: 12px;
+      background: #fff;
+      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+      min-height: 100px;
+      text-decoration: none;
+      color: inherit;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      overflow: hidden;
+    }
+    .widget-brand__item:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+    }
+    .widget-brand__item img {
+      max-width: 100%;
+      max-height: 60px;
+      width: auto;
+      height: auto;
+      object-fit: contain;
+    }
+    .widget-brand__name {
+      font-size: 14px;
+      font-weight: 600;
+      color: #111;
+      text-align: center;
+      line-height: 1.3;
+      word-break: break-word;
+      letter-spacing: -0.01em;
+    }
+    .widget-brand__name--fallback {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 100%;
+      padding: 0 8px;
+    }
+    
+    /* Tablet: 4 columns */
+    @media (max-width: 1024px) {
+      .widget-brand__grid {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 20px;
+      }
+    }
+    
+    /* Mobile: 3 columns */
+    @media (max-width: 768px) {
+      .widget-brand {
+        padding: 32px 0;
+      }
+      .widget-brand__inner {
+        padding: 0 16px;
+      }
+      .widget-brand .widget-header {
+        margin-bottom: 24px;
+      }
+      .widget-brand .widget-title {
+        font-size: 1.3rem;
+      }
+      .widget-brand__grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 16px;
+      }
+      .widget-brand__item {
+        padding: 16px;
+        min-height: 80px;
+      }
+      .widget-brand__item img {
+        max-height: 40px;
+      }
+    }
+    
+    /* Small Mobile: 2 columns */
+    @media (max-width: 480px) {
+      .widget-brand__inner {
+        padding: 0 12px;
+      }
+      .widget-brand__grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+      }
+      .widget-brand__item {
+        padding: 12px;
+        min-height: 70px;
+        border-radius: 8px;
+      }
+      .widget-brand__item img {
+        max-height: 36px;
+      }
+      .widget-brand .widget-title {
+        font-size: 1.2rem;
+      }
+    }
+  </style>
+</section>

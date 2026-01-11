@@ -1,0 +1,42 @@
+{% liquid
+  assign widget_settings = widget.settings
+  assign widget_data = widget.data
+
+  comment
+    Dynamic Widget: Products come from widget_data.products (enriched by WidgetService)
+    Settings come from widget_settings
+  endcomment
+  assign products = widget_data.products
+  assign heading = widget_settings.title
+  assign description = widget_settings.subtitle
+  assign columns = widget_settings.columns | default: 4
+  assign show_add_to_cart = widget_settings.show_add_to_cart | default: true
+  assign show_widget_title_raw = widget_settings.showWidgetTitle | default: 'Yes'
+  if show_widget_title_raw == null or show_widget_title_raw == blank or show_widget_title_raw == 'null'
+    assign show_widget_title = true
+  else
+    if show_widget_title_raw == 'Yes'
+      assign show_widget_title = true
+    elsif show_widget_title_raw == true
+      assign show_widget_title = true
+    else
+      assign show_widget_title = false
+    endif
+  endif
+  assign widget_title_alignment_raw = widget_settings.widgetTitleAlignment | default: 'center'
+  assign widget_title_alignment = widget_title_alignment_raw | downcase
+  if widget_title_alignment != 'left' and widget_title_alignment != 'right' and widget_title_alignment != 'center'
+    assign widget_title_alignment = 'center'
+  endif
+%}
+
+{% render 'widgets/shared/product-grid',
+  widget: widget,
+  heading: heading,
+  description: description,
+  products: products,
+  columns: columns,
+  show_add_to_cart: show_add_to_cart,
+  show_widget_title: show_widget_title,
+  widget_title_alignment: widget_title_alignment %}
+

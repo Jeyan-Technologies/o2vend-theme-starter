@@ -1,0 +1,19 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "O2VEND: Serve Theme",
+      "type": "node",
+      "request": "launch",
+      "program": "${env:USERPROFILE}/AppData/Roaming/npm/o2vend",
+      "args": ["theme", "serve", "--cwd", "${workspaceFolder}/theme"],
+      "console": "integratedTerminal",
+      "env": {
+        "NODE_ENV": "development"
+      },
+      "windows": {
+        "program": "${env:APPDATA}/npm/o2vend.cmd"
+      }
+    }
+  ]
+}

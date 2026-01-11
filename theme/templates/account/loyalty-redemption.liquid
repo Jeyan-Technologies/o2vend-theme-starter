@@ -1,0 +1,405 @@
+{% layout 'layout/theme' %}
+
+<section class="account-page">
+  <div class="container">
+
+    <!-- Header -->
+    <div class="account-header">
+      <h1 class="account-title">Loyalty Redemption</h1>
+      <p class="account-subtitle">View your redeemed points and history</p>
+    </div>
+
+    <div class="account-layout">
+
+      <!-- Sidebar -->
+      <aside class="account-sidebar">
+        {% render 'snippets/account-sidebar' %}
+      </aside>
+
+      <!-- Content -->
+      <div class="account-content">
+        {% hook 'account_loyalty_before' %}
+
+        <div class="account-section-header">
+          <h2 class="account-section-title">Redemption History</h2>
+        </div>
+
+        <div class="loyalty-history loyalty-redemptions">
+          <div class="loyalty-history-list">
+
+            {% if loyalty.redemptions and loyalty.redemptions.size > 0 %}
+              {% for redemption in loyalty.redemptions %}
+                <div class="loyalty-transaction">
+
+                  <!-- Icon -->
+                  <div class="transaction-icon redeemed">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                  </div>
+
+                  <!-- Info -->
+                  <div class="transaction-info">
+                    <p class="transaction-description">
+                      {% assign rtype = redemption.redeemType | downcase %}
+                      {% case rtype %}
+                        {% when 'cash' %} Redeemed as Cash
+                        {% when 'giftcards' %} Redeemed as Gift Card
+                        {% when 'others' %} Redeemed as Other Rewards
+                        {% else %} Points Redeemed
+                      {% endcase %}
+                    </p>
+
+                   <p class="transaction-reference">
+  {{ redemption.additionalSettings.OrderNumbers | default: redemption.referenceId }}
+</p>
+
+                    <p class="transaction-date">
+                      {{ redemption.createdDate | date: '%d-%m-%Y %H:%M' }}
+                    </p>
+                  </div>
+
+                  <!-- Points -->
+                  <div class="transaction-points redeemed">
+                    -{{ redemption.redeemedPoints | default: redemption.point }}
+                  </div>
+
+                </div>
+              {% endfor %}
+            {% else %}
+              <div class="empty-state">
+                <p>No redemption history available.</p>
+              </div>
+            {% endif %}
+ <!-- Pagination -->
+    {% include 'snippets/pagination', pagination: pagination %}
+          </div>
+        </div>
+
+        {% hook 'account_loyalty_after' %}
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+:root {
+  --color-primary: #000000ff;
+  --color-primary-hover: #1d4ed8;
+  --color-primary-light: #dbeafe;
+  --color-success: #10b981;
+  --color-success-light: #d1fae5;
+  --color-success-dark: #065f46;
+  --color-danger: #ef4444;
+  --color-danger-light: #fee2e2;
+  --color-danger-dark: #991b1b;
+  --color-text: #1f2937;
+  --color-text-light: #6b7280;
+  --color-background: #f9fafb;
+  --color-card-bg: #ffffff;
+  --color-border: #e5e7eb;
+  --color-border-light: #f3f4f6;
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --spacing-xs: 0.5rem;
+  --spacing-sm: 1rem;
+  --spacing-md: 1.5rem;
+  --spacing-lg: 2rem;
+  --spacing-xl: 3rem;
+}
+
+.account-page {
+  padding: var(--spacing-xl) var(--spacing-sm);
+  background: var(--color-background);
+  min-height: 100vh;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 var(--spacing-sm);
+}
+.pagination {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+}
+.account-header {
+  text-align: center;
+  margin-bottom: var(--spacing-xl);
+
+}
+
+.account-title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: var(--color-text);
+  margin: 0 0 0.5rem 0;
+  letter-spacing: -0.025em;
+}
+
+.account-subtitle {
+  font-size: 1.125rem;
+  color: var(--color-text-light);
+  margin: 0;
+}
+
+.account-layout {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: var(--spacing-lg);
+  align-items: start;
+}
+
+.account-sidebar {
+  position: sticky;
+  top: var(--spacing-lg);
+  background: var(--color-card-bg);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-md);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--color-border);
+}
+
+.account-content {
+  background: var(--color-card-bg);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--color-border);
+}
+
+.account-section-header {
+  margin-bottom: var(--spacing-lg);
+  padding-bottom: var(--spacing-md);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.account-section-title {
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: var(--color-text);
+  margin: 0;
+}
+
+.loyalty-program {
+  display: grid;
+  gap: var(--spacing-xl);
+}
+
+.loyalty-points {
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-hover) 100%);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-xl);
+  text-align: center;
+  color: white;
+  box-shadow: var(--shadow-lg);
+  position: relative;
+  overflow: hidden;
+}
+
+.loyalty-points::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -10%;
+  width: 300px;
+  height: 300px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+}
+
+.loyalty-points-display {
+  position: relative;
+  z-index: 1;
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.points-icon {
+  margin: 0 auto var(--spacing-md);
+  width: 80px;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+}
+
+.loyalty-points-value {
+  font-size: 4rem;
+  font-weight: 700;
+  margin: 0 0 var(--spacing-xs) 0;
+  line-height: 1;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.loyalty-points-label {
+  font-size: 1.25rem;
+  margin: 0;
+  opacity: 0.95;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.loyalty-history {
+  background: var(--color-background);
+  padding: var(--spacing-lg);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+}
+
+.loyalty-subtitle {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--color-text);
+  margin: 0 0 var(--spacing-md) 0;
+}
+
+.loyalty-history-list {
+  display: grid;
+  gap: var(--spacing-sm);
+}
+
+.loyalty-transaction {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: var(--spacing-md);
+  align-items: center;
+  padding: var(--spacing-md);
+  background: var(--color-card-bg);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  transition: all 0.3s ease;
+}
+
+.loyalty-transaction:hover {
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-sm);
+}
+
+.transaction-icon {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+
+
+.transaction-icon.spent,
+.transaction-icon.redeemed {
+  background: var(--color-danger-light);
+  color: var(--color-danger-dark);
+}
+
+.transaction-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.transaction-description {
+  font-size: 1.25rem;
+  font-weight: 500;
+  color: var(--color-text);
+  margin: 0;
+}
+
+.transaction-date {
+  font-size: 1.25rem;
+  color: var(--color-text-light);
+  margin: 0;
+}
+
+.transaction-points {
+  font-size: 1.25rem;
+  font-weight: 700;
+  text-align: right;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--radius-sm);
+  min-width: 80px;
+}
+
+
+
+.transaction-points.redeemed,
+.transaction-points.spent {
+  color: var(--color-danger-dark);
+  background: var(--color-danger-light);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.625rem 1.5rem;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  text-decoration: none;
+  border-radius: var(--radius-md);
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-primary {
+  background: var(--color-primary);
+  color: white;
+  border: 2px solid var(--color-primary);
+}
+
+.btn-primary:hover {
+  background: var(--color-primary-hover);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.empty-state {
+  text-align: center;
+  padding: var(--spacing-xl);
+  color: var(--color-text-light);
+  background: var(--color-card-bg);
+  border-radius: var(--radius-md);
+  border: 2px dashed var(--color-border);
+}
+
+.empty-state p {
+  margin: 0 0 var(--spacing-md) 0;
+}
+
+@media (max-width: 768px) {
+  .account-layout {
+    grid-template-columns: 1fr;
+  }
+  
+
+  
+  .account-content {
+    order: 1;
+  }
+  
+  .loyalty-points-value {
+    font-size: 3rem;
+  }
+  
+  .loyalty-transaction {
+    grid-template-columns: auto 1fr;
+    gap: var(--spacing-sm);
+  }
+  
+  .transaction-points {
+    grid-column: 2;
+    justify-self: start;
+    margin-top: var(--spacing-xs);
+  }
+}
+</style>

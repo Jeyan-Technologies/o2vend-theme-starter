@@ -1,0 +1,518 @@
+{% layout 'layout/theme' %}
+{% comment %}
+  O2VEND Default Theme - Products Template
+{% endcomment %}
+
+<!-- Breadcrumb Navigation Removed for Default Style -->
+
+<!-- Collection Header -->
+<section class="collection-header">
+  <div class="collection-header-wrapper">
+    <div class="collection-header-inner">
+      <div class="collection-header-left">
+        <h1 class="collection-title collection-title--compact">{{ collection.title }}</h1>
+        {% if collection.description %}
+          <div class="collection-description">
+            {{ collection.description }}
+          </div>
+        {% endif %}
+      </div>
+      <div class="collection-header-right">
+        <span class="collection-count">{{ collection.totalProducts | default: collection.products.size }} products</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Collection Toolbar -->
+<section class="collection-toolbar">
+  <div class="container">
+    <div class="toolbar-content">
+      <!-- Filters -->
+      <div class="filters-section">
+        <button class="btn btn-outline filter-toggle" id="filter-toggle" aria-label="Filter products">
+          <svg class="icon-filter" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+          </svg>
+          <span>Filters</span>
+        </button>
+        
+        <div class="filter-dropdown" id="filter-dropdown">
+          <div class="filter-header">
+            <h3 class="filter-title">Filter Products</h3>
+            <button class="filter-close" id="filter-close">×</button>
+          </div>
+          
+          <div class="filter-content">
+            <div class="filter-group">
+              <h4 class="filter-group-title">PRICE RANGE</h4>
+              <div class="price-range">
+                <div class="price-inputs">
+                  <input type="number" id="price-min" placeholder="Min" min="0" class="price-input">
+                  <span class="price-separator">-</span>
+                  <input type="number" id="price-max" placeholder="Max" min="0" class="price-input">
+                </div>
+              </div>
+            </div>
+            
+            <div class="filter-group">
+              <h4 class="filter-group-title">AVAILABILITY</h4>
+              <div class="filter-options">
+                <label class="filter-option">
+                  <input type="checkbox" name="availability" value="in-stock" class="filter-checkbox">
+                  <span class="filter-option-text">In Stock</span>
+                </label>
+                <label class="filter-option">
+                  <input type="checkbox" name="availability" value="on-sale" class="filter-checkbox">
+                  <span class="filter-option-text">On Sale</span>
+                </label>
+              </div>
+            </div>
+          </div>
+          
+          <div class="filter-actions">
+            <button class="btn btn-ghost" id="clear-filters">Clear All</button>
+            <button class="btn btn-primary" id="apply-filters">Apply Filters</button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Sort -->
+      <div class="sort-section">
+        <div class="sort-dropdown" id="sort-dropdown">
+          <button class="btn btn-outline sort-toggle" id="sort-toggle" aria-haspopup="listbox" aria-expanded="false" aria-label="Sort products">
+            <svg class="icon-sort" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 6h18M7 12h10M11 18h2"></path>
+            </svg>
+            <span id="sort-toggle-label">Sort: Featured</span>
+            <svg class="icon-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+          </button>
+          <ul class="sort-menu" id="sort-menu" role="listbox">
+            <li class="sort-option" role="option" data-value="featured" data-label="Featured">Featured</li>
+            <li class="sort-option" role="option" data-value="price-asc" data-label="Price, low to high">Price, low to high</li>
+            <li class="sort-option" role="option" data-value="price-desc" data-label="Price, high to low">Price, high to low</li>
+            <li class="sort-option" role="option" data-value="newest" data-label="Date, new to old">Date, new to old</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Products Section -->
+{% hook 'product_list_before' %}
+<section class="collection-products">
+  <div class="container">
+    <!-- Products Grid -->
+    <div class="products-container">
+      <div class="products-grid" id="products-grid">
+        {% for product in collection.products %}
+          {% hook 'product_card_before' %}
+          {% include 'snippets/product-card', product: product %}
+          {% hook 'product_card_after' %}
+        {% endfor %}
+      </div>
+      
+      <!-- No Products Message -->
+      {% if collection.products.size == 0 %}
+        <div class="no-products">
+          <div class="no-products-content">
+            <h3 class="no-products-title">No products found</h3>
+            <p class="no-products-description">Try adjusting your filters or browse our other collections.</p>
+            <div class="no-products-actions">
+              <button class="btn btn-primary" id="clear-all-filters">Clear All Filters</button>
+              <a href="/collections" class="btn btn-outline">Browse Collections</a>
+            </div>
+          </div>
+        </div>
+      {% endif %}
+    </div>
+    
+    <!-- Pagination -->
+    {% include 'snippets/pagination', pagination: pagination %}
+  </div>
+</section>
+{% hook 'product_list_after' %}
+
+<script>
+// Collection page specific JavaScript - Server-side filtering & sorting
+document.addEventListener('DOMContentLoaded', function() {
+  // Parse URL parameters
+  const urlParams = new URLSearchParams(window.location.search);
+  
+  // Helper function to build and navigate to filtered URL
+  function applyFiltersToURL() {
+    const params = new URLSearchParams(window.location.search);
+    
+    // Price filter
+    const priceMin = document.getElementById('price-min');
+    const priceMax = document.getElementById('price-max');
+    
+    if (priceMin && priceMin.value) {
+      params.set('price_min', priceMin.value);
+    } else {
+      params.delete('price_min');
+    }
+    
+    if (priceMax && priceMax.value) {
+      params.set('price_max', priceMax.value);
+    } else {
+      params.delete('price_max');
+    }
+    
+    // Availability filter
+    const inStockCheckbox = document.querySelector('input[name="availability"][value="in-stock"]');
+    if (inStockCheckbox && inStockCheckbox.checked) {
+      params.set('in_stock', 'true');
+    } else {
+      params.delete('in_stock');
+    }
+    
+    const onSaleCheckbox = document.querySelector('input[name="availability"][value="on-sale"]');
+    if (onSaleCheckbox && onSaleCheckbox.checked) {
+      params.set('on_sale', 'true');
+    } else {
+      params.delete('on_sale');
+    }
+    
+    // Brand filter
+    const brandCheckboxes = document.querySelectorAll('input[name="brand"]:checked');
+    if (brandCheckboxes.length > 0) {
+      const selectedBrands = Array.from(brandCheckboxes).map(cb => cb.value);
+      params.set('brand', selectedBrands.join(','));
+    } else {
+      params.delete('brand');
+    }
+    
+    // Reset to page 1 when filters change
+    params.set('page', '1');
+    
+    // Navigate to new URL
+    window.location.href = `${window.location.pathname}?${params.toString()}`;
+  }
+  
+  // Initialize filters from URL parameters
+  function initializeFiltersFromURL() {
+    // Price filters
+    const priceMin = document.getElementById('price-min');
+    const priceMax = document.getElementById('price-max');
+    const priceRangeMin = document.getElementById('price-range-min');
+    const priceRangeMax = document.getElementById('price-range-max');
+    
+    if (urlParams.has('price_min')) {
+      const minValue = urlParams.get('price_min');
+      if (priceMin) priceMin.value = minValue;
+      if (priceRangeMin) priceRangeMin.value = minValue;
+    }
+    
+    if (urlParams.has('price_max')) {
+      const maxValue = urlParams.get('price_max');
+      if (priceMax) priceMax.value = maxValue;
+      if (priceRangeMax) priceRangeMax.value = maxValue;
+    }
+    
+    // Availability filters
+    const inStockCheckbox = document.querySelector('input[name="availability"][value="in-stock"]');
+    if (inStockCheckbox && urlParams.has('in_stock')) {
+      inStockCheckbox.checked = true;
+    }
+    
+    const onSaleCheckbox = document.querySelector('input[name="availability"][value="on-sale"]');
+    if (onSaleCheckbox && urlParams.has('on_sale')) {
+      onSaleCheckbox.checked = true;
+    }
+    
+    // Brand filters
+    if (urlParams.has('brand')) {
+      const selectedBrands = urlParams.get('brand').split(',');
+      selectedBrands.forEach(brand => {
+        const checkbox = document.querySelector(`input[name="brand"][value="${brand}"]`);
+        if (checkbox) checkbox.checked = true;
+      });
+    }
+    
+    // Sort initialization - Reconstruct dropdown value from sort and order parameters
+    const sortToggleLabel = document.getElementById('sort-toggle-label');
+    const resultsSort = document.getElementById('results-sort');
+    const sortMenu = document.getElementById('sort-menu');
+    
+    if (urlParams.has('sort')) {
+      const sortParam = urlParams.get('sort');
+      const orderParam = urlParams.get('order') || 'desc'; // Default to 'desc' if not specified
+      let dropdownValue = 'featured';
+      let sortLabel = 'Featured';
+      
+      // Reconstruct the dropdown value format based on URL parameters
+      if (sortParam === 'created' && orderParam === 'desc') {
+        dropdownValue = 'newest';
+        sortLabel = 'Date, new to old';
+      } else if (sortParam === 'price' && orderParam === 'asc') {
+        dropdownValue = 'price-asc';
+        sortLabel = 'Price, low to high';
+      } else if (sortParam === 'price' && orderParam === 'desc') {
+        dropdownValue = 'price-desc';
+        sortLabel = 'Price, high to low';
+      } else if (sortParam === 'featured') {
+        // featured doesn't depend on order parameter
+        dropdownValue = 'featured';
+        sortLabel = 'Featured';
+      }
+      
+      // Update the sort toggle label
+      if (sortToggleLabel) {
+        sortToggleLabel.textContent = `Sort: ${sortLabel}`;
+      }
+      
+      // Update the results sort label
+      if (resultsSort) {
+        resultsSort.textContent = `Sorted by ${sortLabel}`;
+      }
+      
+      // Mark the selected option as active
+      if (sortMenu) {
+        const sortOptions = sortMenu.querySelectorAll('.sort-option');
+        sortOptions.forEach(option => {
+          option.classList.remove('active', 'selected');
+          if (option.getAttribute('data-value') === dropdownValue) {
+            option.classList.add('active', 'selected');
+            option.setAttribute('aria-selected', 'true');
+          } else {
+            option.setAttribute('aria-selected', 'false');
+          }
+        });
+      }
+    } else {
+      // No sort parameter, show default
+      if (sortToggleLabel) {
+        sortToggleLabel.textContent = 'Sort: Featured';
+      }
+      if (resultsSort) {
+        resultsSort.textContent = 'Sorted by Featured';
+      }
+      // Mark featured as selected
+      if (sortMenu) {
+        const featuredOption = sortMenu.querySelector('.sort-option[data-value="featured"]');
+        if (featuredOption) {
+          featuredOption.classList.add('active', 'selected');
+          featuredOption.setAttribute('aria-selected', 'true');
+        }
+      }
+    }
+    
+    // Show reset button if any filters are active
+    const resetFiltersBtn = document.getElementById('reset-filters');
+    if (resetFiltersBtn && (urlParams.has('price_min') || urlParams.has('price_max') || 
+        urlParams.has('in_stock') || urlParams.has('on_sale') || urlParams.has('brand'))) {
+      resetFiltersBtn.style.display = 'block';
+    }
+  }
+  
+  // Initialize filters on page load
+  initializeFiltersFromURL();
+  
+  // Filter functionality
+  const filterToggle = document.getElementById('filter-toggle');
+  const filterDropdown = document.getElementById('filter-dropdown');
+  const filterClose = document.getElementById('filter-close');
+  const clearFiltersBtn = document.getElementById('clear-filters');
+  const applyFiltersBtn = document.getElementById('apply-filters');
+  const resetFiltersBtn = document.getElementById('reset-filters');
+  const clearAllFiltersBtn = document.getElementById('clear-all-filters');
+  
+  // Toggle filter dropdown
+  if (filterToggle && filterDropdown) {
+    filterToggle.addEventListener('click', function() {
+      filterDropdown.classList.toggle('active');
+      document.body.classList.toggle('filter-open');
+    });
+  }
+  
+  // Close filter dropdown
+  if (filterClose) {
+    filterClose.addEventListener('click', function() {
+      filterDropdown.classList.remove('active');
+      document.body.classList.remove('filter-open');
+    });
+  }
+  
+  // Close filter dropdown when clicking outside
+  document.addEventListener('click', function(e) {
+    if (filterDropdown && !filterDropdown.contains(e.target) && !filterToggle.contains(e.target)) {
+      filterDropdown.classList.remove('active');
+      document.body.classList.remove('filter-open');
+    }
+  });
+  
+  // Clear filters (but keep sort)
+  function clearAllFilters() {
+    // Navigate to page without filter parameters (but keep sort if present)
+    const params = new URLSearchParams(window.location.search);
+    params.delete('price_min');
+    params.delete('price_max');
+    params.delete('in_stock');
+    params.delete('on_sale');
+    params.delete('brand');
+    params.delete('page');
+    // Keep sort and order parameters
+    
+    window.location.href = window.location.pathname + (params.toString() ? '?' + params.toString() : '');
+  }
+  
+  if (clearFiltersBtn) {
+    clearFiltersBtn.addEventListener('click', clearAllFilters);
+  }
+  
+  if (clearAllFiltersBtn) {
+    clearAllFiltersBtn.addEventListener('click', clearAllFilters);
+  }
+  
+  if (resetFiltersBtn) {
+    resetFiltersBtn.addEventListener('click', clearAllFilters);
+  }
+  
+  // Apply filters - Submit to server
+  if (applyFiltersBtn) {
+    applyFiltersBtn.addEventListener('click', function() {
+      applyFiltersToURL();
+    });
+  }
+  
+  // Sorting functionality - custom dropdown
+  const sortDropdown = document.getElementById('sort-dropdown');
+  const sortToggle = document.getElementById('sort-toggle');
+  const sortMenu = document.getElementById('sort-menu');
+  const sortLabel = document.getElementById('sort-toggle-label');
+
+  function applySort(sortValue) {
+    const params = new URLSearchParams(window.location.search);
+    if (sortValue && sortValue !== 'featured') {
+      const parts = sortValue.split('-');
+      if (parts.length === 2) {
+        params.set('sort', parts[0]);
+        params.set('order', parts[1]);
+      } else if (sortValue === 'newest') {
+        params.set('sort', 'created');
+        params.set('order', 'desc');
+      }
+    } else {
+      params.set('sort', 'featured');
+      params.set('order', 'desc');
+    }
+    params.set('page', '1');
+    window.location.href = `${window.location.pathname}?${params.toString()}`;
+  }
+
+  if (sortToggle && sortMenu) {
+    sortToggle.addEventListener('click', function() {
+      sortDropdown.classList.toggle('open');
+      const expanded = sortToggle.getAttribute('aria-expanded') === 'true';
+      sortToggle.setAttribute('aria-expanded', (!expanded).toString());
+    });
+
+    sortMenu.querySelectorAll('.sort-option').forEach(option => {
+      option.addEventListener('click', function() {
+        const value = this.getAttribute('data-value');
+        const label = this.getAttribute('data-label') || this.textContent;
+        
+        // Update sort toggle label
+        if (sortLabel) {
+          sortLabel.textContent = `Sort: ${label}`;
+        }
+        
+        // Update results sort text
+        const resultsSort = document.getElementById('results-sort');
+        if (resultsSort) {
+          resultsSort.textContent = `Sorted by ${label}`;
+        }
+        
+        // Update active state
+        sortMenu.querySelectorAll('.sort-option').forEach(opt => {
+          opt.classList.remove('active', 'selected');
+          opt.setAttribute('aria-selected', 'false');
+        });
+        this.classList.add('active', 'selected');
+        this.setAttribute('aria-selected', 'true');
+        
+        sortDropdown.classList.remove('open');
+        applySort(value);
+      });
+    });
+
+    // Close on outside click
+    document.addEventListener('click', function(e) {
+      if (!sortDropdown.contains(e.target)) {
+        sortDropdown.classList.remove('open');
+        sortToggle.setAttribute('aria-expanded', 'false');
+      }
+    });
+  }
+  
+  // View toggle functionality (client-side only for UI)
+  const viewBtns = document.querySelectorAll('.view-btn');
+  const productsGrid = document.getElementById('products-grid');
+  
+  viewBtns.forEach(btn => {
+    btn.addEventListener('click', function() {
+      const view = this.dataset.view;
+      
+      // Update active button
+      viewBtns.forEach(b => b.classList.remove('active'));
+      this.classList.add('active');
+      
+      // Update grid class
+      if (productsGrid) {
+        productsGrid.dataset.view = view;
+        productsGrid.className = `products-grid products-${view}`;
+      }
+      
+      // Save preference to localStorage
+      localStorage.setItem('product-view-preference', view);
+    });
+  });
+  
+  // Restore view preference
+  const savedView = localStorage.getItem('product-view-preference');
+  if (savedView && productsGrid) {
+    const viewBtn = document.querySelector(`.view-btn[data-view="${savedView}"]`);
+    if (viewBtn) {
+      viewBtns.forEach(b => b.classList.remove('active'));
+      viewBtn.classList.add('active');
+      productsGrid.dataset.view = savedView;
+      productsGrid.className = `products-grid products-${savedView}`;
+    }
+  }
+  
+  // Price range slider sync
+  const priceMin = document.getElementById('price-min');
+  const priceMax = document.getElementById('price-max');
+  const priceRangeMin = document.getElementById('price-range-min');
+  const priceRangeMax = document.getElementById('price-range-max');
+  
+  if (priceMin && priceRangeMin) {
+    priceMin.addEventListener('input', function() {
+      priceRangeMin.value = this.value;
+    });
+  }
+  
+  if (priceMax && priceRangeMax) {
+    priceMax.addEventListener('input', function() {
+      priceRangeMax.value = this.value;
+    });
+  }
+  
+  if (priceRangeMin && priceMin) {
+    priceRangeMin.addEventListener('input', function() {
+      priceMin.value = this.value;
+    });
+  }
+  
+  if (priceRangeMax && priceMax) {
+    priceRangeMax.addEventListener('input', function() {
+      priceMax.value = this.value;
+    });
+  }
+});
+</script>
+

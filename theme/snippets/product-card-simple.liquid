@@ -1,0 +1,41 @@
+{% comment %}
+  Simple Product Card Snippet (for Search Results)
+  
+  Parameters:
+  - product: Product object (required)
+  
+  Usage:
+  {% include 'snippets/product-card-simple', product: product %}
+{% endcomment %}
+
+<div class="product-card">
+  <a href="/{{ product.slug }}" class="product-link">
+    <div class="product-image">
+      {% if product.images and product.images[0] %}
+        <img src="{{ product.images[0] }}" 
+             alt="{{ product.title }}" 
+             loading="lazy">
+      {% else %}
+        <img src="/assets/placeholder-product.jpg" 
+             alt="{{ product.title }}" 
+             loading="lazy">
+      {% endif %}
+    </div>
+    <div class="product-info">
+      <h3 class="product-title">{{ product.title }}</h3>
+      <p class="product-description">{{ product.description | truncate: 100 }}</p>
+      <div class="product-price">
+        <span class="price">{{ product.prices.priceString | default: product.prices.price | money }}</span>
+        <span class="currency">{{ shop.currency }}</span>
+      </div>
+    </div>
+  </a>
+  <div class="product-actions">
+    <button class="btn btn-secondary add-to-cart" 
+            data-product-id="{{ product.productId }}" 
+            data-variant-id="{{ product.variants[0].id }}">
+      Add to Cart
+    </button>
+  </div>
+</div>
+

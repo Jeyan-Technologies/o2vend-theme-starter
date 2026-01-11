@@ -1,0 +1,214 @@
+{% liquid
+  assign widget_settings = widget.settings
+  assign widget_content = widget.content
+  assign widget_data = widget.data
+
+  assign title = widget_content.Title | default: widget_content.title | default: widget_settings.title
+  
+  comment
+    HTML content priority order:
+    1. HtmlContent / htmlContent - direct field from widget (highest priority)
+    2. widget.data.htmlContent - normalized HtmlContent
+    3. widget_content.HtmlContent / htmlContent - from content JSON
+    4. widget_content.Html / html - from content JSON
+    5. Other fallbacks for backward compatibility
+  endcomment
+  
+  if widget.htmlContent
+    assign html_content = widget.htmlContent
+  elsif widget.HtmlContent
+    assign html_content = widget.HtmlContent
+  elsif widget_data.htmlContent
+    assign html_content = widget_data.htmlContent
+  elsif widget_content.Html
+    assign html_content = widget_content.Html
+  elsif widget_content.html
+    assign html_content = widget_content.html
+  elsif widget_content.HtmlContent
+    assign html_content = widget_content.HtmlContent
+  elsif widget_content.htmlContent
+    assign html_content = widget_content.htmlContent
+  elsif widget_content.Body
+    assign html_content = widget_content.Body
+  elsif widget_content.body
+    assign html_content = widget_content.body
+  elsif widget_content.Content
+    assign html_content = widget_content.Content
+  elsif widget_content.content
+    assign html_content = widget_content.content
+  elsif widget_settings.html
+    assign html_content = widget_settings.html
+  elsif widget_data.html
+    assign html_content = widget_data.html
+  else
+    assign html_content = ''
+  endif
+  
+  assign show_container = widget_content.ShowContainer | default: widget_settings.show_container | default: 'Yes'
+  assign show_widget_title_raw = widget_content.ShowWidgetTitle | default: widget_settings.show_widget_title | default: 'Yes'
+  
+  if show_widget_title_raw == null
+    assign show_widget_title = true
+  elsif show_widget_title_raw == blank
+    assign show_widget_title = true
+  elsif show_widget_title_raw == 'null'
+    assign show_widget_title = true
+  elsif show_widget_title_raw == 'Yes'
+    assign show_widget_title = true
+  elsif show_widget_title_raw == true
+    assign show_widget_title = true
+  else
+    assign show_widget_title = false
+  endif
+  assign widget_title_alignment_raw = widget_content.WidgetTitleAlignment | default: widget_settings.widget_title_alignment | default: 'center'
+  assign widget_title_alignment = widget_title_alignment_raw | downcase
+  if widget_title_alignment != 'left' and widget_title_alignment != 'right' and widget_title_alignment != 'center'
+    assign widget_title_alignment = 'center'
+  endif
+  assign background_color = widget_content.BackgroundColor | default: widget_settings.background_color
+  assign text_color = widget_content.TextColor | default: widget_settings.text_color
+  assign padding_top = widget_content.PaddingTop | default: widget_settings.padding_top
+  assign padding_bottom = widget_content.PaddingBottom | default: widget_settings.padding_bottom
+%}
+
+<section class="widget widget-html" data-widget-id="{{ widget.id }}"{% if background_color and background_color != blank and background_color != 'null' %} style="background-color: {{ background_color }};"{% endif %}>
+  <div class="widget-html__inner{% if show_container == 'No' %} widget-html__inner--full{% endif %}">
+    {% if show_widget_title %}
+      {% if title and title != blank %}
+        <h2 class="widget-title" style="text-align: {{ widget_title_alignment }};{% if text_color and text_color != blank %} color: {{ text_color }};{% endif %}">{{ title }}</h2>
+      {% endif %}
+    {% endif %}
+    
+    {% if html_content and html_content != blank %}
+      <div class="widget-html__content"{% if text_color and text_color != blank and text_color != 'null' %} style="color: {{ text_color }};"{% endif %}>
+        {{ html_content }}
+      </div>
+    {% endif %}
+  </div>
+
+  <style>
+    .widget-html {
+      padding: {{ padding_top | default: '40' }}px 0 {{ padding_bottom | default: '40' }}px;
+    }
+    .widget-html__inner {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+    .widget-html__inner--full {
+      max-width: none;
+      padding: 0;
+    }
+    .widget-html .widget-header {
+      position: static;
+      z-index: auto;
+    }
+    .widget-html .widget-title {
+      font-size: 1.4rem;
+      font-weight: 500;
+      line-height: 1.3;
+      color: #111;
+      margin: 0 0 8px 0;
+      letter-spacing: -0.01em;
+    }
+    .widget-html__content {
+      font-size: 16px;
+      line-height: 1.7;
+      color: #374151;
+    }
+    .widget-html__content :where(h1, h2, h3, h4, h5, h6) {
+      margin-top: 1.5em;
+      margin-bottom: 0.5em;
+      font-weight: 600;
+      line-height: 1.3;
+      color: #111;
+    }
+    .widget-html__content h1 { font-size: 2em; }
+    .widget-html__content h2 { font-size: 1.5em; }
+    .widget-html__content h3 { font-size: 1.25em; }
+    .widget-html__content h4 { font-size: 1.1em; }
+    .widget-html__content p {
+      margin-bottom: 1em;
+    }
+    .widget-html__content ul,
+    .widget-html__content ol {
+      margin: 1em 0;
+      padding-left: 1.5em;
+    }
+    .widget-html__content li {
+      margin-bottom: 0.5em;
+    }
+    .widget-html__content a {
+      color: #2563eb;
+      text-decoration: underline;
+    }
+    .widget-html__content a:hover {
+      color: #1d4ed8;
+    }
+    .widget-html__content img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 8px;
+    }
+    .widget-html__content table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1em 0;
+    }
+    .widget-html__content th,
+    .widget-html__content td {
+      padding: 12px;
+      border: 1px solid #e5e7eb;
+      text-align: left;
+    }
+    .widget-html__content th {
+      background: #f9fafb;
+      font-weight: 600;
+    }
+    .widget-html__content blockquote {
+      margin: 1.5em 0;
+      padding: 1em 1.5em;
+      border-left: 4px solid #e5e7eb;
+      background: #f9fafb;
+      font-style: italic;
+    }
+    .widget-html__content pre,
+    .widget-html__content code {
+      font-family: 'Monaco', 'Consolas', monospace;
+      font-size: 0.9em;
+    }
+    .widget-html__content pre {
+      background: #1f2937;
+      color: #f9fafb;
+      padding: 1em;
+      border-radius: 8px;
+      overflow-x: auto;
+    }
+    .widget-html__content code {
+      background: #f3f4f6;
+      padding: 0.2em 0.4em;
+      border-radius: 4px;
+    }
+    .widget-html__content pre code {
+      background: none;
+      padding: 0;
+    }
+    
+    /* Mobile */
+    @media (max-width: 768px) {
+      .widget-html {
+        padding: 32px 0;
+      }
+      .widget-html__inner {
+        padding: 0 16px;
+      }
+      .widget-html .widget-title {
+        font-size: 1.3rem;
+      }
+      .widget-html__content {
+        font-size: 15px;
+      }
+    }
+  </style>
+</section>
+

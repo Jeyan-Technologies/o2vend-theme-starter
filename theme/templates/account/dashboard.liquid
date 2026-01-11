@@ -1,0 +1,401 @@
+{% layout 'layout/theme' %}
+
+{% comment %}
+  Account Dashboard Page
+{% endcomment %}
+
+{% hook 'account_before' %}
+<section class="account-page">
+  <div class="container">
+    <div class="account-header">
+      <h1 class="account-title display-2">My Account</h1>
+      <p class="account-subtitle">Manage your account and orders</p>
+    </div>
+
+    <div class="account-layout">
+      <!-- Account Sidebar -->
+      <aside class="account-sidebar">
+        {% render 'snippets/account-sidebar' %}
+      </aside>
+
+      <!-- Dashboard Content -->
+      <div class="account-content">
+        {% hook 'account_dashboard_before' %}
+        <div class="account-section-header">
+          <h2 class="account-section-title">Dashboard</h2>
+        </div>
+        
+        <div class="account-dashboard">
+          <div class="dashboard-stats">
+            <div class="dashboard-stat">
+              <div class="stat-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="9" cy="21" r="1"></circle>
+                  <circle cx="20" cy="21" r="1"></circle>
+                  <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+                </svg>
+              </div>
+              <div class="stat-content">
+                <h3 class="stat-value">{{ customer.ordersCount | default: 0 }}</h3>
+                <p class="stat-label">Total Orders</p>
+              </div>
+            </div>
+            
+            <div class="dashboard-stat">
+              <div class="stat-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                </svg>
+              </div>
+              <div class="stat-content">
+                <h3 class="stat-value">{{ customer.wishlistCount | default: 0 }}</h3>
+                <p class="stat-label">Wishlist Items</p>
+              </div>
+            </div>
+            
+            <div class="dashboard-stat">
+              <div class="stat-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="8" r="7"></circle>
+                  <polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline>
+                </svg>
+              </div>
+              <div class="stat-content">
+                <h3 class="stat-value">{{ customer.loyaltyPoints | default: 0 }}</h3>
+                <p class="stat-label">Loyalty Points</p>
+              </div>
+            </div>
+          </div>
+          
+          <div class="dashboard-recent-orders">
+            <h3 class="dashboard-subtitle">Recent Orders</h3>
+            {% if customer.recentOrders and customer.recentOrders.size > 0 %}
+              <div class="orders-list">
+                {% for order in customer.recentOrders limit: 5 %}
+                  <div class="order-item">
+                    <div class="order-item-info">
+                      <h4 class="order-item-number">Order #{{ order.orderNumber }}</h4>
+                      <p class="order-item-date">{{ order.createdAt | date: '%B %d, %Y' }}</p>
+                    </div>
+                    <div class="order-item-status">
+                      <span class="status-badge status-{{ order.status | downcase }}">{{ order.status }}</span>
+                    </div>
+                    <div class="order-item-total">
+                      {{ order.total | money_with_settings: shop.settings }}
+                    </div>
+                    <div class="order-item-actions">
+                      <a href="/orders/{{ order.id }}" class="btn btn-sm btn-outline">View Details</a>
+                    </div>
+                  </div>
+                {% endfor %}
+              </div>
+              <div class="view-all-orders">
+                <a href="/orders" class="btn btn-primary">View All Orders</a>
+              </div>
+            {% else %}
+              <div class="empty-state">
+                <p>No recent orders</p>
+                <a href="/products" class="btn btn-primary">Start Shopping</a>
+              </div>
+            {% endif %}
+          </div>
+        </div>
+        {% hook 'account_dashboard_after' %}
+      </div>
+    </div>
+  </div>
+</section>
+{% hook 'account_after' %}
+
+<style>
+/* Account page uses theme.css variables - no local :root needed */
+
+.account-page {
+  padding: var(--spacing-section) var(--spacing-small);
+  background: var(--color-background);
+  min-height: 100vh;
+}
+
+.container {
+  max-width: var(--container-width);
+  margin: 0 auto;
+  padding: 0 var(--spacing-small);
+}
+
+.account-header {
+  text-align: center;
+  margin-bottom: var(--spacing-section);
+ 
+}
+
+.account-title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: var(--color-text);
+  margin: 0 0 0.5rem 0;
+  letter-spacing: -0.025em;
+}
+
+.account-subtitle {
+  font-size: 1.125rem;
+  color: var(--color-text-light);
+  margin: 0;
+}
+
+.account-layout {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: var(--spacing-component);
+  align-items: start;
+}
+
+.account-sidebar {
+  position: sticky;
+  top: var(--spacing-component);
+  background: var(--color-background);
+  border-radius: var(--border-radius-large);
+  padding: var(--spacing-component);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--color-border);
+}
+
+.account-content {
+  background: var(--color-background);
+  border-radius: var(--border-radius-large);
+  padding: var(--spacing-component);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--color-border);
+}
+
+.account-section-header {
+  margin-bottom: var(--spacing-component);
+  padding-bottom: var(--spacing-component);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.account-section-title {
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: var(--color-text);
+  margin: 0;
+}
+
+.dashboard-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--spacing-component);
+  margin-bottom: var(--spacing-section);
+}
+
+.dashboard-stat {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-component);
+  padding: var(--spacing-component);
+  background: linear-gradient(135deg, var(--color-primary-light) 0%, var(--color-background) 100%);
+  border-radius: var(--border-radius-medium);
+  border: 1px solid var(--color-border);
+  transition: all 0.3s ease;
+}
+
+.dashboard-stat:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.stat-icon {
+  width: 50px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-primary);
+  color: var(--color-background);
+  border-radius: var(--border-radius-medium);
+  flex-shrink: 0;
+}
+
+.stat-value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--color-text);
+  margin: 0 0 0.25rem 0;
+  line-height: 1;
+}
+
+.stat-label {
+  font-size: 0.875rem;
+  color: var(--color-text-light);
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.dashboard-subtitle {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--color-text);
+  margin: 0 0 var(--spacing-component) 0;
+}
+
+.orders-list {
+  display: grid;
+  gap: var(--spacing-small);
+}
+
+.order-item {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr auto;
+  gap: var(--spacing-component);
+  align-items: center;
+  padding: var(--spacing-component);
+  background: var(--color-background);
+  border-radius: var(--border-radius-medium);
+  border: 1px solid var(--color-border);
+  transition: all 0.3s ease;
+}
+
+.order-item:hover {
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-sm);
+}
+
+.order-item-number {
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: var(--color-text);
+  margin: 0 0 0.25rem 0;
+}
+
+.order-item-date {
+  font-size: 1.2rem;
+  color: var(--color-text-light);
+  margin: 0;
+}
+
+.order-item-status {
+  justify-self: center;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 0.375rem 0.75rem;
+  border-radius: 0.375rem;
+  font-size: 1.2rem;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.status-pending {
+  background: var(--color-warning-light);
+  color: var(--color-warning-dark);
+}
+
+.status-processing {
+  background: var(--color-info-light);
+  color: var(--color-info-dark);
+}
+
+.status-shipped, .status-delivered {
+  background: var(--color-success-light);
+  color: var(--color-success-dark);
+}
+
+.status-cancelled {
+  background: var(--color-danger-light);
+  color: var(--color-danger-dark);
+}
+
+.order-item-total {
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: var(--color-text);
+  text-align: right;
+}
+
+.view-all-orders {
+  margin-top: var(--spacing-component);
+  text-align: center;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.625rem 1.5rem;
+  font-size: 1.4rem;
+  font-weight: 500;
+  text-decoration: none;
+  border-radius: var(--border-radius-medium);
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-primary {
+  background: var(--color-primary);
+  color: var(--color-background);
+  border: 2px solid var(--color-primary);
+}
+
+.btn-primary:hover {
+  background: var(--color-primary-hover);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.btn-outline {
+  background: transparent;
+  color: var(--color-text);
+  border: 2px solid var(--color-border);
+}
+
+.btn-outline:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.btn-sm {
+  padding: 0.5rem 1rem;
+  font-size: 1.4rem;
+}
+
+.empty-state {
+  text-align: center;
+  padding: var(--spacing-section);
+  background: var(--color-background);
+  border-radius: var(--border-radius-medium);
+  border: 2px dashed var(--color-border);
+}
+
+.empty-state p {
+  margin: 0 0 var(--spacing-component) 0;
+  color: var(--color-text-light);
+}
+
+@media (max-width: 768px) {
+  .account-layout {
+    grid-template-columns: 1fr;
+  }
+  
+  .account-content {
+    order: 1;
+  }
+  
+  .dashboard-stats {
+    grid-template-columns: 1fr;
+  }
+  .order-item-status, .order-item-total {
+    justify-self: start;
+  }
+  
+  .order-item-actions {
+    width: 100%;
+  }
+  
+  .order-item-actions .btn {
+    width: 100%;
+  }
+}
+</style>
+

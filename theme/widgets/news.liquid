@@ -1,0 +1,217 @@
+{% liquid
+  assign widget_settings = widget.settings
+  assign widget_content = widget.content
+  assign widget_data = widget.data
+
+  comment
+    Dynamic Widget: News items come from widget_data.products (enriched by WidgetService)
+    Settings come from widget_settings
+  endcomment
+  assign news_items = widget_data.products | default: widget_data.items | default: widget_data.newsItems
+  assign heading = widget_settings.title | default: widget.Title | default: widget_content.ProductName
+  
+  assign show_container = widget_content.ShowContainer | default: widget_settings.showContainer | default: 'Default'
+  assign show_widget_title_raw = widget_content.ShowWidgetTitle | default: widget_settings.showWidgetTitle | default: 'Default'
+  if show_widget_title_raw == null or show_widget_title_raw == blank or show_widget_title_raw == 'null'
+    assign show_widget_title = true
+  elsif show_widget_title_raw == 'Yes' or show_widget_title_raw == 'Default'
+    assign show_widget_title = true
+  else
+    assign show_widget_title = false
+  endif
+  
+  assign widget_title_alignment_raw = widget_content.WidgetTitleAlignment | default: widget_settings.widgetTitleAlignment | default: 'Default'
+  assign alignment = 'center'
+  if widget_title_alignment_raw == 'Left' or widget_title_alignment_raw == 'left'
+    assign alignment = 'left'
+  elsif widget_title_alignment_raw == 'Right' or widget_title_alignment_raw == 'right'
+    assign alignment = 'right'
+  elsif widget_title_alignment_raw == 'Center' or widget_title_alignment_raw == 'Center' or widget_title_alignment_raw == 'Default' or widget_title_alignment_raw == 'default'
+    assign alignment = 'center'
+  endif
+  
+  assign background_color = widget_content.BackgroundColor | default: widget_settings.backgroundColor
+  assign text_color = widget_content.TextColor | default: widget_settings.textColor
+  assign show_grid_view = widget_content.ShowGridView | default: widget_settings.showGridView | default: true
+  
+  comment
+    Container logic based on section and ShowContainer:
+    - section == "hero" + ShowContainer == "No" or ("Default"/null in hero) → no container
+    - section != "hero" + ShowContainer == ("Default"/null) or ShowContainer == "Yes" → with container
+    - ShowContainer == "No" → no container
+    - ShowContainer == "Yes" → with container
+  endcomment
+  assign widget_section = widget.section | default: 'content'
+  assign use_container = true
+  
+  if show_container == 'No'
+    assign use_container = false
+  elsif show_container == 'Yes'
+    assign use_container = true
+  else
+    if widget_section == 'hero'
+      if show_container == 'Default' or show_container == null or show_container == 'null' or show_container == blank
+        assign use_container = false
+      else
+        assign use_container = true
+      endif
+    else
+      assign use_container = true
+    endif
+  endif
+%}
+
+{% if news_items and news_items.size > 0 %}
+  {% if use_container %}
+    <section class="widget widget-news" data-widget-id="{{ widget.id }}"{% if background_color and background_color != 'null' and background_color != blank %} style="background-color: {{ background_color }}; color: {{ text_color }};"{% endif %}>
+      <div class="container">
+        {% if show_widget_title and heading and heading != blank %}
+          <h2 class="widget-news__title" style="text-align: {{ alignment }}; color: {{ text_color }}; padding-top: 2%;">{{ heading }}</h2>
+        {% endif %}
+        
+        <div class="row product-list widget-news__list">
+          {% for item in news_items %}
+            {% if show_grid_view %}
+              <div class="col-6 col-md-3 p-b-35 p-l-5 p-r-5">
+                {% render 'snippets/news-thumbnail', news_item: item %}
+              </div>
+            {% else %}
+              <div class="col-md-3 p-b-35 p-l-5 p-r-5">
+                {% render 'snippets/news-thumbnail', news_item: item %}
+              </div>
+            {% endif %}
+          {% endfor %}
+        </div>
+      </div>
+    </section>
+  {% else %}
+    <div class="widget widget-news" data-widget-id="{{ widget.id }}"{% if background_color and background_color != 'null' and background_color != blank %} style="background-color: {{ background_color }}; color: {{ text_color }};"{% endif %}>
+      {% if show_widget_title and heading and heading != blank %}
+        <h2 class="widget-news__title" style="text-align: {{ alignment }}; color: {{ text_color }}; padding-top: 2%;">{{ heading }}</h2>
+      {% endif %}
+      
+      <div class="row product-list widget-news__list">
+        {% for item in news_items %}
+          {% if show_grid_view %}
+            <div class="col-6 col-md-3 p-b-35 p-l-5 p-r-5">
+              {% render 'snippets/news-thumbnail', news_item: item %}
+            </div>
+          {% else %}
+            <div class="col-md-3 p-b-35 p-l-5 p-r-5">
+              {% render 'snippets/news-thumbnail', news_item: item %}
+            </div>
+          {% endif %}
+        {% endfor %}
+      </div>
+    </div>
+  {% endif %}
+{% else %}
+  <section class="widget widget-news widget-news--empty" data-widget-id="{{ widget.id }}">
+    <div class="widget-empty">
+      <p>No news items available.</p>
+    </div>
+  </section>
+{% endif %}
+
+<style>
+  .widget-news {
+    padding: 40px 0;
+  }
+
+  .widget-news__title {
+    font-size: 1.4rem;
+    font-weight: 500;
+    line-height: 1.3;
+    margin: 0 0 32px 0;
+  }
+
+  .widget-news__list {
+    display: flex;
+    flex-wrap: wrap;
+    margin: 0 -5px;
+  }
+
+  .widget-news .row {
+    display: flex;
+    flex-wrap: wrap;
+    margin: 0 -5px;
+  }
+
+  .widget-news .col-6 {
+    flex: 0 0 50%;
+    max-width: 50%;
+    padding: 0 5px;
+  }
+
+  .widget-news .col-md-3 {
+    flex: 0 0 100%;
+    max-width: 100%;
+    padding: 0 5px;
+  }
+
+  @media (min-width: 768px) {
+    .widget-news .col-md-3 {
+      flex: 0 0 25%;
+      max-width: 25%;
+    }
+  }
+
+  .widget-news .p-b-35 {
+    padding-bottom: 35px;
+  }
+
+  .widget-news .p-l-5 {
+    padding-left: 5px;
+  }
+
+  .widget-news .p-r-5 {
+    padding-right: 5px;
+  }
+
+  .widget-news .container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+
+  .widget-empty {
+    padding: 60px 24px;
+    text-align: center;
+    color: #6b7280;
+  }
+
+  .widget-empty p {
+    margin: 0;
+    font-size: 14px;
+  }
+
+  @media (max-width: 768px) {
+    .widget-news {
+      padding: 32px 0;
+    }
+
+    .widget-news__title {
+      font-size: 1.3rem;
+      margin-bottom: 24px;
+    }
+
+    .widget-news .container {
+      padding: 0 16px;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .widget-news {
+      padding: 24px 0;
+    }
+
+    .widget-news__title {
+      font-size: 1.2rem;
+      margin-bottom: 20px;
+    }
+
+    .widget-news .container {
+      padding: 0 12px;
+    }
+  }
+</style>

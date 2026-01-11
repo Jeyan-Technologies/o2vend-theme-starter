@@ -1,0 +1,4511 @@
+{% layout 'layout/theme' %}
+{% comment %}
+  O2VEND Default Theme - Checkout Template
+  Checkout process with payment and shipping options
+{% endcomment %}
+
+<!-- Checkout Page -->
+{% hook 'checkout_before' %}
+<section class="checkout-page">
+  <div class="checkout-container">
+    {% comment %} <div class="checkout-header">
+      <h1 class="checkout-title">Checkout</h1>
+    </div> {% endcomment %}
+
+    <!-- Price Change Warning Banner -->
+    {% if checkout.priceChangeDetected or checkout.priceChangeMetadata.detected %}
+      <div class="price-change-banner" id="price-change-banner" data-price-change-detected="true">
+        <div class="price-change-banner-content">
+          <div class="price-change-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div class="price-change-message">
+            <h3 class="price-change-title">Prices Have Changed</h3>
+            <p class="price-change-description">
+              {% if checkout.priceChangeMetadata.totalChange > 0 %}
+                Some prices have increased. Please review your order before completing checkout.
+              {% elsif checkout.priceChangeMetadata.totalChange < 0 %}
+                Great news! Some prices have decreased. Your order total has been updated.
+              {% else %}
+                Some prices have changed. Please review your order.
+              {% endif %}
+            </p>
+            {% if checkout.warnings and checkout.warnings.size > 0 %}
+              <ul class="price-change-warnings-list">
+                {% for warning in checkout.warnings %}
+                  <li>{{ warning }}</li>
+                {% endfor %}
+              </ul>
+            {% endif %}
+          </div>
+          <div class="price-change-actions">
+            <button type="button" class="btn btn-outline btn-sm" id="refresh-checkout-prices">
+              Refresh Prices
+            </button>
+            <button type="button" class="btn btn-ghost btn-sm" id="dismiss-price-change-banner">
+              Dismiss
+            </button>
+          </div>
+        </div>
+      </div>
+    {% endif %}
+
+    <!-- Price Change Details -->
+    {% if checkout.priceChangeDetails or checkout.priceChangeMetadata.itemsChanged > 0 %}
+      <div class="price-change-details" id="price-change-details">
+        <h3 class="price-change-details-title">Price Changes</h3>
+        <div class="price-change-items-list">
+          {% if checkout.lineItems %}
+            {% for item in checkout.lineItems %}
+              {% assign itemId = item.id | default: item.variantId | default: forloop.index %}
+              {% assign changeDetail = checkout.priceChangeDetails[itemId] %}
+              {% if changeDetail or checkout.priceChangeMetadata.detected %}
+                <div class="price-change-item" data-item-id="{{ itemId }}">
+                  <div class="price-change-item-info">
+                    <h4 class="price-change-item-title">{{ item.title | default: 'Product' }}</h4>
+                    {% if item.sku %}
+                      <p class="price-change-item-sku">SKU: {{ item.sku }}</p>
+                    {% endif %}
+                  </div>
+                  <div class="price-change-item-prices">
+                    {% if changeDetail.oldPrice or item.originalPrice %}
+                      <span class="price-change-old-price">
+                        {{ changeDetail.oldPrice | default: item.originalPrice | money_with_settings: shop.settings }}
+                      </span>
+                    {% endif %}
+                    <span class="price-change-arrow">→</span>
+                    <span class="price-change-new-price">
+                      {{ changeDetail.newPrice | default: item.price | money_with_settings: shop.settings }}
+                    </span>
+                    {% if changeDetail.percentageChange %}
+                      <span class="price-change-percentage {% if changeDetail.percentageChange > 0 %}price-increase{% else %}price-decrease{% endif %}">
+                        ({{ changeDetail.percentageChange | round: 1 }}%)
+                      </span>
+                    {% endif %}
+                  </div>
+                </div>
+              {% endif %}
+            {% endfor %}
+          {% endif %}
+        </div>
+      </div>
+    {% endif %}
+
+    <form class="checkout-form" id="checkout-form" method="POST" action="/webstoreapi/checkouts">
+      <div class="checkout-layout">
+        <!-- Left Column: Checkout Form -->
+        <div class="checkout-main">
+          
+          <!-- Shipping Address Section -->
+          {% hook 'checkout_shipping_before' %}
+          <div class="checkout-section">
+            <h2 class="checkout-section-title">Shipping Address</h2>
+            
+            {% hook 'checkout_shipping_address_before' %}
+            <div class="checkout-section-content">
+              <div class="form-grid">
+                <div class="form-group">
+                  <label for="shipping-first-name" class="form-label">First Name</label>
+                  <input 
+                    type="text" 
+                    id="shipping-first-name" 
+                    name="shippingFirstName" 
+                    class="form-input" 
+                    value="{{ checkout.shippingAddress.firstName | default: '' | escape }}"
+                    required>
+                </div>
+                
+                <div class="form-group">
+                  <label for="shipping-last-name" class="form-label">Last Name</label>
+                  <input 
+                    type="text" 
+                    id="shipping-last-name" 
+                    name="shippingLastName" 
+                    class="form-input" 
+                    value="{{ checkout.shippingAddress.lastName | default: '' | escape }}">
+                </div>
+                
+                <div class="form-group form-group-full">
+                  <label for="shipping-address" class="form-label">Address</label>
+                  <input 
+                    type="text" 
+                    id="shipping-address" 
+                    name="shippingAddress" 
+                    class="form-input" 
+                    value="{{ checkout.shippingAddress.address1 | default: '' | escape }}"
+                    required>
+                </div>
+                
+                <div class="form-group">
+                  <label for="shipping-city" class="form-label">City</label>
+                  <input 
+                    type="text" 
+                    id="shipping-city" 
+                    name="shippingCity" 
+                    class="form-input" 
+                    value="{{ checkout.shippingAddress.city | default: '' | escape }}"
+                    required>
+                </div>
+                
+                <div class="form-group">
+                  <label for="shipping-country" class="form-label">Country</label>
+                  <select id="shipping-country" name="shippingCountry" class="form-input form-select" required>
+                    <option value="">Select a country</option>
+                    {% if countries and countries.size > 0 %}
+                      {% for country in countries %}
+                        {% assign countryId = country.id | default: country.countryId %}
+                        {% assign countryCode = country.code2 | default: country.code | default: country.countryCode | default: country.name %}
+                        <option value="{{ countryId }}" 
+                                data-country-id="{{ countryId }}"
+                                data-country-code2="{{ country.code2 | default: country.code }}"
+                                {% if checkout.shippingAddress.countryId == countryId or checkout.shippingAddress.country == countryCode or checkout.shippingAddress.country == country.code2 or checkout.shippingAddress.country == country.code %}selected{% endif %}>
+                          {{ country.name }}
+                        </option>
+                      {% endfor %}
+                    {% else %}
+                      <option value="US">United States</option>
+                      <option value="CA">Canada</option>
+                      <option value="GB">United Kingdom</option>
+                      <option value="AU">Australia</option>
+                      <option value="IN">India</option>
+                    {% endif %}
+                  </select>
+                </div>
+                
+                <div class="form-group">
+                  <label for="shipping-state" class="form-label">State</label>
+                  <select id="shipping-state" name="shippingState" class="form-input form-select" required>
+                    <option value="">Select a state</option>
+                  </select>
+                  <input type="text" id="shipping-state-text" name="shippingState" class="form-input" style="display: none;" placeholder="Enter state/province">
+                </div>
+                
+                <div class="form-group">
+                  <label for="shipping-zip" class="form-label">ZIP Code</label>
+                  <input 
+                    type="text" 
+                    id="shipping-zip" 
+                    name="shippingZip" 
+                    class="form-input" 
+                    value="{{ checkout.shippingAddress.zip | default: '' | escape }}"
+                    required>
+                </div>
+                
+                <div class="form-group">
+                  <label for="shipping-phone" class="form-label">Phone</label>
+                  <input 
+                    type="tel" 
+                    id="shipping-phone" 
+                    name="shippingPhone" 
+                    class="form-input" 
+                    value="{{ checkout.shippingAddress.phone | default: '' | escape }}">
+                </div>
+              </div>
+            </div>
+            {% hook 'checkout_shipping_address_after' %}
+          </div>
+          {% hook 'checkout_shipping_after' %}
+
+          <!-- Shipping Methods Section -->
+          {% hook 'checkout_shipping_methods_before' %}
+          <div class="checkout-section" id="shipping-methods-section" style="display: none;">
+            <h2 class="checkout-section-title">Shipping Method</h2>
+            <div class="checkout-section-content">
+              <div id="shipping-methods-container">
+                <p class="shipping-methods-loading">Loading shipping options...</p>
+              </div>
+            </div>
+          </div>
+          {% hook 'checkout_shipping_methods_after' %}
+
+          <!-- Billing Address Section -->
+          {% hook 'checkout_billing_before' %}
+          <div class="checkout-section">
+            <h2 class="checkout-section-title">Billing Address</h2>
+            <div class="checkout-section-content">
+              <div class="form-group">
+                <label class="checkbox-label">
+                  <input type="checkbox" id="same-as-shipping" checked>
+                  <span>Same as shipping address</span>
+                </label>
+              </div>
+              
+              <div id="billing-address-fields" style="display: none;">
+                <div class="form-grid">
+                  <div class="form-group">
+                    <label for="billing-first-name" class="form-label">First Name</label>
+                    <input 
+                      type="text" 
+                      id="billing-first-name" 
+                      name="billingFirstName" 
+                      class="form-input"
+                      value="{{ checkout.billingAddress.firstName | default: '' | escape }}">
+                  </div>
+                  
+                  <div class="form-group">
+                    <label for="billing-last-name" class="form-label">Last Name</label>
+                    <input 
+                      type="text" 
+                      id="billing-last-name" 
+                      name="billingLastName" 
+                      class="form-input"
+                      value="{{ checkout.billingAddress.lastName | default: '' | escape }}">
+                  </div>
+                  
+                  <div class="form-group form-group-full">
+                    <label for="billing-address" class="form-label">Address</label>
+                    <input 
+                      type="text" 
+                      id="billing-address" 
+                      name="billingAddress" 
+                      class="form-input"
+                      value="{{ checkout.billingAddress.address1 | default: '' | escape }}">
+                  </div>
+                  
+                  <div class="form-group">
+                    <label for="billing-city" class="form-label">City</label>
+                    <input 
+                      type="text" 
+                      id="billing-city" 
+                      name="billingCity" 
+                      class="form-input"
+                      value="{{ checkout.billingAddress.city | default: '' | escape }}">
+                  </div>
+                  
+                  <div class="form-group">
+                    <label for="billing-country" class="form-label">Country</label>
+                    <select id="billing-country" name="billingCountry" class="form-input form-select">
+                      <option value="">Select a country</option>
+                      {% if countries and countries.size > 0 %}
+                        {% for country in countries %}
+                          {% assign countryId = country.id | default: country.countryId %}
+                          {% assign countryCode = country.code2 | default: country.code | default: country.countryCode | default: country.name %}
+                          <option value="{{ countryId }}"
+                                  data-country-id="{{ countryId }}"
+                                  data-country-code2="{{ country.code2 | default: country.code }}"
+                                  {% if checkout.billingAddress.countryId == countryId or checkout.billingAddress.country == countryCode or checkout.billingAddress.country == country.code2 or checkout.billingAddress.country == country.code %}selected{% endif %}>
+                            {{ country.name }}
+                          </option>
+                        {% endfor %}
+                      {% else %}
+                        <option value="US">United States</option>
+                        <option value="CA">Canada</option>
+                        <option value="GB">United Kingdom</option>
+                        <option value="AU">Australia</option>
+                        <option value="IN">India</option>
+                      {% endif %}
+                    </select>
+                  </div>
+                  
+                  <div class="form-group">
+                    <label for="billing-state" class="form-label">State</label>
+                    <select id="billing-state" name="billingState" class="form-input form-select">
+                      <option value="">Select a state</option>
+                    </select>
+                  </div>
+                  
+                  <div class="form-group">
+                    <label for="billing-zip" class="form-label">ZIP Code</label>
+                    <input 
+                      type="text" 
+                      id="billing-zip" 
+                      name="billingZip" 
+                      class="form-input"
+                      value="{{ checkout.billingAddress.zip | default: '' | escape }}">
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          {% hook 'checkout_billing_after' %}
+
+          <!-- Payment Section -->
+          {% hook 'checkout_payment_before' %}
+          <div class="checkout-section">
+            <h2 class="checkout-section-title">Payment</h2>
+            
+            {% hook 'checkout_payment_methods_before' %}
+            <div class="checkout-section-content">
+              {% if checkout.paymentMethods and checkout.paymentMethods.size > 0 %}
+                <div class="payment-methods">
+                  <!-- Cash on Delivery -->
+                  {% if checkout.paymentMethodsGrouped.cod.size > 0 %}
+                    <div class="payment-method-group">
+                      <h3 class="payment-method-group-title">Cash on Delivery</h3>
+                      {% for paymentMethod in checkout.paymentMethodsGrouped.cod %}
+                        <div class="payment-method payment-method-cod">
+                          <label class="payment-method-label">
+                            <input 
+                              type="radio" 
+                              name="paymentMethod" 
+                              value="{{ paymentMethod.id }}"
+                              {% if forloop.first and checkout.paymentMethodsGrouped.paymentGateway.size == 0 %}checked{% endif %}
+                              data-payment-type="CoD"
+                              data-payment-id="{{ paymentMethod.id }}"
+                              data-payment-fee="{{ paymentMethod.config.PaymentFee | default: 0 }}"
+                            >
+                            <div class="payment-method-content">
+                              <span class="payment-method-name">{{ paymentMethod.name | default: 'Cash on Delivery' }}</span>
+                              {% if paymentMethod.description %}
+                                <span class="payment-method-description">{{ paymentMethod.description }}</span>
+                              {% endif %}
+                              {% if paymentMethod.config %}
+                                <div class="payment-method-config">
+                                  {% if paymentMethod.config.DisplayText %}
+                                    <span class="config-text">{{ paymentMethod.config.DisplayText }}</span>
+                                  {% endif %}
+                                  {% if paymentMethod.config.PaymentFee and paymentMethod.config.PaymentFee > 0 %}
+                                    <span class="config-fee">Fee: {{ paymentMethod.config.PaymentFee | money_with_settings: shop.settings }}</span>
+                                  {% endif %}
+                                  {% if paymentMethod.config.MinOrderValue %}
+                                    <span class="config-min">Min order: {{ paymentMethod.config.MinOrderValue | money_with_settings: shop.settings }}</span>
+                                  {% endif %}
+                                  {% if paymentMethod.config.MaxOrderValue %}
+                                    <span class="config-max">Max order: {{ paymentMethod.config.MaxOrderValue | money_with_settings: shop.settings }}</span>
+                                  {% endif %}
+                                </div>
+                              {% endif %}
+                            </div>
+                          </label>
+                        </div>
+                      {% endfor %}
+                    </div>
+                  {% endif %}
+
+                  <!-- Payment Gateways -->
+                  {% if checkout.paymentMethodsGrouped.paymentGateway.size > 0 %}
+                    <div class="payment-method-group">
+                      <h3 class="payment-method-group-title">Online Payment</h3>
+                      {% for paymentMethod in checkout.paymentMethodsGrouped.paymentGateway %}
+                        <div class="payment-method payment-method-gateway" data-gateway-id="{{ paymentMethod.id }}">
+                          <label class="payment-method-label">
+                            <input 
+                              type="radio" 
+                              name="paymentMethod" 
+                              value="{{ paymentMethod.id }}"
+                              {% if forloop.first and checkout.paymentMethodsGrouped.cod.size == 0 %}checked{% endif %}
+                              data-payment-type="PaymentGateway"
+                              data-payment-id="{{ paymentMethod.id }}"
+                              data-payment-fee="{{ paymentMethod.config.PaymentFee | default: 0 }}"
+                            >
+                            <div class="payment-method-content">
+                              <span class="payment-method-name">{{ paymentMethod.name | default: paymentMethod.id }}</span>
+                              {% if paymentMethod.description %}
+                                <span class="payment-method-description">{{ paymentMethod.description }}</span>
+                              {% endif %}
+                              {% if paymentMethod.config and paymentMethod.config.DisplayText %}
+                                <span class="config-text">{{ paymentMethod.config.DisplayText }}</span>
+                              {% endif %}
+                            </div>
+                          </label>
+                          <!-- Payment gateway plugin snippet will be rendered here -->
+                          {% hook 'payment_gateway_form' paymentMethod.id %}
+                        </div>
+                      {% endfor %}
+                    </div>
+                  {% endif %}
+
+                  <!-- Store Credit -->
+                  {% if checkout.paymentMethodsGrouped.creditNote.size > 0 %}
+                    <div class="payment-method-group">
+                      <h3 class="payment-method-group-title">Store Credit</h3>
+                      {% for paymentMethod in checkout.paymentMethodsGrouped.creditNote %}
+                        <div class="payment-method payment-method-credit">
+                          <label class="payment-method-label">
+                            <input 
+                              type="radio" 
+                              name="paymentMethod" 
+                              value="{{ paymentMethod.id }}"
+                              data-payment-type="CreditNote"
+                              data-payment-id="{{ paymentMethod.id }}"
+                              data-payment-fee="{{ paymentMethod.config.PaymentFee | default: 0 }}"
+                            >
+                            <div class="payment-method-content">
+                              <span class="payment-method-name">{{ paymentMethod.name | default: 'Store Credit' }}</span>
+                              {% if paymentMethod.availableBalance %}
+                                <span class="payment-method-balance">Available: {{ paymentMethod.availableBalance | money_with_settings: shop.settings }}</span>
+                              {% endif %}
+                            </div>
+                          </label>
+                        </div>
+                      {% endfor %}
+                    </div>
+                  {% endif %}
+
+                  <!-- Loyalty Points -->
+                  {% if checkout.paymentMethodsGrouped.loyaltyPoints.size > 0 %}
+                    <div class="payment-method-group">
+                      <h3 class="payment-method-group-title">Loyalty Points</h3>
+                      {% for paymentMethod in checkout.paymentMethodsGrouped.loyaltyPoints %}
+                        <div class="payment-method payment-method-loyalty">
+                          <label class="payment-method-label">
+                            <input 
+                              type="radio" 
+                              name="paymentMethod" 
+                              value="{{ paymentMethod.id }}"
+                              data-payment-type="LoyaltyPoints"
+                              data-payment-id="{{ paymentMethod.id }}"
+                              data-payment-fee="{{ paymentMethod.config.PaymentFee | default: 0 }}"
+                            >
+                            <div class="payment-method-content">
+                              <span class="payment-method-name">{{ paymentMethod.name | default: 'Loyalty Points' }}</span>
+                              {% if paymentMethod.availableBalance %}
+                                <span class="payment-method-balance">Available: {{ paymentMethod.availableBalance }} points</span>
+                              {% endif %}
+                            </div>
+                          </label>
+                        </div>
+                      {% endfor %}
+                    </div>
+                  {% endif %}
+                </div>
+              {% else %}
+                <div class="payment-methods">
+                  <p class="payment-methods-empty">No payment methods available. Please contact support.</p>
+                </div>
+              {% endif %}
+              
+              <!-- Payment gateway forms container -->
+              <div id="payment-gateway-forms" class="payment-gateway-forms"></div>
+            </div>
+            {% hook 'checkout_payment_methods_after' %}
+          </div>
+          {% hook 'checkout_payment_after' %}
+
+          <!-- Order Notes Section -->
+          {% hook 'checkout_order_notes_before' %}
+          <div class="checkout-section">
+            <h2 class="checkout-section-title">Order Notes (Optional)</h2>
+            <div class="checkout-section-content">
+              <div class="form-group">
+                <label for="order-notes" class="form-label">Special instructions for your order</label>
+                <textarea id="order-notes" name="orderNotes" class="form-textarea" rows="4" placeholder="Any special instructions..."></textarea>
+              </div>
+            </div>
+          </div>
+          {% hook 'checkout_order_notes_after' %}
+
+          <!-- Terms and Conditions -->
+          {% hook 'checkout_terms_before' %}
+          <div class="checkout-section">
+            <div class="checkout-section-content">
+              <div class="form-group">
+                <label class="checkbox-label">
+                  <input type="checkbox" id="accept-terms" required>
+                  <span>I agree to the <a href="/pages/terms" target="_blank">Terms and Conditions</a> and <a href="/pages/privacy" target="_blank">Privacy Policy</a></span>
+                </label>
+              </div>
+            </div>
+          </div>
+          {% hook 'checkout_terms_after' %}
+
+          <!-- Submit Button -->
+          {% hook 'checkout_submit_before' %}
+          <div class="checkout-actions">
+            <button type="submit" class="btn btn-primary btn-lg" id="checkout-submit"
+                    {% if checkout.priceChangeMetadata.hasCriticalIssues %}disabled{% endif %}
+                    data-original-text="Complete Order">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="checkout-button-icon">
+                <path d="M9 12l2 2 4-4"></path>
+                <path d="M21 12c-1 0-3-1-3-3s2-3 3-3 3 1 3 3-2 3-3 3"></path>
+                <path d="M3 12c1 0 3-1 3-3s-2-3-3-3-3 1-3 3 2 3 3 3"></path>
+              </svg>
+              <span class="checkout-button-text">Complete Order</span>
+              <span class="btn-loading" style="display: none;">
+                <span class="btn-spinner"></span>
+                <span>Processing...</span>
+              </span>
+            </button>
+            <a href="/cart" class="btn btn-outline btn-lg">Return to Cart</a>
+          </div>
+          
+          <!-- Price Change Acknowledgment -->
+          {% if checkout.priceChangeDetected or checkout.priceChangeMetadata.detected %}
+            <div class="price-change-acknowledgment" id="price-change-acknowledgment">
+              <label class="checkbox-label">
+                <input type="checkbox" id="acknowledge-price-changes" name="acknowledgePriceChanges" required>
+                <span>I acknowledge that prices have changed and I agree to pay the updated total.</span>
+              </label>
+            </div>
+          {% endif %}
+          
+          {% hook 'checkout_submit_after' %}
+
+        </div>
+
+        <!-- Right Column: Order Summary -->
+        <div class="checkout-sidebar">
+          {% hook 'checkout_order_summary_before' %}
+          
+          <!-- Coupon Section -->
+          {% hook 'checkout_coupons_before' %}
+          <div class="checkout-coupons-section">
+            <h2 class="checkout-section-title">Available Coupons</h2>
+            <div class="checkout-section-content">
+              <div id="coupons-container">
+                <p class="coupons-loading">Loading available coupons...</p>
+              </div>
+              <div id="coupons-error" class="coupons-error" style="display: none;"></div>
+              <div id="applied-coupon" class="applied-coupon" style="display: none;">
+                <div class="applied-coupon-info">
+                  <span class="applied-coupon-code"></span>
+                  <button type="button" class="btn-remove-coupon" id="remove-coupon-btn">Remove</button>
+                </div>
+              </div>
+            </div>
+          </div>
+          {% hook 'checkout_coupons_after' %}
+          
+          <div class="order-summary">
+            <h2 class="order-summary-title">Order Summary</h2>
+            
+            <div class="order-summary-items">
+              {% if cart.items %}
+                {% for item in cart.items %}
+                  <div class="order-summary-item">
+                    <div class="order-summary-item-image">
+                      {% if item.image %}
+                        <img src="{{ item.image }}" alt="{{ item.title }}" loading="lazy">
+                      {% endif %}
+                    </div>
+                    <div class="order-summary-item-details">
+                      <h4 class="order-summary-item-title">{{ item.title }}</h4>
+                      {% if item.variantTitle and item.variantTitle != 'Default Title' %}
+                        <p class="order-summary-item-variant">{{ item.variantTitle }}</p>
+                      {% endif %}
+                      <p class="order-summary-item-quantity">Qty: {{ item.quantity }}</p>
+                    </div>
+                    <div class="order-summary-item-price" data-item-price="{{ item.price }}" data-item-quantity="{{ item.quantity }}">
+                      {{ item.price | times: item.quantity | money_with_settings: shop.settings }}
+                    </div>
+                  </div>
+                {% endfor %}
+              {% endif %}
+            </div>
+
+            <div class="order-summary-totals">
+              <div class="summary-line">
+                <span class="summary-label">Subtotal</span>
+                <span class="summary-value" data-summary-subtotal>
+                  {% if checkout.pricing and checkout.pricing.subtotal != null %}
+                    {{ checkout.pricing.subtotal | money_with_settings: shop.settings }}
+                  {% elsif cart.subTotal and cart.subTotal > 0 %}
+                    {{ cart.subTotal | money_with_settings: shop.settings }}
+                  {% elsif cart.items and cart.items.size > 0 %}
+                    {% assign calculated_subtotal = 0 %}
+                    {% for item in cart.items %}
+                      {% assign item_total = item.price | times: item.quantity %}
+                      {% assign calculated_subtotal = calculated_subtotal | plus: item_total %}
+                    {% endfor %}
+                    {{ calculated_subtotal | money_with_settings: shop.settings }}
+                  {% else %}
+                    {{ 0 | money_with_settings: shop.settings }}
+                  {% endif %}
+                </span>
+              </div>
+              
+              <div class="summary-line summary-discount" data-summary-discount-line style="{% unless checkout.pricing and checkout.pricing.discount != null and checkout.pricing.discount > 0 %}display: none;{% endunless %}">
+                <span class="summary-label">Discount</span>
+                <span class="summary-value" data-summary-discount>
+                  {% if checkout.pricing and checkout.pricing.discount != null and checkout.pricing.discount > 0 %}
+                    -{{ checkout.pricing.discount | money_with_settings: shop.settings }}
+                  {% elsif checkout.pricing and checkout.pricing.totalDiscounts != null and checkout.pricing.totalDiscounts > 0 %}
+                    -{{ checkout.pricing.totalDiscounts | money_with_settings: shop.settings }}
+                  {% else %}
+                    {{ 0 | money_with_settings: shop.settings }}
+                  {% endif %}
+                </span>
+              </div>
+              
+              <div class="summary-line">
+                <span class="summary-label">Shipping</span>
+                <span class="summary-value" data-summary-shipping>
+                  {% if checkout.pricing and checkout.pricing.shipping != null %}
+                    {% if checkout.pricing.shipping == 0 %}
+                      Free
+                    {% else %}
+                      {{ checkout.pricing.shipping | money_with_settings: shop.settings }}
+                    {% endif %}
+                  {% elsif checkout.shipping and checkout.shipping.price != null %}
+                    {% if checkout.shipping.price == 0 %}
+                      Free
+                    {% else %}
+                      {{ checkout.shipping.price | money_with_settings: shop.settings }}
+                    {% endif %}
+                  {% else %}
+                    {% if cart.total > 5000 %}
+                      Free
+                    {% else %}
+                      {{ 999 | money_with_settings: shop.settings }}
+                    {% endif %}
+                  {% endif %}
+                </span>
+              </div>
+              
+              <div class="summary-line">
+                <span class="summary-label">Tax</span>
+                <span class="summary-value" data-summary-tax>
+                  {% if checkout.pricing and checkout.pricing.tax != null %}
+                    {{ checkout.pricing.tax | money_with_settings: shop.settings }}
+                  {% else %}
+                    {{ cart.total | times: 0.08 | money_with_settings: shop.settings }}
+                  {% endif %}
+                </span>
+              </div>
+              
+              <div class="summary-line summary-total">
+                <span class="summary-label">Total</span>
+                <span class="summary-value" data-summary-total>
+                  {% if checkout.pricing and checkout.pricing.total != null %}
+                    {{ checkout.pricing.total | money_with_settings: shop.settings }}
+                  {% else %}
+                    {% assign shipping = 0 %}
+                    {% if cart.total <= 5000 %}
+                      {% assign shipping = 999 %}
+                    {% endif %}
+                    {% assign tax = cart.total | times: 0.08 %}
+                    {% assign total = cart.total | plus: shipping | plus: tax %}
+                    {{ total | money_with_settings: shop.settings }}
+                  {% endif %}
+                </span>
+              </div>
+            </div>
+          </div>
+          {% hook 'checkout_order_summary_after' %}
+        </div>
+      </div>
+    </form>
+  </div>
+</section>
+{% hook 'checkout_after' %}
+
+<script>
+  // Expose checkout token from server-side context
+  const CHECKOUT_TOKEN = {% if checkout.token %}{{ checkout.token | json }}{% else %}null{% endif %};
+  
+  // Debug: Log checkout pricing data
+  console.log('[CHECKOUT] Checkout pricing data:', {% if checkout.pricing %}{{ checkout.pricing | json }}{% else %}null{% endif %});
+  console.log('[CHECKOUT] Cart totals:', {
+    total: {{ cart.total | default: 0 }},
+    subTotal: {{ cart.subTotal | default: 0 }},
+    taxAmount: {{ cart.taxAmount | default: 0 }}
+  });
+  
+  // ==================== CHECKOUT STATE MANAGEMENT ====================
+  
+  // Flag to prevent API calls during checkout completion
+  window.checkoutInProgress = false;
+  
+  // Status tracking for API calls
+  window.checkoutApiStatus = {
+    shippingAddress: 'idle',
+    billingAddress: 'idle',
+    shippingMethodsFetch: 'idle',
+    shippingMethodUpdate: 'idle',
+    orderNote: 'idle'
+  };
+  
+  // Track if shipping method has been selected/updated
+  window.shippingMethodSelected = false;
+  
+  // Check if shipping methods are required (section exists and has methods)
+  function isShippingMethodRequired() {
+    const section = document.getElementById('shipping-methods-section');
+    const container = document.getElementById('shipping-methods-container');
+    
+    // If section doesn't exist or is hidden, shipping methods are not required
+    if (!section || section.style.display === 'none') {
+      return false;
+    }
+    
+    // Check if container has shipping method radio buttons
+    if (container) {
+      const shippingMethodRadios = container.querySelectorAll('input[type="radio"][name^="shippingMethod"]');
+      return shippingMethodRadios.length > 0;
+    }
+    
+    return false;
+  }
+  
+  // Update checkout button state based on pending API calls and shipping method selection
+  function updateCheckoutButtonState() {
+    const submitBtn = document.getElementById('checkout-submit');
+    if (!submitBtn) return;
+    
+    const buttonText = submitBtn.querySelector('.checkout-button-text');
+    const buttonIcon = submitBtn.querySelector('.checkout-button-icon');
+    const originalText = submitBtn.getAttribute('data-original-text') || 'Complete Order';
+    
+    const hasPendingCalls = Object.values(window.checkoutApiStatus).some(status => status === 'pending');
+    
+    // Check if shipping method is required and not selected
+    const shippingMethodRequired = isShippingMethodRequired();
+    const shippingMethodNotSelected = shippingMethodRequired && !window.shippingMethodSelected;
+    
+    // Determine status message based on pending operations (priority order)
+    let statusMessage = null;
+    
+    if (window.checkoutApiStatus.shippingMethodUpdate === 'pending') {
+      statusMessage = 'Calculating shipping fee...';
+    } else if (window.checkoutApiStatus.shippingMethodsFetch === 'pending') {
+      statusMessage = 'Loading shipping options...';
+    } else if (window.checkoutApiStatus.shippingAddress === 'pending') {
+      statusMessage = 'Updating shipping address...';
+    } else if (window.checkoutApiStatus.billingAddress === 'pending') {
+      statusMessage = 'Updating billing address...';
+    } else if (window.checkoutApiStatus.orderNote === 'pending') {
+      statusMessage = 'Saving order note...';
+    } else if (shippingMethodNotSelected) {
+      statusMessage = 'Please select a shipping method';
+    }
+    
+    // Decide if the button should be disabled for this state
+    const shouldDisable = hasPendingCalls || shippingMethodNotSelected;
+    submitBtn.disabled = shouldDisable;
+    
+    // If we are disabling the button but don't have a specific reason,
+    // show a generic fallback message so the user always sees some context.
+    if (!statusMessage && shouldDisable) {
+      statusMessage = 'Updating checkout...';
+    }
+    
+    if (statusMessage && buttonText) {
+      buttonText.textContent = statusMessage;
+      // Add loading class for visual feedback
+      submitBtn.classList.add('checkout-button-loading');
+      // Optionally show spinner by rotating icon
+      if (buttonIcon) {
+        buttonIcon.style.animation = 'spin 1s linear infinite';
+      }
+    } else if (buttonText) {
+      // Restore original text
+      buttonText.textContent = originalText;
+      submitBtn.classList.remove('checkout-button-loading');
+      // Remove spinner animation
+      if (buttonIcon) {
+        buttonIcon.style.animation = '';
+      }
+    }
+  }
+  
+  /**
+   * Get checkout token from server context, URL, or cookie
+   * This function is used by multiple checkout functions
+   * Exposed globally for plugins to use
+   */
+  window.getCheckoutToken = function getCheckoutToken() {
+    // First, try to use the token from server-side context (most reliable)
+    if (CHECKOUT_TOKEN) {
+      return CHECKOUT_TOKEN;
+    }
+    
+    // Check URL parameter (hosted checkout: /checkout/{token})
+    const pathParts = window.location.pathname.split('/');
+    const tokenIndex = pathParts.indexOf('checkout');
+    if (tokenIndex !== -1 && tokenIndex < pathParts.length - 1) {
+      const tokenFromPath = pathParts[tokenIndex + 1];
+      if (tokenFromPath && tokenFromPath !== 'checkout') {
+        return tokenFromPath;
+      }
+    }
+    
+    // Fallback to cookie
+    const cookies = document.cookie.split(';');
+    for (let cookie of cookies) {
+      const [name, value] = cookie.trim().split('=');
+      if (name === 'checkoutToken') {
+        return decodeURIComponent(value);
+      }
+    }
+    return null;
+  }
+  
+  /**
+   * Button loading utility function
+   * Handles button loading states with optional loading text
+   * Supports both checkout-button-text and btn-text class naming conventions
+   */
+  function setButtonLoading(button, loading, loadingText = null) {
+    if (!button) return;
+    
+    // Support both checkout-button-text and btn-text class names
+    const btnText = button.querySelector('.checkout-button-text') || 
+                    button.querySelector('.btn-text');
+    const btnLoading = button.querySelector('.btn-loading');
+    
+    if (loading) {
+      button.disabled = true;
+      button.classList.add('loading');
+      if (btnText) btnText.style.display = 'none';
+      if (btnLoading) {
+        btnLoading.style.display = 'flex';
+        if (loadingText && btnLoading.querySelector('span:last-child')) {
+          btnLoading.querySelector('span:last-child').textContent = loadingText;
+        }
+      } else if (loadingText) {
+        button.textContent = loadingText;
+      }
+    } else {
+      button.disabled = false;
+      button.classList.remove('loading');
+      if (btnText) btnText.style.display = 'inline';
+      if (btnLoading) btnLoading.style.display = 'none';
+    }
+  }
+
+  // States data from tenant settings - could be statesOrProvinces object or nested structure
+  const STATES_DATA = {% if states %}{{ states | json }}{% else %}{}{% endif %};
+  const COUNTRIES_DATA = {% if countries %}{{ countries | json }}{% else %}[]{% endif %};
+  
+  // Debug: Log states data structure
+  console.log('[CHECKOUT] States data:', STATES_DATA);
+  console.log('[CHECKOUT] Countries data:', COUNTRIES_DATA);
+  
+  // Helper to get states for a country (by ID or code)
+  function getStatesForCountry(countryIdentifier) {
+    if (!countryIdentifier) return null;
+    
+    // Try to parse as number (country ID)
+    const countryId = parseInt(countryIdentifier, 10);
+    const isNumericId = !isNaN(countryId);
+    
+    const codeUpper = String(countryIdentifier).toUpperCase();
+    const codeLower = String(countryIdentifier).toLowerCase();
+    
+    console.log('[CHECKOUT] Looking for states for country:', countryIdentifier, isNumericId ? '(ID)' : '(code)');
+    console.log('[CHECKOUT] COUNTRIES_DATA:', COUNTRIES_DATA);
+    
+    // First, check if countries array has statesOrProvinces
+    // The structure is: countries array with objects containing id, code2 and statesOrProvinces
+    if (Array.isArray(COUNTRIES_DATA) && COUNTRIES_DATA.length > 0) {
+      const country = COUNTRIES_DATA.find(c => {
+        // Match by ID first (if identifier is numeric)
+        if (isNumericId) {
+          const cId = c.id || c.countryId;
+          if (cId === countryId || String(cId) === String(countryId)) {
+            return true;
+          }
+        }
+        
+        // Match by code2 (primary), code, countryCode, or name
+        const cCode2 = c.code2 || '';
+        const cCode = c.code || '';
+        const cCountryCode = c.countryCode || '';
+        const cName = c.name || '';
+        
+        return cCode2.toUpperCase() === codeUpper ||
+               cCode2.toLowerCase() === codeLower ||
+               cCode.toUpperCase() === codeUpper ||
+               cCode.toLowerCase() === codeLower ||
+               cCountryCode.toUpperCase() === codeUpper ||
+               cCountryCode.toLowerCase() === codeLower ||
+               cName === countryIdentifier;
+      });
+      
+      if (country) {
+        console.log('[CHECKOUT] Found country:', country);
+        // Check for statesOrProvinces property
+        if (country.statesOrProvinces && Array.isArray(country.statesOrProvinces)) {
+          console.log('[CHECKOUT] Found statesOrProvinces with', country.statesOrProvinces.length, 'states');
+          return country.statesOrProvinces;
+        }
+        if (country.states && Array.isArray(country.states)) {
+          console.log('[CHECKOUT] Found states with', country.states.length, 'states');
+          return country.states;
+        }
+      } else {
+        console.log('[CHECKOUT] Country not found in COUNTRIES_DATA for:', countryIdentifier);
+      }
+    }
+    
+    // Fallback: Check if STATES_DATA is an object with country codes as keys (e.g., {IN: [...], US: [...]})
+    if (STATES_DATA && typeof STATES_DATA === 'object' && !Array.isArray(STATES_DATA)) {
+      // Try exact match
+      if (STATES_DATA[countryIdentifier]) {
+        return STATES_DATA[countryIdentifier];
+      }
+      if (STATES_DATA[codeUpper]) {
+        return STATES_DATA[codeUpper];
+      }
+      if (STATES_DATA[codeLower]) {
+        return STATES_DATA[codeLower];
+      }
+      
+      // Try case-insensitive match
+      for (const key in STATES_DATA) {
+        if (key.toUpperCase() === codeUpper || key.toLowerCase() === codeLower) {
+          return STATES_DATA[key];
+        }
+      }
+    }
+    
+    return null;
+  }
+  
+  // Convert state dropdown to text input when no states are available
+  function convertStateToTextInput(stateSelect, selectedState = null) {
+    if (!stateSelect) return;
+    
+    const formGroup = stateSelect.closest('.form-group');
+    if (!formGroup) return;
+    
+    // Check if already converted
+    if (stateSelect.tagName === 'INPUT') return;
+    
+    // Find or create text input (we have both select and input in the template)
+    let textInput = document.getElementById('shipping-state-text');
+    if (!textInput) {
+      // Create text input if it doesn't exist
+      textInput = document.createElement('input');
+      textInput.type = 'text';
+      textInput.id = stateSelect.id + '-text';
+      textInput.name = stateSelect.name;
+      textInput.className = 'form-input';
+      textInput.required = true;
+      textInput.placeholder = 'Enter state/province';
+      formGroup.appendChild(textInput);
+    }
+    
+    // Hide select and show text input
+    stateSelect.style.display = 'none';
+    stateSelect.removeAttribute('required');
+    textInput.style.display = 'block';
+    textInput.required = true;
+    
+    if (selectedState) {
+      textInput.value = selectedState;
+    }
+    
+    console.log('[CHECKOUT] Converted state dropdown to text input for country without states');
+  }
+  
+  // Populate states dropdown based on selected country
+  function populateStates(countrySelect, stateSelect, selectedState = null) {
+    if (!stateSelect || !countrySelect) {
+      console.warn('[CHECKOUT] Missing country or state select element');
+      return;
+    }
+    
+    const countryIdentifier = countrySelect.value;
+    console.log('[CHECKOUT] Populating states for country:', countryIdentifier);
+    
+    // Clear existing options
+    stateSelect.innerHTML = '<option value="">Select a state</option>';
+    
+    if (!countryIdentifier) {
+      console.log('[CHECKOUT] No country selected');
+      return;
+    }
+    
+    // Try to find states for this country (by ID or code) using helper function
+    let countryStates = getStatesForCountry(countryIdentifier);
+    
+    if (countryStates) {
+      console.log('[CHECKOUT] Found states for country:', countryIdentifier, countryStates);
+    }
+    
+    if (!countryStates) {
+      console.log('[CHECKOUT] No states found for country:', countryIdentifier);
+      // If no states found, convert dropdown to text input
+      convertStateToTextInput(stateSelect, selectedState);
+      return;
+    }
+    
+    console.log('[CHECKOUT] Found states for country:', countryStates);
+    
+    // Handle different data structures
+    let statesArray = [];
+    
+    if (Array.isArray(countryStates)) {
+      // Array format: [{code: 'CA', name: 'California'}, ...]
+      statesArray = countryStates;
+    } else if (typeof countryStates === 'object') {
+      // Object format: {CA: 'California', NY: 'New York'} or {states: [...]}
+      if (countryStates.states && Array.isArray(countryStates.states)) {
+        statesArray = countryStates.states;
+      } else {
+        // Convert object to array
+        statesArray = Object.entries(countryStates).map(([code, name]) => ({
+          code: code,
+          name: typeof name === 'string' ? name : (name.name || name.code || code)
+        }));
+      }
+    }
+    
+    // Populate the dropdown
+    statesArray.forEach(state => {
+      const option = document.createElement('option');
+      // Handle state object structure: {id: 1, name: 'Andaman and Nicobar Islands', code: 'IN-AN'}
+      const stateId = state.id || state.stateOrProvinceId || state.stateId;
+      const stateCode = state.code || (typeof state === 'string' ? state : Object.keys(state)[0]);
+      const stateName = state.name || state.label || (typeof state === 'string' ? state : state[stateCode]) || stateCode;
+      
+      // Use stateId as the value (required by API)
+      option.value = stateId ? String(stateId) : stateCode;
+      option.textContent = stateName;
+      if (stateId) {
+        option.dataset.stateId = String(stateId);
+      }
+      
+      // Check if this should be selected
+      if (selectedState) {
+        const selectedStateStr = String(selectedState).toLowerCase();
+        const stateIdStr = stateId ? String(stateId).toLowerCase() : '';
+        const stateCodeStr = String(stateCode).toLowerCase();
+        const stateNameStr = String(stateName).toLowerCase();
+        
+        if (stateIdStr && stateIdStr === selectedStateStr) {
+          option.selected = true;
+        } else if (stateCodeStr === selectedStateStr || 
+            stateNameStr === selectedStateStr ||
+            stateCodeStr.includes(selectedStateStr) ||
+            stateNameStr.includes(selectedStateStr)) {
+          option.selected = true;
+        }
+      }
+      
+      stateSelect.appendChild(option);
+    });
+    
+    console.log('[CHECKOUT] Populated', statesArray.length, 'states');
+  }
+  
+  // Initialize states dropdowns when DOM is ready
+  function initializeStateDropdowns() {
+    console.log('[CHECKOUT] initializeStateDropdowns() called');
+    const shippingCountrySelect = document.getElementById('shipping-country');
+    const shippingStateSelect = document.getElementById('shipping-state');
+    const billingCountrySelect = document.getElementById('billing-country');
+    const billingStateSelect = document.getElementById('billing-state');
+    
+    console.log('[CHECKOUT] Country select:', shippingCountrySelect);
+    console.log('[CHECKOUT] State select:', shippingStateSelect);
+    console.log('[CHECKOUT] Selected country value:', shippingCountrySelect?.value);
+    
+    if (!shippingCountrySelect || !shippingStateSelect) {
+      console.warn('[CHECKOUT] Shipping country/state selects not found');
+      return;
+    }
+    
+    // Populate shipping states on page load
+    const initShippingStates = () => {
+      const selectedCountry = shippingCountrySelect.value;
+      // Try to get stateOrProvinceId first, fallback to province name/code
+      const selectedState = {% if checkout.shippingAddress and checkout.shippingAddress.stateOrProvinceId %}{{ checkout.shippingAddress.stateOrProvinceId | json }}{% elsif checkout.shippingAddress and checkout.shippingAddress.province %}{{ checkout.shippingAddress.province | json }}{% else %}null{% endif %};
+      
+      console.log('[CHECKOUT] Initializing shipping states. Country:', selectedCountry, 'State:', selectedState);
+      
+      if (selectedCountry) {
+        console.log('[CHECKOUT] Calling populateStates for country:', selectedCountry);
+        try {
+          populateStates(shippingCountrySelect, shippingStateSelect, selectedState);
+          console.log('[CHECKOUT] populateStates completed');
+        } catch (error) {
+          console.error('[CHECKOUT] Error in populateStates:', error);
+        }
+        
+        // After populating states, check if address is complete and fetch shipping methods
+        setTimeout(() => {
+          if (typeof checkAndFetchShippingMethods === 'function') {
+            checkAndFetchShippingMethods();
+          }
+        }, 200);
+      }
+    };
+    
+    // Initialize immediately if country is already selected
+    if (shippingCountrySelect.value) {
+      initShippingStates();
+    }
+    
+    // Also initialize after a short delay to ensure DOM is ready
+    setTimeout(initShippingStates, 100);
+    
+    // Handle country change
+    shippingCountrySelect.addEventListener('change', function() {
+      console.log('[CHECKOUT] Shipping country changed to:', this.value);
+      populateStates(shippingCountrySelect, shippingStateSelect);
+      // Trigger address update to fetch shipping methods
+      if (typeof checkAndFetchShippingMethods === 'function') {
+        checkAndFetchShippingMethods();
+      }
+    });
+    
+    // Handle state change
+    shippingStateSelect.addEventListener('change', function() {
+      console.log('[CHECKOUT] Shipping state changed to:', this.value);
+      if (typeof checkAndFetchShippingMethods === 'function') {
+        checkAndFetchShippingMethods();
+      }
+    });
+    
+    // Populate billing states
+    if (billingCountrySelect && billingStateSelect) {
+      const initBillingStates = () => {
+        const selectedCountry = billingCountrySelect.value;
+        const selectedState = {% if checkout.billingAddress and checkout.billingAddress.province %}{{ checkout.billingAddress.province | json }}{% else %}null{% endif %};
+        
+        console.log('[CHECKOUT] Initializing billing states. Country:', selectedCountry, 'State:', selectedState);
+        
+        if (selectedCountry) {
+          populateStates(billingCountrySelect, billingStateSelect, selectedState);
+        }
+      };
+      
+      // Initialize immediately if country is already selected
+      if (billingCountrySelect.value) {
+        initBillingStates();
+      }
+      
+      // Also initialize after a short delay
+      setTimeout(initBillingStates, 100);
+      
+      // Handle country change
+      billingCountrySelect.addEventListener('change', function() {
+        console.log('[CHECKOUT] Billing country changed to:', this.value);
+        populateStates(billingCountrySelect, billingStateSelect);
+      });
+    }
+  }
+  
+  // Initialize intl-tel-input for shipping phone
+  function initializePhoneInput() {
+    console.log('[CHECKOUT] initializePhoneInput() called');
+    const shippingPhoneInput = document.getElementById('shipping-phone');
+    console.log('[CHECKOUT] shippingPhoneInput element:', shippingPhoneInput);
+    console.log('[CHECKOUT] intlTelInput available:', typeof intlTelInput !== 'undefined');
+    
+    if (!shippingPhoneInput) {
+      console.warn('[CHECKOUT] shipping-phone input element not found');
+      return;
+    }
+    
+    if (typeof intlTelInput === 'undefined') {
+      console.warn('[CHECKOUT] intlTelInput library not loaded yet');
+      return;
+    }
+    
+    if (shippingPhoneInput && typeof intlTelInput !== 'undefined') {
+      // Get existing phone number value
+      const existingPhone = shippingPhoneInput.value || '';
+      
+      // Check the country select value synchronously before initializing
+      const countrySelect = document.getElementById('shipping-country');
+      let initialCountry = 'auto';
+      if (countrySelect && countrySelect.value) {
+        const countryCode = countrySelect.options[countrySelect.selectedIndex]?.getAttribute('data-country-code2');
+        if (countryCode) {
+          initialCountry = countryCode.toLowerCase();
+        }
+      }
+      
+      // Build configuration object for intl-tel-input
+      const itiConfig = {
+        utilsScript: 'https://cdn.jsdelivr.net/npm/intl-tel-input@23.0.0/build/js/utils.js',
+        initialCountry: initialCountry,
+        preferredCountries: ['us', 'gb', 'ca', 'au', 'in'],
+        separateDialCode: true,
+        nationalMode: false
+      };
+      
+      // Only include geoIpLookup when using auto-detection
+      if (initialCountry === 'auto') {
+        itiConfig.geoIpLookup = function(callback) {
+          // Try to get country from shipping address country select (use outer scope variable)
+          if (countrySelect && countrySelect.value) {
+            const countryCode = countrySelect.options[countrySelect.selectedIndex]?.getAttribute('data-country-code2');
+            if (countryCode) {
+              callback(countryCode.toLowerCase());
+              return;
+            }
+          }
+          // Fallback to auto-detection via IP
+          fetch('https://ipapi.co/json/')
+            .then(res => res.json())
+            .then(data => callback(data.country_code ? data.country_code.toLowerCase() : 'us'))
+            .catch(() => callback('us'));
+        };
+      }
+      
+      // Initialize intl-tel-input
+      console.log('[CHECKOUT] Initializing intl-tel-input with config:', itiConfig);
+      let iti;
+      try {
+        iti = intlTelInput(shippingPhoneInput, itiConfig);
+        console.log('[CHECKOUT] intl-tel-input initialized successfully');
+      } catch (error) {
+        console.error('[CHECKOUT] Error initializing intl-tel-input:', error);
+        return;
+      }
+      
+      // Store the instance for later use
+      window.shippingPhoneIti = iti;
+      
+      // Set existing phone number if available (after a small delay to ensure utils are loaded)
+      if (existingPhone) {
+        // Use setTimeout to ensure utils script has loaded
+        setTimeout(function() {
+          iti.setNumber(existingPhone);
+        }, 100);
+      }
+      
+      // Update country when shipping country changes (countrySelect already declared above)
+      if (countrySelect) {
+        countrySelect.addEventListener('change', function() {
+          const countryCode = this.options[this.selectedIndex]?.getAttribute('data-country-code2');
+          if (countryCode) {
+            iti.setCountry(countryCode.toLowerCase());
+          }
+        });
+      }
+    }
+  }
+
+  // Initialize when DOM is ready
+  function initializeCheckout() {
+    console.log('[CHECKOUT] Initializing checkout functions...');
+    console.log('[CHECKOUT] intlTelInput available:', typeof intlTelInput !== 'undefined');
+    console.log('[CHECKOUT] shipping-phone element:', document.getElementById('shipping-phone'));
+    console.log('[CHECKOUT] shipping-country element:', document.getElementById('shipping-country'));
+    
+    try {
+      initializeStateDropdowns();
+      console.log('[CHECKOUT] State dropdowns initialized');
+    } catch (error) {
+      console.error('[CHECKOUT] Error initializing state dropdowns:', error);
+    }
+    
+    try {
+      initializePhoneInput();
+      console.log('[CHECKOUT] Phone input initialized');
+    } catch (error) {
+      console.error('[CHECKOUT] Error initializing phone input:', error);
+    }
+    
+    // Initialize button state
+    if (typeof updateCheckoutButtonState === 'function') {
+      updateCheckoutButtonState();
+    }
+    
+    // Check if shipping address is already complete and fetch methods
+    setTimeout(function() {
+      if (typeof checkAndFetchShippingMethods === 'function') {
+        checkAndFetchShippingMethods();
+      }
+    }, 500);
+  }
+  
+  // Wait for intl-tel-input to load if needed
+  function waitForIntlTelInput(callback, maxAttempts = 20, attempt = 0) {
+    if (typeof intlTelInput !== 'undefined') {
+      callback();
+      return;
+    }
+    
+    if (attempt >= maxAttempts) {
+      console.warn('[CHECKOUT] intlTelInput not loaded after', maxAttempts * 100, 'ms, initializing without it');
+      callback();
+      return;
+    }
+    
+    setTimeout(function() {
+      waitForIntlTelInput(callback, maxAttempts, attempt + 1);
+    }, 100);
+  }
+  
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function() {
+      waitForIntlTelInput(initializeCheckout);
+    });
+  } else {
+    // DOM is already ready
+    waitForIntlTelInput(initializeCheckout);
+  }
+
+  // Handle same as shipping checkbox
+  document.getElementById('same-as-shipping')?.addEventListener('change', function(e) {
+    const billingFields = document.getElementById('billing-address-fields');
+    if (billingFields) {
+      billingFields.style.display = e.target.checked ? 'none' : 'block';
+    }
+  });
+
+  // Handle payment method selection
+  document.querySelectorAll('input[name="paymentMethod"]').forEach(radio => {
+    radio.addEventListener('change', function() {
+      const paymentType = this.getAttribute('data-payment-type') || '';
+      const paymentId = this.getAttribute('data-payment-id') || this.value;
+      const gatewayFormsContainer = document.getElementById('payment-gateway-forms');
+      
+      // Hide all gateway forms
+      if (gatewayFormsContainer) {
+        gatewayFormsContainer.innerHTML = '';
+        gatewayFormsContainer.style.display = 'none';
+      }
+      
+      // Show gateway form for PaymentGateway type
+      if (paymentType === 'PaymentGateway') {
+        // Load payment gateway plugin form
+        loadPaymentGatewayForm(paymentId, gatewayFormsContainer);
+      }
+      
+      // Hide card form (legacy support)
+      const cardForm = document.getElementById('card-payment-form');
+      if (cardForm) {
+        cardForm.style.display = 'none';
+      }
+    });
+    
+    // Trigger change event on page load if first option is selected
+    if (radio.checked) {
+      radio.dispatchEvent(new Event('change'));
+    }
+  });
+
+  // Load payment gateway form
+  async function loadPaymentGatewayForm(paymentMethodId, container) {
+    if (!container || !paymentMethodId) return;
+    
+    try {
+      // Check if there's a plugin snippet for this gateway
+      // This would typically be loaded via hook system, but for now we'll handle it client-side
+      const gatewayElement = document.querySelector(`[data-gateway-id="${paymentMethodId}"]`);
+      if (gatewayElement) {
+        // Gateway forms are loaded via plugin hooks, so we just show the container
+        container.style.display = 'block';
+      }
+    } catch (error) {
+      console.error('Error loading payment gateway form:', error);
+    }
+  }
+
+  // Update shipping address when form fields change (debounced)
+  let shippingAddressTimeout;
+  const shippingFields = ['shipping-first-name', 'shipping-last-name', 'shipping-address', 'shipping-city', 'shipping-state', 'shipping-zip', 'shipping-country', 'shipping-phone'];
+  
+  function attachShippingFieldListeners() {
+    const markShippingAddressPending = () => {
+      // As soon as the user edits shipping address fields, treat it as a
+      // pending update so the checkout button stays disabled until we
+      // either send the API call or decide we can't.
+      window.checkoutApiStatus.shippingAddress = 'pending';
+      updateCheckoutButtonState();
+    };
+
+    shippingFields.forEach(fieldId => {
+      const field = document.getElementById(fieldId);
+      if (!field) return;
+
+      // Remove existing listeners by cloning (simple approach)
+      const newField = field.cloneNode(true);
+      field.parentNode.replaceChild(newField, field);
+      
+      // Re-attach listeners
+      newField.addEventListener('blur', function() {
+        markShippingAddressPending();
+        clearTimeout(shippingAddressTimeout);
+        shippingAddressTimeout = setTimeout(updateShippingAddress, 500);
+      });
+      
+      // Also listen to change/input events for select dropdowns and input fields
+      if (newField.tagName === 'SELECT' || newField.tagName === 'INPUT') {
+        newField.addEventListener('change', function() {
+          markShippingAddressPending();
+          clearTimeout(shippingAddressTimeout);
+          shippingAddressTimeout = setTimeout(updateShippingAddress, 500);
+        });
+        if (newField.tagName === 'INPUT') {
+          newField.addEventListener('input', function() {
+            markShippingAddressPending();
+            clearTimeout(shippingAddressTimeout);
+            shippingAddressTimeout = setTimeout(updateShippingAddress, 500);
+          });
+        }
+      }
+    });
+  }
+  
+  // Attach listeners initially
+  attachShippingFieldListeners();
+  
+  // Re-attach after state field might be converted to text input
+  const originalConvertStateToTextInput = convertStateToTextInput;
+  convertStateToTextInput = function(stateSelect, selectedState) {
+    originalConvertStateToTextInput(stateSelect, selectedState);
+    // Re-attach listeners after state field conversion
+    setTimeout(attachShippingFieldListeners, 100);
+  };
+  
+  // Helper function to format money using shop settings
+  function formatMoney(amount) {
+    if (amount === null || amount === undefined || isNaN(amount)) {
+      return '0.00';
+    }
+    
+    const num = parseFloat(amount);
+    if (isNaN(num)) return String(amount);
+    
+    // Get currency settings from page data
+    const currencySymbol = document.body.dataset.shopCurrencySymbol || window.__SHOP_CURRENCY_SYMBOL__ || '₹';
+    const currencyDecimalDigits = 2; // Default to 2 decimal places
+    
+    // Check if amount is in cents (if > 1000, likely in cents, otherwise might be in actual currency)
+    // For now, assume API returns actual currency amounts (not cents) based on double type in schema
+    // But handle both cases: if amount seems like cents (> 1000 for typical prices), divide by 100
+    let formattedAmount = num;
+    
+    // If the amount is very large (> 1000), it might be in cents/paise
+    // But since API schema shows double (decimal), we'll assume it's already in currency units
+    // However, if prices from API seem to be in cents, we can detect and convert
+    
+    // Format with proper decimal places
+    formattedAmount = formattedAmount.toFixed(currencyDecimalDigits);
+    
+    // Add thousand separators
+    formattedAmount = formattedAmount.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    
+    return currencySymbol + formattedAmount;
+  }
+
+  // Check if shipping address is complete
+  function isShippingAddressComplete() {
+    const requiredFields = [
+      'shipping-first-name',
+      'shipping-last-name',
+      'shipping-address',
+      'shipping-city',
+      'shipping-zip',
+      'shipping-country'
+    ];
+    
+    // State is optional if no states are available for the country
+    const stateField = document.getElementById('shipping-state');
+    const stateRequired = stateField && stateField.tagName === 'SELECT' && stateField.options.length > 1;
+    
+    const allRequired = requiredFields.every(fieldId => {
+      const field = document.getElementById(fieldId);
+      return field && field.value && field.value.trim() !== '';
+    });
+    
+    // If state is required (dropdown with options), check it too
+    if (stateRequired) {
+      return allRequired && stateField.value && stateField.value.trim() !== '';
+    }
+    
+    return allRequired;
+  }
+  
+  // Fetch shipping methods when address is complete
+  async function fetchShippingMethods() {
+    // Prevent fetching during checkout completion
+    if (window.checkoutInProgress) return;
+    
+    const checkoutToken = getCheckoutToken();
+    if (!checkoutToken) {
+      console.log('[CHECKOUT] No checkout token, skipping shipping methods fetch');
+      return;
+    }
+    
+    // Track status
+    window.checkoutApiStatus.shippingMethodsFetch = 'pending';
+    updateCheckoutButtonState();
+    
+    const isHostedCheckout = window.location.pathname.includes('/checkout/') && 
+                             window.location.pathname.split('/').length > 2;
+    const endpoint = isHostedCheckout
+      ? `/webstoreapi/checkout/${checkoutToken}/shipping-methods`
+      : '/webstoreapi/checkout/shipping-methods';
+    
+    const container = document.getElementById('shipping-methods-container');
+    const section = document.getElementById('shipping-methods-section');
+    
+    if (!container || !section) {
+      console.warn('[CHECKOUT] Shipping methods container or section not found');
+      return;
+    }
+    
+    container.innerHTML = '<p class="shipping-methods-loading">Loading shipping options...</p>';
+    section.style.display = 'block';
+    
+    try {
+      console.log('[CHECKOUT] Fetching shipping methods from:', endpoint);
+      const response = await fetch(endpoint);
+      
+      const result = await response.json();
+      
+      // Handle error response - check if address is required
+      if (!response.ok) {
+        if (result.requiresAddress || (result.error && result.error.includes('address'))) {
+          console.log('[CHECKOUT] Shipping address required before fetching shipping methods');
+          container.innerHTML = '<p class="shipping-methods-message">Please complete your shipping address to see available shipping options.</p>';
+          section.style.display = 'block';
+          return;
+        }
+        throw new Error(result.error || `HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      console.log('[CHECKOUT] Shipping methods response:', result);
+      
+      // Handle both wrapped response {success: true, data: [...]} and direct array response
+      let methods = [];
+      if (result.success && result.data && Array.isArray(result.data)) {
+        methods = result.data;
+      } else if (Array.isArray(result)) {
+        methods = result;
+      }
+      
+      if (methods.length > 0) {
+        container.innerHTML = '';
+        
+        // Get currently selected shipping method from checkout data
+        const selectedShippingMethodHandle = {% if checkout.shipping and checkout.shipping.methodHandle %}{{ checkout.shipping.methodHandle | json }}{% elsif checkout.shipping and checkout.shipping.handle %}{{ checkout.shipping.handle | json }}{% else %}null{% endif %};
+        console.log('[CHECKOUT] Currently selected shipping method:', selectedShippingMethodHandle);
+        
+        // Store methods array for later use
+        window.checkoutShippingMethods = methods;
+        
+        // Extract all unique products from all shipping methods
+        const productMap = new Map();
+        methods.forEach((method) => {
+          if (method.products && Array.isArray(method.products)) {
+            method.products.forEach((product) => {
+              const productId = product.productId || product.id;
+              if (productId && !productMap.has(productId)) {
+                productMap.set(productId, product);
+              }
+            });
+          }
+        });
+        
+        const allProducts = Array.from(productMap.values());
+        
+        // Helper function to get applicable method IDs for a product
+        const getApplicableMethodIds = (productId) => {
+          return methods
+            .filter((method) => {
+              if (!method.products || !Array.isArray(method.products)) return false;
+              return method.products.some((p) => (p.productId || p.id) === productId);
+            })
+            .map((method) => String(method.id || method.index))
+            .sort()
+            .join(',');
+        };
+        
+        // Group products by their applicable shipping methods
+        const productGroups = new Map();
+        allProducts.forEach((product) => {
+          const productId = product.productId || product.id;
+          const methodSignature = getApplicableMethodIds(productId);
+          
+          if (!productGroups.has(methodSignature)) {
+            productGroups.set(methodSignature, {
+              products: [],
+              methodIds: methodSignature.split(',').filter(id => id)
+            });
+          }
+          productGroups.get(methodSignature).products.push(product);
+        });
+        
+        // Create rows for each product group
+        productGroups.forEach((group, methodSignature) => {
+          const productRow = document.createElement('div');
+          productRow.className = 'shipping-product-row';
+          
+          // Left side: All products in this group
+          const productColumn = document.createElement('div');
+          productColumn.className = 'shipping-product-column';
+          
+          group.products.forEach((product) => {
+            const productItem = document.createElement('div');
+            productItem.className = 'shipping-product-item';
+            
+            // Product image
+            const productImage = document.createElement('img');
+            productImage.src = product.thumbnailUrl || '';
+            productImage.alt = product.name || '';
+            productImage.className = 'shipping-product-image';
+            productImage.onerror = function() {
+              this.style.display = 'none';
+            };
+            
+            // Product details
+            const productDetails = document.createElement('div');
+            productDetails.className = 'shipping-product-details';
+            
+            const productName = document.createElement('div');
+            productName.className = 'shipping-product-name';
+            productName.textContent = product.name || '';
+            
+            const productPrice = document.createElement('div');
+            productPrice.className = 'shipping-product-price';
+            const price = product.price !== undefined && product.price !== null ? parseFloat(product.price) : 0;
+            const quantity = product.quantity !== undefined && product.quantity !== null ? parseFloat(product.quantity) : 1;
+            productPrice.textContent = formatMoney(price) + 'x' + quantity;
+            
+            productDetails.appendChild(productName);
+            productDetails.appendChild(productPrice);
+            
+            productItem.appendChild(productImage);
+            productItem.appendChild(productDetails);
+            productColumn.appendChild(productItem);
+          });
+          
+          // Right side: Shared shipping methods for this group
+          const methodsColumn = document.createElement('div');
+          methodsColumn.className = 'shipping-methods-column';
+          
+          // Get the applicable methods for this group (all products in group share these)
+          const applicableMethods = methods.filter((method) => {
+            const methodId = String(method.id || method.index);
+            return group.methodIds.includes(methodId);
+          });
+          
+          if (applicableMethods.length === 0) {
+            // No shipping methods available for these products
+            const noShippingMsg = document.createElement('div');
+            noShippingMsg.className = 'shipping-unavailable-message';
+            noShippingMsg.textContent = 'Sorry, This product cannot be shipped to your location';
+            methodsColumn.appendChild(noShippingMsg);
+          } else {
+            // Create radio buttons for each applicable shipping method
+            // Use a unique name per group to allow selection for all products in group
+            const radioGroupName = `shippingMethod-group-${methodSignature}`;
+            
+            applicableMethods.forEach((method, methodIndex) => {
+              const methodId = method.id || method.index || methodIndex;
+              const methodIdentifier = String(methodId);
+              
+              // Check if this method is selected
+              const isSelected = (!selectedShippingMethodHandle && methodIndex === 0) ||
+                (selectedShippingMethodHandle && methodIdentifier === String(selectedShippingMethodHandle));
+              
+              const methodDiv = document.createElement('div');
+              methodDiv.className = 'shipping-method';
+              
+              const label = document.createElement('label');
+              label.className = 'shipping-method-label';
+              
+              const radio = document.createElement('input');
+              radio.type = 'radio';
+              radio.name = radioGroupName;
+              radio.value = methodIdentifier;
+              radio.id = `shipping-method-${methodSignature}-${methodIndex}`;
+              radio.dataset.methodId = methodIdentifier;
+              radio.dataset.methodIndex = methodIndex;
+              radio.checked = isSelected;
+              
+              const content = document.createElement('div');
+              content.className = 'shipping-method-content';
+              
+              // Title and price row
+              const titleRow = document.createElement('div');
+              titleRow.className = 'shipping-method-title-row';
+              
+              const name = document.createElement('span');
+              name.className = 'shipping-method-name';
+              name.textContent = method.title || method.name || 'Shipping';
+              
+              const priceSpan = document.createElement('span');
+              priceSpan.className = 'shipping-method-price';
+              if (method.price !== undefined && method.price !== null && parseFloat(method.price) > 0) {
+                priceSpan.textContent = formatMoney(method.price);
+              } else {
+                priceSpan.textContent = formatMoney(0);
+              }
+              
+              titleRow.appendChild(name);
+              titleRow.appendChild(priceSpan);
+              content.appendChild(titleRow);
+              
+              // Time information row (if available)
+              if (method.shippingTime || method.deliveryTime) {
+                const timeRow = document.createElement('div');
+                timeRow.className = 'shipping-method-time-row';
+                
+                if (method.shippingTime) {
+                  const shippingTime = document.createElement('div');
+                  shippingTime.className = 'shipping-method-time';
+                  shippingTime.textContent = 'Ship by: ' + method.shippingTime;
+                  timeRow.appendChild(shippingTime);
+                }
+                
+                if (method.deliveryTime) {
+                  const deliveryTime = document.createElement('div');
+                  deliveryTime.className = 'shipping-method-time';
+                  deliveryTime.textContent = 'Delivery by: ' + method.deliveryTime;
+                  timeRow.appendChild(deliveryTime);
+                }
+                
+                content.appendChild(timeRow);
+              }
+              
+              label.appendChild(radio);
+              label.appendChild(content);
+              methodDiv.appendChild(label);
+              methodsColumn.appendChild(methodDiv);
+              
+              // Add change handler - store method reference in closure
+              (function(methodObj) {
+                radio.addEventListener('change', function() {
+                  if (this.checked) {
+                    console.log('[CHECKOUT] Shipping method changed for product group', methodSignature, 'to method:', methodObj);
+                    updateShippingMethod(methodObj);
+                  }
+                });
+              })(method);
+            });
+          }
+          
+          productRow.appendChild(productColumn);
+          productRow.appendChild(methodsColumn);
+          container.appendChild(productRow);
+        });
+        
+        console.log('[CHECKOUT] Rendered', methods.length, 'shipping methods');
+        
+        // Update shipping method on page load if a method is selected but not yet saved
+        // Check if a shipping method is already selected from server
+        if (selectedShippingMethodHandle) {
+          // Shipping method already selected from server, mark as selected
+          window.shippingMethodSelected = true;
+        }
+        
+        // Only update if no method was previously selected (to avoid unnecessary API calls)
+        const selectedRadio = container.querySelector('input[type="radio"]:checked');
+        if (selectedRadio && !selectedShippingMethodHandle) {
+          // No method was previously selected, so update with the default selection
+          const methodIndex = parseInt(selectedRadio.dataset.methodIndex, 10);
+          if (methods[methodIndex]) {
+            updateShippingMethod(methods[methodIndex]);
+          }
+        } else if (selectedRadio && selectedShippingMethodHandle) {
+          // Method is already selected from server, mark as selected
+          window.shippingMethodSelected = true;
+        }
+        
+        // Update button state after shipping methods are loaded
+        updateCheckoutButtonState();
+      } else {
+        console.log('[CHECKOUT] No shipping methods available');
+        container.innerHTML = '<p class="shipping-methods-empty">No shipping methods available for this address.</p>';
+      }
+      
+      // Mark as completed
+      window.checkoutApiStatus.shippingMethodsFetch = 'completed';
+      updateCheckoutButtonState();
+    } catch (error) {
+      console.error('[CHECKOUT] Error fetching shipping methods:', error);
+      // Check if error is about missing address
+      const errorMessage = error.message || '';
+      if (errorMessage.includes('address') || errorMessage.includes('Address')) {
+        container.innerHTML = '<p class="shipping-methods-message">Please complete your shipping address to see available shipping options.</p>';
+      } else {
+        container.innerHTML = '<p class="shipping-methods-error">Unable to load shipping options. Please try again.</p>';
+      }
+      
+      // Mark as completed even on error (to allow retry)
+      window.checkoutApiStatus.shippingMethodsFetch = 'completed';
+      updateCheckoutButtonState();
+    }
+  }
+  
+  // Update shipping method
+  async function updateShippingMethod(shippingMethod) {
+    // Prevent updating during checkout completion
+    if (window.checkoutInProgress) return;
+    
+    const checkoutToken = getCheckoutToken();
+    if (!checkoutToken) {
+      console.error('[CHECKOUT] No checkout token available');
+      return;
+    }
+    
+    if (!shippingMethod) {
+      console.error('[CHECKOUT] Shipping method object is required');
+      return;
+    }
+    
+    // Track status
+    window.checkoutApiStatus.shippingMethodUpdate = 'pending';
+    updateCheckoutButtonState();
+    
+    const isHostedCheckout = window.location.pathname.includes('/checkout/') && 
+                             window.location.pathname.split('/').length > 2;
+    const endpoint = isHostedCheckout
+      ? `/webstoreapi/checkout/${checkoutToken}/shipping-method`
+      : '/webstoreapi/checkout/shipping-method';
+    
+    console.log('[CHECKOUT] Updating shipping method:', shippingMethod);
+    
+    // Show loading state on selected radio button
+    const methodId = shippingMethod.id || shippingMethod.index;
+    const selectedRadio = document.querySelector(`input[name="shippingMethod"][value="${methodId}"]`);
+    if (selectedRadio) {
+      selectedRadio.disabled = true;
+    }
+    
+    try {
+      // API expects shippingMethods array with the selected method object
+      const requestBody = {
+        shippingMethods: [shippingMethod]
+      };
+      
+      console.log('[CHECKOUT] Sending request to:', endpoint, 'with body:', requestBody);
+      
+      const response = await fetch(endpoint, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(requestBody)
+      });
+      
+      console.log('[CHECKOUT] Response status:', response.status, response.statusText);
+      
+      let result;
+      try {
+        result = await response.json();
+        console.log('[CHECKOUT] Response data:', result);
+      } catch (parseError) {
+        console.error('[CHECKOUT] Failed to parse response as JSON:', parseError);
+        const text = await response.text();
+        console.error('[CHECKOUT] Response text:', text);
+        throw new Error(`Invalid response from server: ${response.status} ${response.statusText}`);
+      }
+      
+      if (!response.ok) {
+        const errorMessage = result.error || result.message || `HTTP ${response.status}: ${response.statusText}`;
+        console.error('[CHECKOUT] API error:', errorMessage, result);
+        throw new Error(errorMessage);
+      }
+      
+      if (!result.success) {
+        const errorMessage = result.error || result.message || 'Failed to update shipping method';
+        console.error('[CHECKOUT] Request failed:', errorMessage, result);
+        throw new Error(errorMessage);
+      }
+      
+      console.log('[CHECKOUT] Shipping method updated successfully:', result);
+      
+      // Re-enable radio button on success
+      if (selectedRadio) {
+        selectedRadio.disabled = false;
+      }
+      
+      // Update order summary with new pricing if available
+      if (result.data && result.data.pricing) {
+        // Map API pricing format to template format
+        const mappedPricing = mapPricingFromApi(result.data.pricing);
+        updateOrderSummary(mappedPricing);
+      } else if (result.data) {
+        // Check if pricing fields are directly in result.data
+        const mappedPricing = mapPricingFromApi(result.data);
+        updateOrderSummary(mappedPricing);
+      } else {
+        // Reload page to get updated checkout data with new totals
+        console.log('[CHECKOUT] Reloading page to update order totals');
+        window.location.reload();
+      }
+      
+      // Mark as completed and set shipping method selected flag
+      window.checkoutApiStatus.shippingMethodUpdate = 'completed';
+      window.shippingMethodSelected = true;
+      updateCheckoutButtonState();
+    } catch (error) {
+      console.error('[CHECKOUT] Error updating shipping method:', error);
+      console.error('[CHECKOUT] Error details:', {
+        message: error.message,
+        stack: error.stack,
+        name: error.name
+      });
+      
+      // Re-enable radio button on error
+      if (selectedRadio) {
+        selectedRadio.disabled = false;
+      }
+      
+      // Show error message to user with more details
+      const container = document.getElementById('shipping-methods-container');
+      if (container) {
+        // Remove existing error messages
+        const existingErrors = container.querySelectorAll('.shipping-methods-error');
+        existingErrors.forEach(el => el.remove());
+        
+        const errorMsg = document.createElement('div');
+        errorMsg.className = 'shipping-methods-error';
+        errorMsg.textContent = error.message || 'Failed to update shipping method. Please try again.';
+        errorMsg.style.display = 'block';
+        errorMsg.style.marginTop = '10px';
+        errorMsg.style.padding = '10px';
+        errorMsg.style.backgroundColor = '#fee';
+        errorMsg.style.color = '#c33';
+        errorMsg.style.borderRadius = '4px';
+        
+        container.appendChild(errorMsg);
+        
+        // Remove error message after 8 seconds
+        setTimeout(() => {
+          errorMsg.remove();
+        }, 8000);
+      }
+      
+      // Mark as completed even on error (to allow retry)
+      window.checkoutApiStatus.shippingMethodUpdate = 'completed';
+      updateCheckoutButtonState();
+    }
+  }
+  
+  // Map API pricing format to template-friendly format
+  function mapPricingFromApi(apiPricing) {
+    if (!apiPricing) return null;
+    
+    // API uses: subtotalPrice, totalPrice, totalTax, totalShipping, totalDiscounts
+    // Template expects: subtotal, total, tax, shipping, discount
+    return {
+      subtotal: apiPricing.subtotalPrice || apiPricing.subtotal || 0,
+      total: apiPricing.totalPrice || apiPricing.total || 0,
+      tax: apiPricing.totalTax || apiPricing.tax || 0,
+      shipping: apiPricing.totalShipping || apiPricing.shipping || 0,
+      discount: apiPricing.totalDiscounts || apiPricing.discount || 0
+    };
+  }
+  
+  // Calculate subtotal from cart items
+  function calculateSubtotalFromItems() {
+    const cartItems = document.querySelectorAll('.order-summary-item');
+    let subtotal = 0;
+    
+    cartItems.forEach(item => {
+      const priceEl = item.querySelector('[data-item-price]');
+      const qtyEl = item.querySelector('[data-item-quantity]');
+      
+      if (priceEl && qtyEl) {
+        const price = parseFloat(priceEl.getAttribute('data-item-price')) || 0;
+        const quantity = parseInt(qtyEl.getAttribute('data-item-quantity')) || 0;
+        subtotal += price * quantity;
+      }
+    });
+    
+    return subtotal;
+  }
+  
+  // Update subtotal display
+  function updateSubtotalDisplay(subtotal) {
+    const subtotalEl = document.querySelector('[data-summary-subtotal]');
+    if (subtotalEl && subtotal !== null && subtotal !== undefined) {
+      subtotalEl.textContent = formatMoney(subtotal);
+      console.log('[CHECKOUT] Updated subtotal display:', subtotal);
+    }
+  }
+  
+  // Update order summary with new pricing
+  function updateOrderSummary(pricing) {
+    console.log('[CHECKOUT] Updating order summary with pricing:', pricing);
+    
+    if (!pricing) {
+      console.warn('[CHECKOUT] No pricing data provided, calculating from items');
+      // If no pricing provided, calculate from cart items
+      const calculatedSubtotal = calculateSubtotalFromItems();
+      if (calculatedSubtotal > 0) {
+        updateSubtotalDisplay(calculatedSubtotal);
+      }
+      return;
+    }
+    
+    // If pricing is in API format, map it first
+    if (pricing.subtotalPrice !== undefined || pricing.totalPrice !== undefined) {
+      pricing = mapPricingFromApi(pricing);
+      console.log('[CHECKOUT] Mapped pricing from API format:', pricing);
+    }
+    
+    const totalsContainer = document.querySelector('.order-summary-totals');
+    if (!totalsContainer) {
+      console.warn('[CHECKOUT] Order summary totals container not found');
+      return;
+    }
+    
+    // Update subtotal
+    if (pricing.subtotal !== undefined && pricing.subtotal !== null && pricing.subtotal > 0) {
+      updateSubtotalDisplay(pricing.subtotal);
+    } else {
+      // Fallback to calculating from items
+      const calculatedSubtotal = calculateSubtotalFromItems();
+      if (calculatedSubtotal > 0) {
+        updateSubtotalDisplay(calculatedSubtotal);
+      }
+    }
+    
+    // Handle discount - add or update discount line
+    const discountEl = document.querySelector('[data-summary-discount]');
+    const hasDiscount = pricing.discount !== undefined && pricing.discount !== null && pricing.discount > 0;
+    
+    if (hasDiscount) {
+      if (!discountEl) {
+        // Insert discount line after subtotal
+        const subtotalLine = totalsContainer.querySelector('.summary-line:first-child');
+        if (subtotalLine) {
+          const discountLine = document.createElement('div');
+          discountLine.className = 'summary-line summary-discount';
+          discountLine.innerHTML = `
+            <span class="summary-label">Discount</span>
+            <span class="summary-value" data-summary-discount>-${formatMoney(pricing.discount)}</span>
+          `;
+          subtotalLine.insertAdjacentElement('afterend', discountLine);
+        }
+      } else {
+        // Update existing discount
+        discountEl.textContent = '-' + formatMoney(pricing.discount);
+        const discountLine = discountEl.closest('.summary-line');
+        if (discountLine) {
+          discountLine.style.display = '';
+        }
+      }
+    } else {
+      // Remove discount line if it exists
+      if (discountEl) {
+        const discountLine = discountEl.closest('.summary-line');
+        if (discountLine) {
+          discountLine.remove();
+        }
+      }
+    }
+    
+    // Update shipping
+    if (pricing.shipping !== undefined && pricing.shipping !== null) {
+      const shippingEl = document.querySelector('[data-summary-shipping]');
+      if (shippingEl) {
+        shippingEl.textContent = pricing.shipping === 0 ? 'Free' : formatMoney(pricing.shipping);
+      }
+    }
+    
+    // Update tax
+    if (pricing.tax !== undefined && pricing.tax !== null) {
+      const taxEl = document.querySelector('[data-summary-tax]');
+      if (taxEl) {
+        taxEl.textContent = formatMoney(pricing.tax);
+      }
+    }
+    
+    // Update total
+    if (pricing.total !== undefined && pricing.total !== null) {
+      const totalEl = document.querySelector('[data-summary-total]');
+      if (totalEl) {
+        totalEl.textContent = formatMoney(pricing.total);
+      }
+    }
+    
+    console.log('[CHECKOUT] Order summary updated successfully');
+  }
+  
+  // Initialize subtotal on page load
+  (function() {
+    // Wait for DOM to be ready
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', function() {
+        setTimeout(initializeSubtotal, 100);
+      });
+    } else {
+      setTimeout(initializeSubtotal, 100);
+    }
+    
+    function initializeSubtotal() {
+      const subtotalEl = document.querySelector('[data-summary-subtotal]');
+      if (!subtotalEl) return;
+      
+      // Check if subtotal is already set (from server-side rendering)
+      const currentSubtotal = subtotalEl.textContent.trim();
+      
+      // If subtotal is 0 or empty, try to calculate from items
+      if (!currentSubtotal || currentSubtotal === '$0.00' || currentSubtotal === '0.00' || currentSubtotal === '₹0.00') {
+        const calculatedSubtotal = calculateSubtotalFromItems();
+        if (calculatedSubtotal > 0) {
+          updateSubtotalDisplay(calculatedSubtotal);
+        }
+      }
+      
+      // Also update if checkout pricing is available
+      {% if checkout.pricing %}
+        const checkoutPricing = {% if checkout.pricing %}{{ checkout.pricing | json }}{% else %}null{% endif %};
+        if (checkoutPricing && checkoutPricing.subtotal) {
+          updateOrderSummary(checkoutPricing);
+        }
+      {% endif %}
+    }
+  })();
+  
+  // Check and fetch shipping methods if address is complete
+  function checkAndFetchShippingMethods() {
+    // Prevent fetching during checkout completion
+    if (window.checkoutInProgress) return;
+    
+    if (isShippingAddressComplete()) {
+      // Debounce the fetch
+      clearTimeout(window.shippingMethodsTimeout);
+      window.shippingMethodsTimeout = setTimeout(fetchShippingMethods, 500);
+    }
+  }
+
+  async function updateShippingAddress() {
+    // Prevent updating during checkout completion
+    if (window.checkoutInProgress) return;
+    
+    const checkoutToken = getCheckoutToken();
+    if (!checkoutToken) {
+      // No valid checkout, clear pending state if we set it earlier
+      if (window.checkoutApiStatus.shippingAddress === 'pending') {
+        window.checkoutApiStatus.shippingAddress = 'idle';
+        updateCheckoutButtonState();
+      }
+      return;
+    }
+
+    // Track status
+    window.checkoutApiStatus.shippingAddress = 'pending';
+    updateCheckoutButtonState();
+
+    const formData = new FormData(document.getElementById('checkout-form'));
+    
+    try {
+      const isHostedCheckout = window.location.pathname.includes('/checkout/') && 
+                               window.location.pathname.split('/').length > 2;
+      const endpoint = isHostedCheckout
+        ? `/webstoreapi/checkout/${checkoutToken}/shipping-address`
+        : '/webstoreapi/checkout/shipping-address';
+      
+      // Get countryId from select dropdown
+      const countrySelect = document.getElementById('shipping-country');
+      const countryId = countrySelect ? countrySelect.value : null;
+      
+      // Get stateOrProvinceId from either select dropdown or text input
+      const stateSelect = document.getElementById('shipping-state');
+      const stateTextInput = document.getElementById('shipping-state-text');
+      let stateOrProvinceId = null;
+      
+      if (stateSelect && stateSelect.style.display !== 'none' && stateSelect.value) {
+        stateOrProvinceId = stateSelect.value;
+      } else if (stateTextInput && stateTextInput.style.display !== 'none' && stateTextInput.value) {
+        // For text input, we still need an ID - this should not happen if states are properly configured
+        // But we'll send the text value and let backend handle validation
+        stateOrProvinceId = stateTextInput.value;
+      }
+      
+      // Validate that we have both IDs
+      if (!countryId || !stateOrProvinceId) {
+        console.warn('[CHECKOUT] Missing countryId or stateOrProvinceId. Country:', countryId, 'State:', stateOrProvinceId);
+        // Don't send request if IDs are missing. Since we previously
+        // marked this as pending when the user started editing, reset
+        // it back so the button state reflects that no call was sent.
+        window.checkoutApiStatus.shippingAddress = 'idle';
+        updateCheckoutButtonState();
+        return;
+      }
+      
+      // Get phone number from intl-tel-input if available
+      let shippingPhone = formData.get('shippingPhone');
+      if (window.shippingPhoneIti) {
+        const phoneNumber = window.shippingPhoneIti.getNumber();
+        if (phoneNumber) {
+          // Remove leading + sign
+          shippingPhone = phoneNumber.replace(/^\+/, '');
+        }
+      }
+      
+      const requestBody = {
+        shippingFirstName: formData.get('shippingFirstName'),
+        shippingLastName: formData.get('shippingLastName'),
+        shippingAddress: formData.get('shippingAddress'),
+        shippingCity: formData.get('shippingCity'),
+        shippingZip: formData.get('shippingZip'),
+        shippingPhone: shippingPhone,
+        countryId: countryId,
+        stateOrProvinceId: stateOrProvinceId
+      };
+      
+      console.log('[CHECKOUT] Updating shipping address with data:', requestBody);
+      
+      const response = await fetch(endpoint, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(requestBody)
+      });
+
+      if (!response.ok) {
+        const result = await response.json();
+        console.error('Failed to update shipping address:', result.error);
+        // Mark as completed even on error (to allow retry)
+        window.checkoutApiStatus.shippingAddress = 'completed';
+        updateCheckoutButtonState();
+      } else {
+        // Mark as completed
+        window.checkoutApiStatus.shippingAddress = 'completed';
+        updateCheckoutButtonState();
+        
+        // Only fetch shipping methods if checkout not in progress
+        if (!window.checkoutInProgress) {
+          checkAndFetchShippingMethods();
+        }
+      }
+    } catch (error) {
+      console.error('Error updating shipping address:', error);
+      // Mark as completed even on error (to allow retry)
+      window.checkoutApiStatus.shippingAddress = 'completed';
+      updateCheckoutButtonState();
+    }
+  }
+
+  // Update billing address when form fields change (debounced)
+  let billingAddressTimeout;
+  const billingFields = ['billingFirstName', 'billingLastName', 'billingAddress', 'billingCity', 'billingState', 'billingZip', 'billingCountry'];
+  billingFields.forEach(fieldId => {
+    const field = document.getElementById(fieldId);
+    if (field) {
+      field.addEventListener('blur', function() {
+        clearTimeout(billingAddressTimeout);
+        billingAddressTimeout = setTimeout(updateBillingAddress, 500);
+      });
+    }
+  });
+
+  async function updateBillingAddress() {
+    // Prevent updating during checkout completion
+    if (window.checkoutInProgress) return;
+    
+    const checkoutToken = getCheckoutToken();
+    if (!checkoutToken) return;
+
+    const sameAsShipping = document.getElementById('same-as-shipping')?.checked;
+    if (sameAsShipping) return; // Don't update if same as shipping
+
+    // Track status
+    window.checkoutApiStatus.billingAddress = 'pending';
+    updateCheckoutButtonState();
+
+    const formData = new FormData(document.getElementById('checkout-form'));
+    
+    try {
+      // Get countryId from select dropdown
+      const countrySelect = document.getElementById('billing-country');
+      const countryId = countrySelect ? countrySelect.value : null;
+      
+      // Get stateOrProvinceId from select dropdown
+      const stateSelect = document.getElementById('billing-state');
+      const stateOrProvinceId = stateSelect && stateSelect.value ? stateSelect.value : null;
+      
+      // Validate that we have both IDs
+      if (!countryId || !stateOrProvinceId) {
+        console.warn('[CHECKOUT] Missing billing countryId or stateOrProvinceId. Country:', countryId, 'State:', stateOrProvinceId);
+        // Don't send request if IDs are missing
+        return;
+      }
+      
+      const response = await fetch('/webstoreapi/checkout/billing-address', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          billingFirstName: formData.get('billingFirstName'),
+          billingLastName: formData.get('billingLastName'),
+          billingAddress: formData.get('billingAddress'),
+          billingCity: formData.get('billingCity'),
+          billingZip: formData.get('billingZip'),
+          countryId: countryId,
+          stateOrProvinceId: stateOrProvinceId
+        })
+      });
+
+      if (!response.ok) {
+        const result = await response.json();
+        console.error('Failed to update billing address:', result.error);
+        // Mark as completed even on error (to allow retry)
+        window.checkoutApiStatus.billingAddress = 'completed';
+        updateCheckoutButtonState();
+      } else {
+        // Mark as completed
+        window.checkoutApiStatus.billingAddress = 'completed';
+        updateCheckoutButtonState();
+      }
+    } catch (error) {
+      console.error('Error updating billing address:', error);
+      // Mark as completed even on error (to allow retry)
+      window.checkoutApiStatus.billingAddress = 'completed';
+      updateCheckoutButtonState();
+    }
+  }
+
+  // Handle same as shipping checkbox change
+  document.getElementById('same-as-shipping')?.addEventListener('change', function(e) {
+    if (e.target.checked) {
+      // Clear billing address when same as shipping
+      updateBillingAddress();
+    } else {
+      // Update billing address when unchecked
+      updateBillingAddress();
+    }
+  });
+
+  // Update note when order notes field changes (debounced)
+  let noteTimeout;
+  const orderNotesField = document.getElementById('orderNotes');
+  if (orderNotesField) {
+    orderNotesField.addEventListener('blur', function() {
+      clearTimeout(noteTimeout);
+      noteTimeout = setTimeout(updateNote, 500);
+    });
+  }
+
+  async function updateNote() {
+    // Prevent updating during checkout completion
+    if (window.checkoutInProgress) return;
+    
+    const checkoutToken = getCheckoutToken();
+    if (!checkoutToken) return;
+
+    // Track status
+    window.checkoutApiStatus.orderNote = 'pending';
+    updateCheckoutButtonState();
+
+    const formData = new FormData(document.getElementById('checkout-form'));
+    const note = formData.get('orderNotes') || '';
+    
+    try {
+      const response = await fetch('/webstoreapi/checkout/note', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ note })
+      });
+
+      if (!response.ok) {
+        const result = await response.json();
+        console.error('Failed to update note:', result.error);
+        // Mark as completed even on error (to allow retry)
+        window.checkoutApiStatus.orderNote = 'completed';
+        updateCheckoutButtonState();
+      } else {
+        // Mark as completed
+        window.checkoutApiStatus.orderNote = 'completed';
+        updateCheckoutButtonState();
+      }
+    } catch (error) {
+      console.error('Error updating note:', error);
+      // Mark as completed even on error (to allow retry)
+      window.checkoutApiStatus.orderNote = 'completed';
+      updateCheckoutButtonState();
+    }
+  }
+
+  // Wait for Razorpay script to load
+  async function waitForRazorpay(maxWaitTime = 10000) {
+    const startTime = Date.now();
+    
+    console.log('[CHECKOUT] Waiting for Razorpay to load...');
+    console.log('[CHECKOUT] Current Razorpay status:', {
+      typeof: typeof Razorpay,
+      razorpayLoaded: window.razorpayLoaded,
+      razorpayLoadError: window.razorpayLoadError,
+      scriptExists: !!document.querySelector('script[src*="checkout.razorpay.com"]')
+    });
+    
+    // Check if there was a load error
+    if (window.razorpayLoadError) {
+      console.error('[CHECKOUT] Razorpay load error detected');
+      return false;
+    }
+    
+    // If already loaded, return immediately
+    if (typeof Razorpay !== 'undefined') {
+      console.log('[CHECKOUT] Razorpay already available');
+      return true;
+    }
+    
+    // Check if script tag exists, if not try to load it
+    const scriptTag = document.querySelector('script[src*="checkout.razorpay.com"]');
+    if (!scriptTag) {
+      console.warn('[CHECKOUT] Razorpay script tag not found, attempting to load...');
+      return new Promise((resolve) => {
+        const razorpayScript = document.createElement('script');
+        razorpayScript.src = 'https://checkout.razorpay.com/v1/checkout.js';
+        razorpayScript.async = false;
+        razorpayScript.onload = function() {
+          console.log('[CHECKOUT] Razorpay script loaded dynamically');
+          // Wait for Razorpay object to be available
+          setTimeout(function() {
+            if (typeof Razorpay !== 'undefined') {
+              window.razorpayLoaded = true;
+              resolve(true);
+            } else {
+              console.error('[CHECKOUT] Script loaded but Razorpay object not available');
+              window.razorpayLoadError = true;
+              resolve(false);
+            }
+          }, 300);
+        };
+        razorpayScript.onerror = function() {
+          console.error('[CHECKOUT] Failed to load Razorpay script dynamically');
+          window.razorpayLoadError = true;
+          resolve(false);
+        };
+        (document.head || document.getElementsByTagName('head')[0]).appendChild(razorpayScript);
+      });
+    }
+    
+    // Wait for Razorpay to become available (script exists but object not ready)
+    return new Promise((resolve) => {
+      // Listen for ready event if available
+      const readyHandler = function() {
+        console.log('[CHECKOUT] Razorpay ready event received');
+        window.removeEventListener('razorpayReady', readyHandler);
+        resolve(typeof Razorpay !== 'undefined');
+      };
+      window.addEventListener('razorpayReady', readyHandler);
+      
+      // Also poll for Razorpay object
+      let checkCount = 0;
+      const checkInterval = setInterval(function() {
+        checkCount++;
+        
+        if (typeof Razorpay !== 'undefined') {
+          console.log('[CHECKOUT] Razorpay object found after', checkCount * 100, 'ms');
+          clearInterval(checkInterval);
+          window.removeEventListener('razorpayReady', readyHandler);
+          window.razorpayLoaded = true;
+          resolve(true);
+        } else if (window.razorpayLoadError) {
+          console.error('[CHECKOUT] Razorpay load error detected during wait');
+          clearInterval(checkInterval);
+          window.removeEventListener('razorpayReady', readyHandler);
+          resolve(false);
+        } else if ((Date.now() - startTime) >= maxWaitTime) {
+          console.error('[CHECKOUT] Timeout waiting for Razorpay after', maxWaitTime, 'ms');
+          clearInterval(checkInterval);
+          window.removeEventListener('razorpayReady', readyHandler);
+          resolve(false);
+        } else if (checkCount % 10 === 0) {
+          console.log('[CHECKOUT] Still waiting for Razorpay...', checkCount * 100, 'ms');
+        }
+      }, 100);
+    });
+  }
+
+  // Helper function to handle Razorpay payment directly
+  async function handleRazorpayPaymentDirect() {
+      let checkoutToken = getCheckoutToken();
+      console.log('[CHECKOUT] Starting Razorpay payment, checkout token:', checkoutToken ? checkoutToken.substring(0, 10) + '...' : 'not found');
+      
+      if (!checkoutToken) {
+        throw new Error('Checkout session not found. Please refresh the page and try again.');
+      }
+      
+      // Create Razorpay order
+      const isHostedCheckout = window.location.pathname.includes('/checkout/') && 
+                               window.location.pathname.split('/').length > 2;
+      
+      const endpoint = isHostedCheckout 
+        ? `/webstoreapi/payment/razorpay/create-order?token=${checkoutToken}`
+        : '/webstoreapi/payment/razorpay/create-order';
+      
+      console.log('[CHECKOUT] Calling Razorpay create-order endpoint:', endpoint);
+      
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          checkoutToken: checkoutToken
+        })
+      });
+      
+      if (!response.ok) {
+        let errorMessage = 'Failed to create Razorpay order';
+        let errorData = null;
+        
+        try {
+          errorData = await response.json();
+          errorMessage = errorData.error || errorData.message || errorMessage;
+          console.error('[CHECKOUT] Razorpay API error response:', errorData);
+          
+          if (errorData.details) {
+            console.error('[CHECKOUT] Error details:', errorData.details);
+          }
+          
+          // Provide user-friendly error messages for common scenarios
+          if (errorMessage.includes('cart') || errorMessage.includes('Cart')) {
+            errorMessage = 'Your cart is empty or no longer available. Please add items to your cart and try again.';
+          } else if (errorMessage.includes('Checkout not found') || errorMessage.includes('checkout')) {
+            errorMessage = 'Checkout session expired. Please refresh the page and try again.';
+          } else if (errorMessage.includes('payment method not available')) {
+            errorMessage = 'Razorpay payment method is not available at this time. Please try another payment method.';
+          } else if (errorMessage.includes('minimum')) {
+            errorMessage = errorMessage; // Keep the minimum amount error message as is
+          }
+        } catch (parseError) {
+          console.error('[CHECKOUT] Failed to parse error response:', parseError);
+          errorMessage = `Server error (${response.status}): ${response.statusText}`;
+        }
+        
+        throw new Error(errorMessage);
+      }
+      
+      const result = await response.json();
+      console.log('[CHECKOUT] Razorpay order creation response:', result);
+      
+      const orderData = result.data;
+      
+      if (!orderData || !orderData.orderId) {
+        console.error('[CHECKOUT] Invalid order data in response:', result);
+        throw new Error('Failed to create Razorpay order. Please try again.');
+      }
+      
+      // Update checkout token if it was recreated by the backend
+      if (orderData.checkoutToken && orderData.checkoutToken !== checkoutToken) {
+        console.log('[CHECKOUT] Checkout token was recreated by backend, updating...');
+        checkoutToken = orderData.checkoutToken;
+        // Update the global CHECKOUT_TOKEN if it exists
+        if (typeof CHECKOUT_TOKEN !== 'undefined') {
+          CHECKOUT_TOKEN = checkoutToken;
+        }
+      }
+      
+      // Open Razorpay checkout - ensure Razorpay is available
+      if (typeof Razorpay === 'undefined') {
+        console.error('[CHECKOUT] Razorpay not available in handleRazorpayPaymentDirect');
+        // Wait a bit more and check again
+        await new Promise(resolve => setTimeout(resolve, 500));
+        if (typeof Razorpay === 'undefined') {
+          throw new Error('Razorpay payment gateway is not available. Please refresh the page and try again.');
+        }
+      }
+      
+      console.log('[CHECKOUT] Opening Razorpay checkout with order:', orderData.orderId);
+      
+      const razorpay = new Razorpay({
+        key: orderData.keyId,
+        amount: orderData.amount,
+        currency: orderData.currency,
+        name: orderData.name || 'Store',
+        description: orderData.description || 'Order Payment',
+        order_id: orderData.orderId,
+        prefill: orderData.prefill || {},
+        theme: orderData.theme || { color: '#3399cc' },
+        handler: async function(response) {
+          console.log('[CHECKOUT] Razorpay payment completed, verifying payment...');
+          
+          // Use the current checkout token (may have been updated if checkout was recreated)
+          const currentCheckoutToken = checkoutToken || getCheckoutToken();
+          
+          // Verify payment
+          const verifyEndpoint = isHostedCheckout
+            ? `/webstoreapi/payment/razorpay/verify?token=${currentCheckoutToken}`
+            : '/webstoreapi/payment/razorpay/verify';
+          
+          try {
+            const verifyResponse = await fetch(verifyEndpoint, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                checkoutToken: currentCheckoutToken,
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature
+              })
+            });
+            
+            const verifyResult = await verifyResponse.json();
+            console.log('[CHECKOUT] Payment verification response:', verifyResult);
+            
+            if (verifyResult.success) {
+              // Handle array of orders from CompleteCheckoutResponse
+              const orders = Array.isArray(verifyResult.data) ? verifyResult.data : [verifyResult.data];
+              const orderIds = orders.map(o => o.orderId || o.orderNumber).filter(Boolean).join(',');
+              console.log('[CHECKOUT] Payment verified successfully, redirecting to order confirmation');
+              
+              if (orderIds) {
+                window.location.href = `/order-confirmation?orderIds=${orderIds}`;
+              } else {
+                window.location.href = '/order-confirmation';
+              }
+            } else {
+              console.error('[CHECKOUT] Payment verification failed:', verifyResult);
+              const errorMsg = verifyResult.error || 'Payment verification failed. Please contact support.';
+              alert(errorMsg);
+            }
+          } catch (verifyError) {
+            console.error('[CHECKOUT] Error during payment verification:', verifyError);
+            alert('An error occurred while verifying your payment. Please contact support with your payment ID: ' + (response.razorpay_payment_id || 'N/A'));
+          }
+        },
+        modal: {
+          ondismiss: function() {
+            console.log('[CHECKOUT] Razorpay popup closed by user');
+            window.checkoutInProgress = false; // Reset flag when popup is closed
+            const submitBtn = document.getElementById('checkout-submit');
+            if (submitBtn) {
+              setButtonLoading(submitBtn, false);
+            }
+          }
+        }
+      });
+      
+      razorpay.open();
+    }
+
+  // Handle form submission
+  document.getElementById('checkout-form')?.addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    // CRITICAL: Set flag immediately to prevent any API calls
+    window.checkoutInProgress = true;
+    clearTimeout(window.shippingMethodsTimeout);
+    clearTimeout(shippingAddressTimeout);
+    clearTimeout(billingAddressTimeout);
+    clearTimeout(noteTimeout);
+    
+    const submitBtn = document.getElementById('checkout-submit');
+    const formData = new FormData(this);
+    const paymentMethod = formData.get('paymentMethod');
+    
+    // If Razorpay is selected, let the Razorpay plugin handle the payment
+    if (paymentMethod === 'Razorpay') {
+      console.log('[CHECKOUT] Razorpay payment method selected');
+      
+      // Wait for Razorpay script to load (up to 10 seconds)
+      setButtonLoading(submitBtn, true, 'Loading payment gateway...');
+      
+      const razorpayLoaded = await waitForRazorpay(10000);
+      
+      if (!razorpayLoaded) {
+        console.error('[CHECKOUT] Razorpay failed to load after waiting');
+        window.checkoutInProgress = false; // Reset flag on error
+        alert('Razorpay payment gateway failed to load. Please refresh the page and try again. If the problem persists, please contact support.');
+        setButtonLoading(submitBtn, false);
+        return;
+      }
+      
+      console.log('[CHECKOUT] Razorpay loaded successfully, proceeding with payment');
+      
+      // Proceed directly with Razorpay payment (do not re-call shipping/billing updates here)
+      try {
+        setButtonLoading(submitBtn, true, 'Initializing payment...');
+        await handleRazorpayPaymentDirect();
+        // Note: Don't reset checkoutInProgress here if popup opened successfully
+        // It will be reset in the modal ondismiss handler or after successful payment
+        console.log('[CHECKOUT] Razorpay payment initialized successfully, popup should be open');
+      } catch (error) {
+        console.error('[CHECKOUT] Razorpay payment error:', error);
+        window.checkoutInProgress = false; // Reset flag on error
+        
+        // Provide user-friendly error messages
+        let userMessage = 'Unable to initialize Razorpay payment. ';
+        if (error.message) {
+          userMessage += error.message;
+        } else {
+          userMessage += 'Please try again or contact support.';
+        }
+        
+        alert(userMessage);
+        if (submitBtn) {
+          setButtonLoading(submitBtn, false);
+        }
+      }
+      return;
+    }
+    
+    setButtonLoading(submitBtn, true, 'Processing...');
+    
+    const checkoutToken = getCheckoutToken();
+    if (!checkoutToken) {
+      window.checkoutInProgress = false; // Reset flag on error
+      alert('Checkout session expired. Please refresh the page and try again.');
+      setButtonLoading(submitBtn, false);
+      return;
+    }
+    
+    if (!paymentMethod) {
+      window.checkoutInProgress = false; // Reset flag on error
+      alert('Please select a payment method.');
+      setButtonLoading(submitBtn, false);
+      return;
+    }
+    
+    // Get the selected payment method's fee from the radio input
+    const selectedPaymentInput = document.querySelector(`input[name="paymentMethod"][value="${paymentMethod}"]`);
+    const paymentFee = selectedPaymentInput ? parseFloat(selectedPaymentInput.getAttribute('data-payment-fee') || '0') : 0;
+    
+    // Directly call complete checkout API (do not re-call shipping/billing/shipping method updates here)
+    try {
+      // Use the payment method value (which is the id/name from API) as paymentMethodHandle
+      const isHostedCheckout = window.location.pathname.includes('/checkout/') && 
+                               window.location.pathname.split('/').length > 2;
+      
+      const endpoint = isHostedCheckout
+        ? `/webstoreapi/checkout/${checkoutToken}/complete`
+        : '/webstoreapi/checkout/complete';
+      
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          paymentMethodHandle: paymentMethod,
+          paymentFeeAmount: paymentFee
+        })
+      });
+      
+      const result = await response.json();
+      
+      if (result.success && result.data) {
+        // Handle array of orders from CompleteCheckoutResponse
+        const orders = Array.isArray(result.data) ? result.data : [result.data];
+        const orderIds = orders.map(o => o.orderId || o.orderNumber).filter(Boolean).join(',');
+        if (orderIds) {
+          window.location.href = `/order-confirmation?orderIds=${orderIds}`;
+        } else {
+          window.location.href = '/order-confirmation';
+        }
+      } else {
+        throw new Error(result.error || 'Checkout failed');
+      }
+    } catch (error) {
+      console.error('Checkout error:', error);
+      window.checkoutInProgress = false; // Reset flag on error
+      alert('Checkout failed. Please try again.');
+      setButtonLoading(submitBtn, false);
+    }
+  });
+
+  // ==================== COUPON FUNCTIONALITY ====================
+  
+  /**
+   * Fetch available discount codes for checkout
+   */
+  async function fetchDiscountCodes() {
+    const checkoutToken = getCheckoutToken();
+    if (!checkoutToken) {
+      console.warn('[COUPONS] No checkout token available');
+      return;
+    }
+
+    const couponsContainer = document.getElementById('coupons-container');
+    const couponsError = document.getElementById('coupons-error');
+    
+    if (couponsContainer) {
+      couponsContainer.innerHTML = '<p class="coupons-loading">Loading available coupons...</p>';
+    }
+    
+    if (couponsError) {
+      couponsError.style.display = 'none';
+    }
+
+    try {
+      const response = await fetch(`/webstoreapi/checkout/${checkoutToken}/discount-codes`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const result = await response.json();
+      
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to fetch discount codes');
+      }
+
+      const discountCodes = result.data;
+      displayDiscountCodes(discountCodes);
+    } catch (error) {
+      console.error('[COUPONS] Error fetching discount codes:', error);
+      if (couponsContainer) {
+        couponsContainer.innerHTML = '<p class="coupons-error">Unable to load coupons. Please try again later.</p>';
+      }
+      if (couponsError) {
+        couponsError.textContent = error.message || 'Failed to load coupons';
+        couponsError.style.display = 'block';
+      }
+    }
+  }
+
+  /**
+   * Display available discount codes
+   */
+  function displayDiscountCodes(discountCodes) {
+    const couponsContainer = document.getElementById('coupons-container');
+    if (!couponsContainer) return;
+
+    // Handle different response formats
+    let codes = [];
+    if (Array.isArray(discountCodes)) {
+      codes = discountCodes;
+    } else if (discountCodes && typeof discountCodes === 'object') {
+      // If it's a single object, wrap it in an array
+      if (discountCodes.code) {
+        codes = [discountCodes];
+      } else if (discountCodes.codes && Array.isArray(discountCodes.codes)) {
+        codes = discountCodes.codes;
+      }
+    }
+
+    if (codes.length === 0) {
+      couponsContainer.innerHTML = '<p class="coupons-empty">No coupons available at this time.</p>';
+      return;
+    }
+
+    const couponsList = document.createElement('div');
+    couponsList.className = 'coupons-list';
+
+    codes.forEach((coupon, index) => {
+      const couponItem = document.createElement('div');
+      couponItem.className = 'coupon-item';
+      couponItem.dataset.couponCode = coupon.code || coupon.couponCode || '';
+
+      const couponInfo = document.createElement('div');
+      couponInfo.className = 'coupon-info';
+
+      const couponCode = document.createElement('div');
+      couponCode.className = 'coupon-code';
+      couponCode.textContent = coupon.code || coupon.couponCode || 'N/A';
+
+      const couponDescription = document.createElement('div');
+      couponDescription.className = 'coupon-description';
+      couponDescription.textContent = coupon.description || '';
+
+      if (coupon.minCartAmount) {
+        const minAmount = document.createElement('div');
+        minAmount.className = 'coupon-min-amount';
+        minAmount.textContent = `Minimum order: ${formatMoney(coupon.minCartAmount)}`;
+        couponInfo.appendChild(minAmount);
+      }
+
+      couponInfo.appendChild(couponCode);
+      if (coupon.description) {
+        couponInfo.appendChild(couponDescription);
+      }
+
+      const applyButton = document.createElement('button');
+      applyButton.type = 'button';
+      applyButton.className = 'btn btn-primary btn-sm apply-coupon-btn';
+      applyButton.textContent = 'Apply';
+      applyButton.dataset.couponCode = coupon.code || coupon.couponCode || '';
+      applyButton.addEventListener('click', () => applyDiscountCode(coupon.code || coupon.couponCode));
+
+      couponItem.appendChild(couponInfo);
+      couponItem.appendChild(applyButton);
+      couponsList.appendChild(couponItem);
+    });
+
+    couponsContainer.innerHTML = '';
+    couponsContainer.appendChild(couponsList);
+  }
+
+  /**
+   * Apply discount code to checkout
+   */
+  async function applyDiscountCode(discountCode) {
+    if (!discountCode) {
+      alert('Please select a valid coupon code.');
+      return;
+    }
+
+    const checkoutToken = getCheckoutToken();
+    if (!checkoutToken) {
+      alert('Checkout session not found. Please refresh the page.');
+      return;
+    }
+
+    // Disable all apply buttons
+    const applyButtons = document.querySelectorAll('.apply-coupon-btn');
+    applyButtons.forEach(btn => {
+      btn.disabled = true;
+      btn.textContent = 'Applying...';
+    });
+
+    try {
+      const response = await fetch(`/webstoreapi/checkout/${checkoutToken}/apply-discount`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          discountCode: discountCode
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const result = await response.json();
+      
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to apply discount code');
+      }
+
+      // Show applied coupon
+      const appliedCouponDiv = document.getElementById('applied-coupon');
+      const appliedCouponCode = appliedCouponDiv?.querySelector('.applied-coupon-code');
+      if (appliedCouponDiv && appliedCouponCode) {
+        appliedCouponCode.textContent = `Applied: ${discountCode}`;
+        appliedCouponDiv.style.display = 'block';
+      }
+
+      // Update pricing display
+      updateCheckoutPricing(result.data);
+
+      // Show success message
+      alert(`Coupon "${discountCode}" applied successfully!`);
+
+      // Reload page to show updated pricing (or update DOM directly)
+      // For now, we'll reload to ensure consistency
+      window.location.reload();
+    } catch (error) {
+      console.error('[COUPONS] Error applying discount code:', error);
+      alert(error.message || 'Failed to apply coupon. Please try again.');
+      
+      // Re-enable buttons
+      applyButtons.forEach(btn => {
+        btn.disabled = false;
+        btn.textContent = 'Apply';
+      });
+    }
+  }
+
+  /**
+   * Update checkout pricing display
+   */
+  function updateCheckoutPricing(checkoutData) {
+    if (!checkoutData || !checkoutData.pricing) return;
+
+    const pricing = checkoutData.pricing;
+
+    // Update subtotal
+    const subtotalEl = document.querySelector('[data-summary-subtotal]');
+    if (subtotalEl && pricing.subtotalPrice !== undefined) {
+      subtotalEl.textContent = formatMoney(pricing.subtotalPrice);
+    }
+
+    // Update discount
+    const discountEl = document.querySelector('[data-summary-discount]');
+    const discountLine = document.querySelector('[data-summary-discount-line]');
+    if (pricing.totalDiscounts !== undefined && pricing.totalDiscounts > 0) {
+      if (discountEl) {
+        discountEl.textContent = `-${formatMoney(pricing.totalDiscounts)}`;
+      }
+      if (discountLine) {
+        discountLine.style.display = 'flex';
+      }
+    } else {
+      if (discountLine) {
+        discountLine.style.display = 'none';
+      }
+    }
+
+    // Update shipping
+    const shippingEl = document.querySelector('[data-summary-shipping]');
+    if (shippingEl && pricing.totalShipping !== undefined) {
+      shippingEl.textContent = pricing.totalShipping === 0 ? 'Free' : formatMoney(pricing.totalShipping);
+    }
+
+    // Update tax
+    const taxEl = document.querySelector('[data-summary-tax]');
+    if (taxEl && pricing.totalTax !== undefined) {
+      taxEl.textContent = formatMoney(pricing.totalTax);
+    }
+
+    // Update total
+    const totalEl = document.querySelector('[data-summary-total]');
+    if (totalEl && pricing.totalPrice !== undefined) {
+      totalEl.textContent = formatMoney(pricing.totalPrice);
+    }
+  }
+
+  /**
+   * Format money value
+   */
+  function formatMoney(amount) {
+    if (typeof amount !== 'number') {
+      amount = parseFloat(amount) || 0;
+    }
+    // Use shop settings if available, otherwise default format
+    const currencySymbol = {% if shop.settings.currencySymbol %}{{ shop.settings.currencySymbol | json }}{% else %}'₹'{% endif %};
+    return `${currencySymbol}${amount.toFixed(2)}`;
+  }
+
+  /**
+   * Remove applied coupon
+   */
+  async function removeCoupon() {
+    const appliedCouponDiv = document.getElementById('applied-coupon');
+    const appliedCouponCode = appliedCouponDiv?.querySelector('.applied-coupon-code');
+    if (!appliedCouponCode) return;
+
+    const couponCode = appliedCouponCode.textContent.replace('Applied: ', '').trim();
+    if (!couponCode) return;
+
+    const checkoutToken = getCheckoutToken();
+    if (!checkoutToken) return;
+
+    try {
+      // Note: We would need a remove discount code endpoint
+      // For now, we'll just reload the page after removing from UI
+      appliedCouponDiv.style.display = 'none';
+      window.location.reload();
+    } catch (error) {
+      console.error('[COUPONS] Error removing coupon:', error);
+      alert('Failed to remove coupon. Please refresh the page.');
+    }
+  }
+
+  /**
+   * Show currently applied coupon if any
+   */
+  function showAppliedCoupon() {
+    // Check if there's a discount applied in the checkout pricing
+    const discountValue = document.querySelector('[data-summary-discount]');
+    const discountLine = document.querySelector('[data-summary-discount-line]');
+    
+    if (discountValue && discountLine && discountLine.style.display !== 'none') {
+      const discountText = discountValue.textContent.trim();
+      // Try to extract coupon code from checkout data if available
+      // For now, we'll just show that a discount is applied
+      const appliedCouponDiv = document.getElementById('applied-coupon');
+      const appliedCouponCode = appliedCouponDiv?.querySelector('.applied-coupon-code');
+      
+      if (appliedCouponDiv && appliedCouponCode && discountText && discountText !== '₹0.00') {
+        // If we have discount info, show it (we don't have the code, so show generic message)
+        appliedCouponCode.textContent = 'Discount Applied';
+        appliedCouponDiv.style.display = 'block';
+      }
+    }
+  }
+
+  // Initialize coupon functionality on page load
+  document.addEventListener('DOMContentLoaded', () => {
+    // Fetch discount codes when page loads
+    fetchDiscountCodes();
+    
+    // Show applied coupon if any
+    showAppliedCoupon();
+
+    // Set up remove coupon button
+    const removeCouponBtn = document.getElementById('remove-coupon-btn');
+    if (removeCouponBtn) {
+      removeCouponBtn.addEventListener('click', removeCoupon);
+    }
+  });
+</script>
+
+<!-- Price Change Handler -->
+<script src="{{ 'checkout-price-handler.js' | asset_url }}"></script>
+
+<style>
+/* Checkout Page - Shopify Horizon Style */
+/* Base Typography - Shopify uses 10px base */
+/* Set base font-size on html when checkout page is present */
+html:has(.checkout-page) {
+  font-size: 10px;
+}
+
+.checkout-page {
+  min-height: calc(100vh - 200px);
+  padding: 0;
+  background: var(--color-background, #ffffff);
+  font-family: var(--font-body, -apple-system, "system-ui", "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol");
+  color: var(--color-text, #000000);
+  line-height: var(--line-height-base, 1.5);
+  font-size: var(--text-base, 1.4rem);
+}
+
+.checkout-container {
+  max-width: var(--container-width, 1200px);
+  margin: 0 auto;
+  padding: 0;
+}
+
+.checkout-header {
+  margin-bottom: 0;
+  padding: 1rem 1.5rem 0; /* Reduced top padding to optimize space */
+  border-bottom: none;
+}
+
+.checkout-title {
+  font-size: var(--text-4xl, 2.8rem);
+  font-weight: var(--font-weight-bold, 700);
+  color: var(--color-text, #000000);
+  margin: 0 -1px 0 0; /* Match Shopify's -1px margin */
+  letter-spacing: var(--letter-spacing-heading, -0.01em);
+}
+
+/* Price Change Banner */
+.price-change-banner {
+  background: linear-gradient(135deg, var(--color-warning-light, #fff3cd) 0%, var(--color-warning, #ffe69c) 100%);
+  border: 2px solid var(--color-warning, #ffc107);
+  border-radius: var(--border-radius-large, 12px);
+  padding: var(--spacing-component, 1.5rem);
+  margin-bottom: var(--spacing-section, 2rem);
+  box-shadow: 0 4px 12px rgba(255, 193, 7, 0.2);
+}
+
+.price-change-banner.price-decrease {
+  background: linear-gradient(135deg, var(--color-success-light, #d1f2eb) 0%, var(--color-success, #a8e6cf) 100%);
+  border-color: var(--color-success, #28a745);
+}
+
+.price-change-banner.price-critical {
+  background: linear-gradient(135deg, var(--color-error-light, #f8d7da) 0%, var(--color-error, #f5c6cb) 100%);
+  border-color: var(--color-error, #dc3545);
+}
+
+.price-change-banner-content {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.price-change-icon {
+  flex-shrink: 0;
+  color: #ff8c00;
+}
+
+.price-change-banner.price-decrease .price-change-icon {
+  color: #28a745;
+}
+
+.price-change-banner.price-critical .price-change-icon {
+  color: #dc3545;
+}
+
+.price-change-message {
+  flex: 1;
+}
+
+.price-change-title {
+  font-size: var(--text-xl, 1.25rem);
+  font-weight: var(--font-weight-bold, 600);
+  margin: 0 0 var(--spacing-element, 0.5rem) 0;
+  color: var(--color-warning-dark, #856404);
+}
+
+.price-change-banner.price-decrease .price-change-title {
+  color: var(--color-success-dark, #155724);
+}
+
+.price-change-banner.price-critical .price-change-title {
+  color: var(--color-error-dark, #721c24);
+}
+
+.price-change-description {
+  margin: 0 0 0.75rem 0;
+  color: #856404;
+  line-height: 1.5;
+}
+
+.price-change-banner.price-decrease .price-change-description {
+  color: #155724;
+}
+
+.price-change-banner.price-critical .price-change-description {
+  color: #721c24;
+}
+
+.price-change-warnings-list {
+  margin: 0.75rem 0 0 0;
+  padding-left: 1.5rem;
+  color: #856404;
+}
+
+.price-change-warnings-list li {
+  margin-bottom: 0.25rem;
+}
+
+.price-change-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-shrink: 0;
+}
+
+/* Price Change Details */
+.price-change-details {
+  background: var(--color-surface, #f8f9fa);
+  border: 1px solid var(--color-border, #dee2e6);
+  border-radius: var(--border-radius-medium, 8px);
+  padding: var(--spacing-component, 1.5rem);
+  margin-bottom: var(--spacing-section, 2rem);
+}
+
+.price-change-details-title {
+  font-size: var(--text-lg, 1.125rem);
+  font-weight: var(--font-weight-bold, 600);
+  margin: 0 0 var(--spacing-component, 1rem) 0;
+  color: var(--color-text, #1a1a1a);
+}
+
+.price-change-items-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.price-change-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  background: white;
+  border-radius: 6px;
+  border: 1px solid #e9ecef;
+}
+
+.price-change-item-info {
+  flex: 1;
+}
+
+.price-change-item-title {
+  font-size: 1rem;
+  font-weight: 500;
+  margin: 0 0 0.25rem 0;
+  color: #1a1a1a;
+}
+
+.price-change-item-sku {
+  font-size: 0.875rem;
+  color: #6c757d;
+  margin: 0;
+}
+
+.price-change-item-prices {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.price-change-old-price {
+  text-decoration: line-through;
+  color: #6c757d;
+  font-size: 0.9375rem;
+}
+
+.price-change-arrow {
+  color: #6c757d;
+  font-weight: 600;
+}
+
+.price-change-new-price {
+  font-weight: 600;
+  color: #1a1a1a;
+  font-size: 1rem;
+}
+
+.price-change-percentage {
+  font-size: 0.875rem;
+  font-weight: 500;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+}
+
+.price-change-percentage.price-increase {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.price-change-percentage.price-decrease {
+  background: #d1f2eb;
+  color: #155724;
+}
+
+/* Price Change Acknowledgment */
+.price-change-acknowledgment {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #dee2e6;
+}
+
+.price-change-acknowledgment .checkbox-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  cursor: pointer;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+}
+
+.price-change-acknowledgment input[type="checkbox"] {
+  margin-top: 0.25rem;
+  flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+  .price-change-banner-content {
+    flex-direction: column;
+  }
+  
+  .price-change-actions {
+    width: 100%;
+    flex-direction: column;
+  }
+  
+  .price-change-actions .btn {
+    width: 100%;
+  }
+  
+  .price-change-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+  
+  .price-change-item-prices {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
+
+.checkout-layout {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0;
+  max-width: 1200px;
+  margin: 0 auto;
+  align-items: start; /* Align items to top */
+}
+
+/* Desktop: Two-column layout - Shopify Horizon style */
+@media (min-width: 1000px) {
+  .checkout-layout {
+    grid-template-columns: 1fr 440px;
+    gap: 0;
+    align-items: start;
+  }
+  
+  .checkout-main {
+    max-width: 100%;
+    border-right: 1px solid #e5e7eb;
+    padding-right: 3rem;
+  }
+  
+  .checkout-sidebar {
+    position: sticky;
+    top: 1rem; /* Reduced top offset to optimize space */
+    align-self: start;
+    padding-left: 3rem;
+    background: #fafafa;
+    max-height: calc(100vh - 2rem); /* Optimized height calculation */
+    overflow-y: auto; /* Allow sidebar content to scroll */
+    overflow-x: hidden;
+  }
+}
+
+.checkout-main {
+  background: #ffffff;
+  border-radius: 0;
+  padding: 1.5rem 1.5rem; /* Reduced top padding to optimize space */
+  box-shadow: none;
+}
+
+.checkout-sidebar {
+  background: #fafafa;
+  border-radius: 0;
+  padding: 1rem 1.5rem; /* Further reduced padding to optimize space */
+  box-shadow: none;
+  display: flex;
+  flex-direction: column;
+  min-height: 0; /* Allow flex shrinking */
+}
+
+.checkout-section {
+  margin-bottom: 2rem; /* Reduced spacing to optimize space */
+  padding-bottom: 2rem; /* Reduced spacing to optimize space */
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.checkout-section:last-of-type {
+  margin-bottom: 0;
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.checkout-section-title {
+  font-size: 2.1rem; /* 21px for H2 section titles */
+  font-weight: 600;
+  color: #000000;
+  margin: 0 0 1.5rem;
+  letter-spacing: 0;
+  text-transform: none;
+  line-height: 1.2;
+}
+
+.checkout-section-title h2,
+h2.checkout-section-title {
+  font-size: 2.1rem; /* 21px */
+  font-weight: 600;
+  color: #000000;
+  margin: 0 0 1.5rem;
+}
+
+.checkout-section-title h3,
+h3.checkout-section-title {
+  font-size: 1.4rem; /* 14px */
+  font-weight: 600;
+  color: #000000;
+  margin: 0 0 1rem;
+}
+
+.checkout-section-content {
+  margin-top: 0;
+  flex: 1 1 auto;
+  min-height: 0; /* Allow flex shrinking */
+  overflow-y: auto; /* Allow scrolling of coupon content */
+  overflow-x: hidden;
+}
+
+/* Form Styles - Shopify style */
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+@media (min-width: 640px) {
+  .form-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .form-group-full {
+    grid-column: 1 / -1;
+  }
+}
+
+/* intl-tel-input styling */
+.iti {
+  width: 100%;
+}
+
+.iti__flag-container {
+  z-index: 1;
+}
+
+.iti__selected-flag {
+  padding: 0 0.75rem 0 0.5rem;
+  border-right: 1px solid var(--color-border, #e5e7eb);
+}
+
+.iti__selected-flag:hover {
+  background-color: var(--color-background, #f9fafb);
+}
+
+.iti__country-list {
+  z-index: 1000;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border: 1px solid var(--color-border, #e5e7eb);
+  border-radius: var(--border-radius-medium, 8px);
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.iti__country {
+  padding: 0.5rem 0.75rem;
+}
+
+.iti__country:hover,
+.iti__country.iti__highlight {
+  background-color: var(--color-primary-light, #dbeafe);
+}
+
+#shipping-phone {
+  padding-left: 3.5rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.form-label {
+  font-size: 1.4rem; /* 14px */
+  font-weight: 500;
+  color: #000000;
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.form-input,
+.form-select,
+.form-textarea {
+  width: 100%;
+  padding: 13.5px 11px; /* Exact Shopify padding */
+  font-size: 1.4rem; /* 14px */
+  color: #000000;
+  background: #ffffff;
+  border: 1px solid #e5e7eb; /* Lighter border */
+  border-radius: 8px; /* 8px border radius */
+  transition: border-color 0.15s ease;
+  font-family: inherit;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  line-height: 1.5;
+}
+
+.form-input::placeholder,
+.form-textarea::placeholder {
+  color: #9ca3af;
+}
+
+.form-select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23000000' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
+  background-size: 12px;
+  padding-right: 2.75rem;
+}
+
+.form-input:focus,
+.form-select:focus,
+.form-textarea:focus {
+  outline: none;
+  border-color: #000000;
+  box-shadow: none; /* Remove box-shadow for cleaner look */
+}
+
+.form-textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  cursor: pointer;
+  font-size: 1.4rem; /* 14px */
+  color: #000000;
+  line-height: 1.5;
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  margin-top: 0.125rem;
+  flex-shrink: 0;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  border: 2px solid #d1d5db;
+  border-radius: 4px; /* Slightly more rounded */
+  background-color: #ffffff;
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.checkbox-label input[type="checkbox"]:hover {
+  border-color: #000000;
+}
+
+.checkbox-label input[type="checkbox"]:checked {
+  background-color: #000000;
+  border-color: #000000;
+}
+
+.checkbox-label input[type="checkbox"]:checked::after {
+  content: '';
+  position: absolute;
+  left: 4px;
+  top: 1px;
+  width: 5px;
+  height: 10px;
+  border: solid #ffffff;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+  display: block;
+}
+
+.checkbox-label input[type="checkbox"]:focus {
+  outline: 2px solid #000000;
+  outline-offset: 2px;
+}
+
+/* Payment Methods */
+.payment-methods {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.payment-method-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.payment-method-group-title {
+  font-size: 1.4rem; /* 14px for H3 */
+  font-weight: 600;
+  color: #000000;
+  margin: 0 0 1rem;
+}
+
+.payment-method {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px; /* 8px border radius */
+  padding: 1rem;
+  transition: all 0.15s ease;
+  background: #ffffff;
+}
+
+.payment-method:hover {
+  border-color: #d1d5db;
+  background: #fafafa;
+}
+
+.payment-method:has(input[type="radio"]:checked) {
+  border-color: #000000;
+  background: #ffffff;
+}
+
+.payment-method-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  cursor: pointer;
+  margin: 0;
+}
+
+.payment-method-label input[type="radio"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  margin-top: 0.125rem;
+  flex-shrink: 0;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  border: 2px solid #d1d5db;
+  border-radius: 50%;
+  background-color: #ffffff;
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.payment-method-label input[type="radio"]:hover {
+  border-color: #000000;
+}
+
+.payment-method-label input[type="radio"]:checked {
+  border-color: #000000;
+  background-color: #ffffff;
+}
+
+.payment-method-label input[type="radio"]:checked::after {
+  background-color: #000000;
+}
+
+.payment-method-label input[type="radio"]:checked::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #111827;
+  display: block;
+}
+
+.payment-method-label input[type="radio"]:focus {
+  outline: 2px solid #000000;
+  outline-offset: 2px;
+}
+
+.payment-method-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.payment-method-name {
+  font-size: 1.4rem; /* 14px */
+  font-weight: 500;
+  color: #000000;
+}
+
+.payment-method-description {
+  font-size: 1.4rem; /* 14px */
+  color: #6b7280;
+  font-weight: normal;
+}
+
+.payment-method-balance {
+  font-size: 0.8125rem;
+  color: #059669;
+  font-weight: 500;
+}
+
+.payment-method-config {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid #f3f4f6;
+}
+
+.config-text,
+.config-fee,
+.config-min,
+.config-max {
+  font-size: 1.2rem; /* 12px */
+  color: #6b7280;
+  padding: 0.25rem 0.5rem;
+  background: #f9fafb;
+  border-radius: 8px; /* 8px border radius */
+}
+
+.config-fee {
+  color: #dc2626;
+  font-weight: 500;
+}
+
+.payment-methods-empty {
+  padding: 1rem;
+  text-align: center;
+  color: #6b7280;
+  font-size: 1.4rem; /* 14px */
+}
+
+/* Shipping Methods - Product-based Layout */
+.shipping-product-row {
+  display: flex;
+  gap: 2rem;
+  align-items: flex-start;
+  margin-bottom: 2rem;
+  padding-bottom: 2rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.shipping-product-row:last-child {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.shipping-product-column {
+  flex: 0 0 300px;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.shipping-product-item {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.shipping-product-image {
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 4px;
+  flex-shrink: 0;
+  background: #f3f4f6;
+}
+
+.shipping-product-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  flex: 1;
+}
+
+.shipping-product-name {
+  font-size: 1.4rem; /* 14px */
+  font-weight: 500;
+  color: #000000;
+}
+
+.shipping-product-price {
+  font-size: 1.4rem; /* 14px */
+  color: #6b7280;
+}
+
+.shipping-methods-column {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.shipping-unavailable-message {
+  padding: 1rem;
+  background-color: #fef3c7;
+  border: 1px solid #fde68a;
+  border-radius: 8px;
+  color: #92400e;
+  font-size: 1.4rem; /* 14px */
+  text-align: center;
+}
+
+.shipping-method {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px; /* 8px border radius */
+  padding: 1rem;
+  transition: all 0.15s ease;
+  background: #ffffff;
+}
+
+.shipping-method:hover {
+  border-color: #d1d5db;
+  background: #fafafa;
+}
+
+.shipping-method:has(input[type="radio"]:checked) {
+  border-color: #000000;
+  background: #ffffff;
+}
+
+.shipping-method-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  cursor: pointer;
+  margin: 0;
+}
+
+.shipping-method-label input[type="radio"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  flex-shrink: 0;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  border: 2px solid #d1d5db;
+  border-radius: 50%;
+  background-color: #ffffff;
+  position: relative;
+  transition: all 0.2s ease;
+  margin-top: 2px;
+}
+
+.shipping-method-label input[type="radio"]:hover {
+  border-color: #000000;
+}
+
+.shipping-method-label input[type="radio"]:checked {
+  border-color: #000000;
+  background-color: #ffffff;
+}
+
+.shipping-method-label input[type="radio"]:checked::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #000000;
+  display: block;
+}
+
+.shipping-method-label input[type="radio"]:focus {
+  outline: 2px solid #000000;
+  outline-offset: 2px;
+}
+
+.shipping-method-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.shipping-method-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.shipping-method-name {
+  font-size: 1.4rem; /* 14px */
+  font-weight: 500;
+  color: #000000;
+}
+
+.shipping-method-price {
+  font-size: 1.4rem; /* 14px */
+  font-weight: 500;
+  color: #000000;
+}
+
+.shipping-method-time-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-top: 0.25rem;
+}
+
+.shipping-method-time {
+  font-size: 1.2rem; /* 12px */
+  color: #6b7280;
+  line-height: 1.5;
+}
+
+/* Responsive: Stack columns on mobile */
+@media (max-width: 768px) {
+  .shipping-product-row {
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+  
+  .shipping-product-column {
+    flex: 1;
+    width: 100%;
+  }
+  
+  .shipping-methods-column {
+    width: 100%;
+  }
+}
+
+.shipping-methods-loading,
+.shipping-methods-empty,
+.shipping-methods-error {
+  padding: 1rem;
+  text-align: center;
+  color: #6b7280;
+  font-size: 1.4rem; /* 14px */
+}
+
+.shipping-methods-error {
+  color: #dc2626;
+}
+
+.payment-form {
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.payment-gateway-forms {
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+/* Order Summary - Shopify Horizon Style */
+.order-summary {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto; /* Take available space in flex container */
+  min-height: 0; /* Allow flex shrinking */
+}
+
+.order-summary-title {
+  font-size: 2.1rem; /* 21px for H2 */
+  font-weight: 600;
+  color: #000000;
+  margin: 0 0 0.75rem; /* Further reduced margin */
+  letter-spacing: 0;
+  flex-shrink: 0; /* Keep title fixed */
+}
+
+.order-summary-items {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem; /* Reduced gap to fit more items */
+  margin-bottom: 0;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #e5e7eb;
+  flex: 1 1 auto; /* Take available space, allow shrinking */
+  overflow-y: auto; /* Only items scroll */
+  overflow-x: hidden;
+  min-height: 0; /* Allow flex shrinking - critical for scrolling */
+  -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+  max-height: none; /* Remove fixed max-height, let flex handle it */
+}
+
+.order-summary-item {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.order-summary-item-image {
+  flex-shrink: 0;
+  width: 64px;
+  height: 64px;
+  border-radius: 6px;
+  overflow: hidden;
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
+}
+
+.order-summary-item-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.order-summary-item-details {
+  flex: 1;
+  min-width: 0;
+}
+
+.order-summary-item-title {
+  font-size: 1.4rem; /* 14px */
+  font-weight: 500;
+  color: #000000;
+  margin: 0 0 0.25rem;
+  line-height: 1.4;
+}
+
+.order-summary-item-variant {
+  font-size: 1.4rem; /* 14px */
+  color: #6b7280;
+  margin: 0 0 0.25rem;
+}
+
+.order-summary-item-quantity {
+  font-size: 1.4rem; /* 14px */
+  color: #6b7280;
+  margin: 0;
+}
+
+.order-summary-item-price {
+  font-size: 1.4rem; /* 14px */
+  font-weight: 600;
+  color: #000000;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.order-summary-totals {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem; /* Reduced gap */
+  margin-top: auto; /* Push to bottom */
+  padding-top: 0.75rem;
+  padding-bottom: 0.5rem;
+  flex-shrink: 0; /* Keep totals fixed, don't shrink */
+  background: #fafafa; /* Match sidebar background */
+  border-top: 1px solid #e5e7eb; /* Visual separator */
+}
+
+.summary-line {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0;
+  font-size: 1.4rem; /* 14px */
+}
+
+.summary-line.summary-discount {
+  color: #059669; /* Green color for discount */
+}
+
+.summary-line.summary-discount .summary-label {
+  color: #059669;
+}
+
+.summary-line.summary-discount .summary-value {
+  color: #059669;
+  font-weight: 500;
+}
+
+.summary-label {
+  color: #6b7280;
+  font-size: 1.4rem; /* 14px */
+}
+
+.summary-value {
+  color: #000000;
+  font-weight: 500;
+  font-size: 1.4rem; /* 14px */
+}
+
+.summary-total {
+  padding-top: 1rem;
+  border-top: 1px solid #e5e7eb;
+  margin-top: 0.5rem;
+}
+
+.summary-total .summary-label {
+  font-size: 1.4rem; /* 14px */
+  font-weight: 600;
+  color: #000000;
+}
+
+.summary-total .summary-value {
+  font-size: 1.4rem; /* 14px */
+  font-weight: 600;
+  color: #000000;
+}
+
+/* Checkout Actions */
+.checkout-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 2rem;
+  padding-top: 2rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.checkout-actions .btn {
+  width: 100%;
+  padding: 1.4rem 1.5rem; /* Match Shopify button padding */
+  font-size: 1.4rem; /* 14px */
+  font-weight: 500;
+  border-radius: 8px; /* 8px border radius */
+  transition: all 0.15s ease;
+  text-align: center;
+  cursor: pointer;
+  border: none;
+  font-family: inherit;
+}
+
+.checkout-actions .btn-primary {
+  background: #000000;
+  color: #ffffff;
+  border: 1px solid #000000;
+}
+
+.checkout-actions .btn-primary:hover:not(:disabled) {
+  background: #1a1a1a;
+  border-color: #1a1a1a;
+}
+
+.checkout-actions .btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Checkout Button Loading State */
+.checkout-button-loading {
+  position: relative;
+}
+
+.checkout-button-loading .checkout-button-icon {
+  display: inline-block;
+}
+
+/* Button loading states */
+.btn.loading {
+  opacity: 0.7;
+  cursor: not-allowed;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+.btn-loading {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btn-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+.checkout-button-text {
+  transition: opacity 0.2s ease;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.checkout-actions .btn-outline {
+  background: transparent;
+  color: #000000;
+  border: 1px solid #d1d5db;
+}
+
+.checkout-actions .btn-outline:hover {
+  background: #fafafa;
+  border-color: #9ca3af;
+}
+
+/* Coupon Section Styles */
+.checkout-coupons-section {
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.8rem;
+  flex-shrink: 0; /* Don't shrink, but allow scrolling within */
+  max-height: 40vh; /* Limit coupon section height */
+  display: flex;
+  flex-direction: column;
+}
+
+.checkout-coupons-section .checkout-section-title {
+  font-size: 1.6rem;
+  font-weight: 600;
+  margin-bottom: 1.2rem;
+  color: #111827;
+  flex-shrink: 0; /* Keep title fixed */
+}
+
+.coupons-loading,
+.coupons-empty {
+  padding: 1rem;
+  text-align: center;
+  color: #6b7280;
+  font-size: 1.4rem;
+}
+
+.coupons-error {
+  padding: 1rem;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 0.4rem;
+  color: #991b1b;
+  font-size: 1.4rem;
+  margin-top: 1rem;
+}
+
+.coupons-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-height: 0; /* Allow flex shrinking */
+  -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+}
+
+.coupon-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.2rem;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.6rem;
+  transition: all 0.2s ease;
+}
+
+.coupon-item:hover {
+  border-color: #d1d5db;
+  background: #f3f4f6;
+}
+
+.coupon-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.coupon-code {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.coupon-description {
+  font-size: 1.3rem;
+  color: #6b7280;
+}
+
+.coupon-min-amount {
+  font-size: 1.2rem;
+  color: #9ca3af;
+  margin-top: 0.4rem;
+}
+
+.apply-coupon-btn {
+  padding: 0.8rem 1.6rem;
+  font-size: 1.4rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.apply-coupon-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.applied-coupon {
+  margin-top: 1rem;
+  padding: 1.2rem;
+  background: #ecfdf5;
+  border: 1px solid #86efac;
+  border-radius: 0.6rem;
+}
+
+.applied-coupon-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.applied-coupon-code {
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: #065f46;
+}
+
+.btn-remove-coupon {
+  padding: 0.6rem 1.2rem;
+  font-size: 1.3rem;
+  background: #dc2626;
+  color: #fff;
+  border: none;
+  border-radius: 0.4rem;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.btn-remove-coupon:hover {
+  background: #b91c1c;
+}
+
+/* Custom Scrollbar Styling for Better UX */
+.checkout-sidebar::-webkit-scrollbar,
+.order-summary-items::-webkit-scrollbar,
+.checkout-section-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.checkout-sidebar::-webkit-scrollbar-track,
+.order-summary-items::-webkit-scrollbar-track,
+.checkout-section-content::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.checkout-sidebar::-webkit-scrollbar-thumb,
+.order-summary-items::-webkit-scrollbar-thumb,
+.checkout-section-content::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+}
+
+.checkout-sidebar::-webkit-scrollbar-thumb:hover,
+.order-summary-items::-webkit-scrollbar-thumb:hover,
+.checkout-section-content::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/* Firefox scrollbar styling */
+.checkout-sidebar,
+.order-summary-items,
+.checkout-section-content {
+  scrollbar-width: thin;
+  scrollbar-color: #888 #f1f1f1;
+}
+
+/* Mobile Optimizations */
+@media (max-width: 1023px) {
+  .checkout-page {
+    padding: 1rem 0 2rem;
+  }
+  
+  .checkout-container {
+    padding: 0 1rem;
+  }
+  
+  .checkout-title {
+    font-size: 2.4rem; /* Slightly smaller on mobile */
+  }
+  
+  .checkout-sidebar {
+    position: relative; /* Remove sticky on mobile */
+    top: 0;
+    max-height: none;
+    padding: 1.5rem 1rem;
+    overflow: visible; /* Allow natural flow on mobile - no scrollbar */
+  }
+  
+  .order-summary {
+    max-height: none; /* Remove height restriction on mobile */
+  }
+  
+  .order-summary-items {
+    max-height: none; /* Remove height restriction on mobile */
+    flex: none; /* Don't use flex on mobile */
+    overflow: visible; /* Allow natural flow - no scrollbar on mobile */
+  }
+  
+  .order-summary-totals {
+    position: relative; /* Remove sticky on mobile */
+    margin-top: 1rem;
+  }
+  
+  .checkout-coupons-section {
+    max-height: none; /* Remove height restriction on mobile */
+  }
+  
+  .checkout-section-content {
+    max-height: none; /* Remove height restriction on mobile */
+    overflow: visible; /* Allow natural flow - no scrollbar on mobile */
+  }
+  
+  .checkout-section {
+    margin-bottom: 1.5rem;
+    padding-bottom: 1.5rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .checkout-section {
+    margin-bottom: 1.5rem;
+    padding-bottom: 1.5rem;
+  }
+  
+  .checkout-section-title {
+    font-size: 1.8rem; /* Slightly smaller on mobile */
+  }
+  
+  .checkout-section-title h2,
+  h2.checkout-section-title {
+    font-size: 1.8rem;
+  }
+  
+  .checkout-section-title h3,
+  h3.checkout-section-title {
+    font-size: 1.3rem;
+  }
+}
+</style>
+

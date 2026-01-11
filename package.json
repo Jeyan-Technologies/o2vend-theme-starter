@@ -1,0 +1,29 @@
+{
+  "name": "o2vend-theme-starter",
+  "version": "1.0.0",
+  "description": "O2VEND Theme Starter - Developer-ready template",
+  "scripts": {
+    "setup": "node setup.js",
+    "serve": "cd theme && o2vend theme serve",
+    "validate": "cd theme && o2vend theme validate",
+    "check": "cd theme && o2vend theme check",
+    "postinstall": "node setup.js"
+  },
+  "keywords": [
+    "o2vend",
+    "theme",
+    "starter",
+    "template",
+    "liquid",
+    "ecommerce"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Jeyan-Technologies/o2vend-theme-starter.git"
+  },
+  "author": "Jeyan Technologies Private Limited",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

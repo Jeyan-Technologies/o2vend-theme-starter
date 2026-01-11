@@ -1,0 +1,467 @@
+<div class="cart-drawer" id="cart-drawer" aria-hidden="true">
+  <div class="cart-drawer-overlay" data-cart-overlay></div>
+  <aside class="cart-drawer-panel" role="dialog" aria-label="Shopping cart">
+    <header class="cart-drawer-header">
+      <h3 class="cart-drawer-title" data-cart-title>
+        <span class="cart-drawer-title-text">Cart</span>
+        <span class="cart-drawer-title-badge" data-cart-count>0</span>
+      </h3>
+      <button class="cart-drawer-close" aria-label="Close cart" data-cart-close>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </header>
+
+    <div class="cart-drawer-content" data-cart-items>
+      <div class="cart-drawer-loading" data-cart-loading>
+        <p>Loading cart...</p>
+      </div>
+      <div class="cart-drawer-empty" data-cart-empty style="display: none;">
+        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+          <circle cx="9" cy="21" r="1"></circle>
+          <circle cx="20" cy="21" r="1"></circle>
+          <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+        </svg>
+        <p>Your cart is empty</p>
+        {% comment %}Continue shopping - Check settings with proper boolean handling{% endcomment %}
+        {% liquid
+          assign continue_val = settings.show_continue_shopping
+          if continue_val == blank or continue_val == null
+            assign continue_val = true
+          endif
+        %}
+        {% if continue_val or continue_val == true or continue_val == 'true' or continue_val == 1 %}
+          <a href="/products" class="btn btn-outline">Continue shopping</a>
+        {% endif %}
+      </div>
+      <div class="cart-drawer-items" data-cart-items-list style="display: none;"></div>
+    </div>
+
+    <footer class="cart-drawer-footer" data-cart-footer style="display: none;">
+      <div class="cart-drawer-discount" data-cart-discount style="display: none;">
+        <button class="cart-drawer-discount-toggle" data-discount-toggle>
+          <span>Discount</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </button>
+        <div class="cart-drawer-discount-content" data-discount-content style="display: none;">
+          <!-- Discount content will be added here -->
+        </div>
+      </div>
+      <div class="cart-drawer-total">
+        <span class="cart-drawer-total-label">Estimated total</span>
+        <span class="cart-drawer-total-amount" data-cart-total>$0.00</span>
+      </div>
+      <p class="cart-drawer-note">Taxes and shipping calculated at checkout.</p>
+      <button class="btn btn-primary btn-lg cart-drawer-checkout" id="cart-drawer-checkout-btn">Check out</button>
+    </footer>
+  </aside>
+</div>
+
+<style>
+.cart-drawer {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-modal, 1050);
+  display: none;
+  pointer-events: none;
+}
+
+.cart-drawer.active {
+  display: block;
+  pointer-events: auto;
+}
+
+.cart-drawer-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, calc(var(--shadow-opacity, 0.1) * 5));
+  opacity: 0;
+  transition: opacity var(--transition, 0.3s) var(--ease-out, ease);
+}
+
+.cart-drawer.active .cart-drawer-overlay {
+  opacity: 1;
+}
+
+.cart-drawer-panel {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: min(420px, 100%);
+  height: 100%;
+  background: var(--color-background, #fff);
+  border-left: 1px solid var(--color-border, #e5e7eb);
+  display: flex;
+  flex-direction: column;
+  transform: translateX(100%);
+  transition: transform var(--transition, 0.3s) var(--ease-out, ease);
+  box-shadow: -2px 0 var(--shadow-blur, 8px) rgba(0, 0, 0, var(--shadow-opacity, 0.1));
+}
+
+.cart-drawer.active .cart-drawer-panel {
+  transform: translateX(0);
+}
+
+.cart-drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-component, 1.25rem) var(--spacing-component, 1.5rem);
+  border-bottom: 1px solid var(--color-border, #e5e7eb);
+}
+
+.cart-drawer-title {
+  margin: 0;
+  font-size: var(--text-2xl, 2.1rem);
+  font-weight: var(--font-weight-bold, 600);
+  color: var(--color-text, #333333);
+  font-family: var(--font-primary, var(--font-body));
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-element, 0.5rem);
+  line-height: var(--line-height-heading, 1.2);
+}
+
+.cart-drawer-title-text {
+  display: inline-block;
+  line-height: inherit;
+}
+
+.cart-drawer-title-badge,
+.cart-drawer-title [data-cart-count] {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 24px;
+  padding: 0 var(--spacing-element, 6px);
+  background: var(--color-surface, #E0E0E0);
+  color: var(--color-text, #333333);
+  border-radius: var(--radius-full, 50%);
+  font-size: var(--text-xs, 1.2rem);
+  font-weight: var(--font-weight-normal, 500);
+  line-height: 1;
+  margin-left: var(--spacing-element, 0.25rem);
+  margin-top: 0.1em;
+  flex-shrink: 0;
+  align-self: center;
+}
+
+.cart-drawer-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--color-text-light, #6b7280);
+  padding: 0;
+  border-radius: var(--border-radius-small, 4px);
+  transition: background-color var(--transition-fast, 0.2s) var(--ease-out, ease);
+}
+
+.cart-drawer-close:hover {
+  background-color: var(--color-surface, #f3f4f6);
+}
+
+.cart-drawer-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0;
+}
+
+.cart-drawer-loading,
+.cart-drawer-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-section, 3rem) var(--spacing-component, 1.5rem);
+  text-align: center;
+  min-height: 300px;
+}
+
+.cart-drawer-empty svg {
+  color: var(--color-text-light, #9ca3af);
+  margin-bottom: var(--spacing-element, 1rem);
+}
+
+.cart-drawer-empty p {
+  margin: 0 0 var(--spacing-component, 1.5rem);
+  color: var(--color-text-light, #6b7280);
+  font-size: var(--font-size-base, 1.4rem);
+  font-family: var(--font-primary, var(--font-body));
+}
+
+.cart-drawer-items {
+  padding: var(--spacing-element, 1rem) 0;
+}
+
+.cart-drawer-item {
+  display: flex;
+  gap: var(--spacing-element, 1rem);
+  padding: var(--spacing-element, 1rem) var(--spacing-component, 1.5rem);
+  border-bottom: 1px solid var(--color-surface, #f3f4f6);
+}
+
+.cart-drawer-item:last-child {
+  border-bottom: none;
+}
+
+.cart-drawer-image {
+  flex-shrink: 0;
+  width: 80px;
+  height: 80px;
+  border: 1px solid var(--color-border, #e5e7eb);
+  border-radius: var(--border-radius-medium, 8px);
+  overflow: hidden;
+  display: block;
+  background: var(--color-surface, #f9fafb);
+}
+
+.cart-drawer-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.cart-drawer-item-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-element, 0.5rem);
+  min-width: 0;
+}
+
+.cart-drawer-item-title {
+  color: var(--color-text, #000000);
+  text-decoration: none;
+  font-weight: var(--font-weight-normal, 500);
+  font-size: var(--font-size-base, 1.4rem);
+  line-height: var(--line-height-base, 1.5);
+  display: block;
+  font-family: var(--font-primary, var(--font-body));
+}
+
+.cart-drawer-item-title:hover {
+  text-decoration: underline;
+}
+
+.cart-drawer-item-variant {
+  color: var(--color-text-light, #6b7280);
+  font-size: var(--font-size-base, 1.4rem);
+  font-family: var(--font-primary, var(--font-body));
+}
+
+.cart-drawer-item-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-element, 1rem);
+  margin-top: var(--spacing-element, 0.5rem);
+}
+
+.cart-drawer-qty {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--color-border, #d1d5db);
+  border-radius: var(--border-radius-small, 6px);
+  overflow: hidden;
+  background: var(--color-background, #fff);
+}
+
+.qty-btn {
+  width: 32px;
+  height: 32px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--color-text, #374151);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--text-lg, 1.125rem);
+  line-height: 1;
+  transition: background-color var(--transition-fast, 0.2s) var(--ease-out, ease);
+}
+
+.qty-btn:hover {
+  background-color: var(--color-surface, #f3f4f6);
+}
+
+.qty-input {
+  width: 48px;
+  height: 32px;
+  border: none;
+  text-align: center;
+  font-size: var(--font-size-base, 1.4rem);
+  color: var(--color-text, #000000);
+  background: transparent;
+  font-family: var(--font-primary, var(--font-body));
+  -moz-appearance: textfield;
+}
+
+.qty-input::-webkit-outer-spin-button,
+.qty-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.cart-drawer-item-price {
+  font-weight: var(--font-weight-bold, 600);
+  color: var(--color-text, #000000);
+  font-size: var(--font-size-base, 1.4rem);
+  font-family: var(--font-primary, var(--font-body));
+}
+
+.cart-drawer-remove {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  background: none;
+  border: none;
+  color: var(--color-text-light, #9ca3af);
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color var(--transition-fast, 0.2s) var(--ease-out, ease);
+}
+
+.cart-drawer-remove:hover {
+  color: var(--color-error, #ef4444);
+}
+
+.cart-drawer-remove svg {
+  width: 16px;
+  height: 16px;
+}
+
+.cart-drawer-footer {
+  border-top: 1px solid var(--color-border, #e5e7eb);
+  padding: var(--spacing-component, 1.5rem);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-element, 1rem);
+  background: var(--color-background, #fff);
+}
+
+.cart-drawer-discount {
+  border-bottom: 1px solid var(--color-border, #e5e7eb);
+  padding-bottom: var(--spacing-element, 1rem);
+}
+
+.cart-drawer-discount-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: none;
+  border: none;
+  padding: var(--spacing-element, 0.5rem) 0;
+  cursor: pointer;
+  color: var(--color-text, #000000);
+  font-size: var(--font-size-base, 1.4rem);
+  font-family: var(--font-primary, var(--font-body));
+}
+
+.cart-drawer-discount-toggle svg {
+  transition: transform var(--transition-fast, 0.2s) var(--ease-out, ease);
+}
+
+.cart-drawer-discount-toggle[aria-expanded="true"] svg {
+  transform: rotate(180deg);
+}
+
+.cart-drawer-discount-content {
+  padding-top: var(--spacing-element, 0.75rem);
+}
+
+.cart-drawer-total {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: var(--font-size-base, 1.4rem);
+  font-family: var(--font-primary, var(--font-body));
+}
+
+.cart-drawer-total-label {
+  color: var(--color-text-light, #6b7280);
+  font-weight: var(--font-weight-normal, 500);
+  font-size: var(--font-size-base, 1.4rem);
+}
+
+.cart-drawer-total-amount {
+  font-weight: var(--font-weight-bold, 600);
+  color: var(--color-text, #000000);
+  font-size: var(--font-size-base, 1.4rem);
+}
+
+.cart-drawer-note {
+  margin: 0;
+  color: var(--color-text-light, #6b7280);
+  font-size: var(--text-xs, 1.2rem);
+  text-align: center;
+  font-family: var(--font-primary, var(--font-body));
+}
+
+.cart-drawer-checkout {
+  width: 100%;
+  padding: var(--button-padding-vertical, 1.4rem) var(--button-padding-tal, 1.5rem);
+  background: var(--color-primary, #000);
+  color: var(--color-white, #fff);
+  border: none;
+  border-radius: var(--border-radius-medium, 8px);
+  font-size: var(--text-sm, 1.4rem);
+  font-weight: var(--font-weight-normal, 500);
+  cursor: pointer;
+  transition: opacity var(--button-transition-speed, 0.2s) var(--ease-out, ease), background-color var(--transition-fast, 0.2s) var(--ease-out, ease);
+  font-family: var(--font-primary, var(--font-body));
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-element, 0.5rem);
+  position: relative;
+}
+
+.cart-drawer-checkout:hover:not(.loading):not(:disabled) {
+  opacity: 0.9;
+}
+
+.cart-drawer-checkout.loading,
+.cart-drawer-checkout:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.cart-drawer-checkout .loading-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top: 2px solid var(--color-white, #fff);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  flex-shrink: 0;
+  display: inline-block;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@media (max-width: 768px) {
+  .cart-drawer-panel {
+    width: 100%;
+  }
+}
+</style>

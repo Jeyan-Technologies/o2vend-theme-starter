@@ -1,0 +1,610 @@
+{% liquid
+  assign widget_settings = widget.settings
+  assign widget_data = widget.data
+  assign widget_content = widget.content
+
+  comment
+    Dynamic Widget: Product comes from widget_data.products (enriched by WidgetService)
+    Single Product widget displays one product with PDP-like layout
+    Settings come from widget_settings
+  endcomment
+  assign products = widget_data.products
+  assign product = products.first
+  
+  comment
+    Title can come from widget_settings.title, widget.Title, or widget_content.ProductName
+  endcomment
+  assign heading = widget_settings.title | default: widget.Title | default: widget_content.ProductName | default: widget_content.productName
+  
+  assign description = widget_settings.subtitle | default: widget.Subtitle
+  assign show_widget_title_raw = widget_settings.showWidgetTitle | default: widget_content.ShowWidgetTitle | default: 'Yes'
+  
+  if show_widget_title_raw == null or show_widget_title_raw == blank or show_widget_title_raw == 'null'
+    assign show_widget_title = true
+  else
+    if show_widget_title_raw == 'Yes'
+      assign show_widget_title = true
+    elsif show_widget_title_raw == true
+      assign show_widget_title = true
+    else
+      assign show_widget_title = false
+    endif
+  endif
+  
+  assign widget_title_alignment_raw = widget_settings.widgetTitleAlignment | default: widget_content.WidgetTitleAlignment | default: 'center'
+  assign widget_title_alignment = widget_title_alignment_raw | downcase
+  if widget_title_alignment != 'left' and widget_title_alignment != 'right' and widget_title_alignment != 'center'
+    assign widget_title_alignment = 'center'
+  endif
+  
+  assign background_color = widget_settings.backgroundColor | default: widget_settings.BackgroundColor | default: widget_content.BackgroundColor | default: widget_content.backgroundColor
+  assign text_color = widget_settings.textColor | default: widget_settings.TextColor | default: widget_content.TextColor | default: widget_content.textColor
+  assign show_add_to_cart = widget_settings.showAddToCartButton | default: widget_content.ShowAddToCartButton | default: true
+  
+  comment
+    Extract short description (first 200 chars or until first paragraph)
+  endcomment
+  if product and product.description
+    assign full_description = product.description
+    assign short_description = full_description | truncate: 200
+    if full_description contains '<p>'
+      assign first_para = full_description | split: '<p>' | last | split: '</p>' | first
+      assign short_description = first_para | truncate: 200
+    endif
+  endif
+%}
+
+<section class="widget widget-single-product" data-widget-id="{{ widget.id }}"{% if background_color and background_color != blank and background_color != 'null' %} style="background-color: {{ background_color }};"{% endif %}>
+  <div class="widget-single-product__inner">
+    {% if show_widget_title and heading and heading != blank %}
+      <div class="widget-header" style="text-align: {{ widget_title_alignment }};{% if text_color and text_color != blank and text_color != 'null' %} color: {{ text_color }};{% endif %}">
+        <h2 class="widget-title">{{ heading }}</h2>
+        {% if description and description != blank %}
+          <p class="widget-subtitle">{{ description }}</p>
+        {% endif %}
+      </div>
+    {% endif %}
+
+    {% if product %}
+      <div class="single-product-pdp">
+        <div class="single-product-pdp__layout">
+          <!-- Product Gallery -->
+          <div class="single-product-pdp__gallery">
+            <div class="gallery-main">
+              {% if product.images and product.images.size > 0 %}
+                {% for image in product.images %}
+                  {% assign image_url = image.url | default: image %}
+                  <img 
+                    src="{{ image_url }}" 
+                    alt="{{ product.name | default: product.title }} - {{ forloop.index }}" 
+                    class="gallery-main-image {% if forloop.first %}active{% endif %}" 
+                    data-index="{{ forloop.index0 }}"
+                    loading="{% if forloop.first %}eager{% else %}lazy{% endif %}"
+                    width="600"
+                    height="600"
+                  >
+                {% endfor %}
+              {% elsif product.thumbnailImage %}
+                {% assign thumbImage = product.thumbnailImage %}
+                <img 
+                  src="{{ thumbImage.url | default: thumbImage }}" 
+                  alt="{{ product.name | default: product.title }}" 
+                  class="gallery-main-image active"
+                  loading="eager"
+                  width="600"
+                  height="600"
+                >
+              {% else %}
+                <div class="gallery-placeholder">
+                  <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="16" y="16" width="32" height="32" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M16 24L24 32L32 24L40 32L48 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </div>
+              {% endif %}
+            </div>
+            
+            <!-- Thumbnails -->
+            {% if product.images and product.images.size > 1 %}
+              <div class="gallery-thumbnails">
+                {% for image in product.images limit: 8 %}
+                  {% assign image_url = image.url | default: image %}
+                  <button 
+                    class="gallery-thumbnail {% if forloop.first %}active{% endif %}" 
+                    data-image="{{ image_url }}"
+                    data-index="{{ forloop.index0 }}"
+                    aria-label="View image {{ forloop.index }}"
+                    type="button"
+                  >
+                    <img src="{{ image_url }}" alt="{{ product.name }} - {{ forloop.index }}" loading="lazy" width="80" height="80">
+                  </button>
+                {% endfor %}
+              </div>
+            {% endif %}
+          </div>
+
+          <!-- Product Info -->
+          <div class="single-product-pdp__info"{% if text_color and text_color != blank and text_color != 'null' %} style="color: {{ text_color }};"{% endif %}>
+            <!-- Vendor/Brand -->
+            {% if product.vendor or product.brand %}
+              <div class="product-vendor">
+                {{ product.vendor | default: product.brand.name }}
+              </div>
+            {% endif %}
+            
+            <!-- Product Title -->
+            <h1 class="product-title">{{ product.name | default: product.title }}</h1>
+            
+            <!-- Price -->
+            <div class="product-price-wrapper">
+              <span class="price-current" id="singleProductPrice">
+                {{ product.prices.price | money_with_settings: shop.settings }}
+              </span>
+              {% if product.prices.mrp and product.prices.mrp > product.prices.price %}
+                <span class="price-compare">
+                  {{ product.prices.mrp | money_with_settings: shop.settings }}
+                </span>
+              {% endif %}
+            </div>
+
+            <!-- Short Description -->
+            {% if short_description and short_description != blank %}
+              <div class="product-short-description">
+                {{ short_description }}
+              </div>
+            {% endif %}
+
+            <!-- Product Form -->
+            <form class="product-form" id="singleProductForm" data-product-id="{{ product.productId }}">
+              <!-- Variations -->
+              {% if product.variations and product.variations.size > 0 %}
+                {% assign default_variant = null %}
+                {% for variant in product.variations %}
+                  {% assign isAvailable = variant.inStock | default: variant.available | default: true %}
+                  {% if default_variant == null and isAvailable %}
+                    {% assign default_variant = variant %}
+                  {% endif %}
+                {% endfor %}
+                {% if default_variant == null %}
+                  {% assign default_variant = product.variations.first %}
+                {% endif %}
+
+                <div class="product-variation-selector">
+                  <label for="singleProductVariant" class="variation-label">Select Variant:</label>
+                  <select id="singleProductVariant" class="variation-select" name="variantId" aria-label="Select product variant">
+                    {% for variant in product.variations %}
+                      {% assign isAvailable = variant.inStock | default: variant.available | default: true %}
+                      {% assign variant_name = variant.name | default: '' %}
+                      {% if variant_name == '' and variant.options and variant.options.size > 0 %}
+                        {% assign variant_name = '' %}
+                        {% for option in variant.options %}
+                          {% if variant_name != '' %}
+                            {% assign variant_name = variant_name | append: ' / ' %}
+                          {% endif %}
+                          {% assign variant_name = variant_name | append: option.value %}
+                        {% endfor %}
+                      {% endif %}
+                      {% if variant_name == '' %}
+                        {% assign variant_name = 'Option ' | append: forloop.index %}
+                      {% endif %}
+                      {% assign variant_price = variant.prices.price | default: product.prices.price %}
+                      <option 
+                        value="{{ variant.productId }}"
+                        data-variant-price="{{ variant_price }}"
+                        data-variant-mrp="{{ variant.prices.mrp | default: 0 }}"
+                        data-in-stock="{{ isAvailable }}"
+                        {% if variant.productId == default_variant.productId %}selected{% endif %}>
+                        {{ variant_name }}{% unless isAvailable %} — Out of Stock{% endunless %}
+                      </option>
+                    {% endfor %}
+                  </select>
+                </div>
+              {% endif %}
+
+              <!-- Quantity (optional) -->
+              <div class="product-quantity">
+                <label for="singleProductQuantity">Quantity:</label>
+                <input type="number" id="singleProductQuantity" name="quantity" value="1" min="1" class="quantity-input">
+              </div>
+
+              <!-- Add to Cart Button -->
+              {% if show_add_to_cart != false %}
+                {% assign default_variant_id = product.productId %}
+                {% if product.variations and product.variations.size > 0 %}
+                  {% assign default_variant_id = default_variant.productId %}
+                {% endif %}
+                
+                <button 
+                  type="submit" 
+                  class="btn-add-to-cart"
+                  data-product-id="{{ default_variant_id }}"
+                  data-base-product-id="{{ product.productId }}">
+                  Add to Cart
+                </button>
+              {% endif %}
+            </form>
+          </div>
+        </div>
+      </div>
+    {% else %}
+      <div class="widget-empty">
+        <p>No product configured for this widget.</p>
+      </div>
+    {% endif %}
+  </div>
+
+  <style>
+    .widget-single-product {
+      padding: 40px 0;
+    }
+
+    .widget-single-product__inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    .widget-single-product .widget-header {
+      margin-bottom: 32px;
+      text-align: center;
+    }
+
+    .widget-single-product .widget-title {
+      font-size: 1.4rem;
+      font-weight: 500;
+      line-height: 1.3;
+      margin: 0 0 8px 0;
+      color: #111;
+    }
+
+    .widget-single-product .widget-subtitle {
+      font-size: 1.3rem;
+      font-weight: 400;
+      line-height: 1.5;
+      margin: 0;
+      color: #666;
+    }
+
+    /* PDP Layout */
+    .single-product-pdp__layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 48px;
+      align-items: start;
+    }
+
+    /* Gallery */
+    .single-product-pdp__gallery {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .gallery-main {
+      position: relative;
+      aspect-ratio: 1;
+      width: 100%;
+      background: #f5f5f5;
+      border-radius: var(--border-radius-medium);
+      overflow: hidden;
+    }
+
+    .gallery-main-image {
+      display: none;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+
+    .gallery-main-image.active {
+      display: block;
+    }
+
+    .gallery-placeholder {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #999;
+    }
+
+    .gallery-thumbnails {
+      display: flex;
+      gap: 12px;
+      overflow-x: auto;
+      padding-bottom: 8px;
+    }
+
+    .gallery-thumbnail {
+      flex-shrink: 0;
+      width: 80px;
+      height: 80px;
+      border: 2px solid transparent;
+      border-radius: 6px;
+      overflow: hidden;
+      background: #f5f5f5;
+      cursor: pointer;
+      padding: 0;
+      transition: border-color 0.2s ease;
+    }
+
+    .gallery-thumbnail.active {
+      border-color: #111;
+    }
+
+    .gallery-thumbnail img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    /* Product Info */
+    .single-product-pdp__info {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .product-vendor {
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #666;
+      font-weight: 500;
+    }
+
+    .product-title {
+      font-size: 32px;
+      font-weight: 600;
+      line-height: 1.2;
+      margin: 0;
+      color: #111;
+    }
+
+    .product-price-wrapper {
+      display: flex;
+      align-items: baseline;
+      gap: 12px;
+    }
+
+    .price-current {
+      font-size: 28px;
+      font-weight: 600;
+      color: #111;
+    }
+
+    .price-compare {
+      font-size: 20px;
+      color: #999;
+      text-decoration: line-through;
+    }
+
+    .product-short-description {
+      font-size: 16px;
+      line-height: 1.6;
+      color: #666;
+      margin-top: 8px;
+    }
+
+    /* Form */
+    .product-form {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      margin-top: 24px;
+    }
+
+    .product-variation-selector {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .variation-label {
+      font-size: 14px;
+      font-weight: 600;
+      color: #111;
+    }
+
+    .variation-select {
+      width: 100%;
+      padding: 12px 16px;
+      font-size: 16px;
+      border: 1px solid #e0e0e0;
+      border-radius: var(--border-radius-medium);
+      background: #fff;
+      cursor: pointer;
+      transition: border-color 0.2s ease;
+    }
+
+    .variation-select:hover {
+      border-color: #999;
+    }
+
+    .variation-select:focus {
+      outline: none;
+      border-color: #111;
+      box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.05);
+    }
+
+    .product-quantity {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .product-quantity label {
+      font-size: 14px;
+      font-weight: 600;
+      color: #111;
+    }
+
+    .quantity-input {
+      width: 120px;
+      padding: 12px 16px;
+      font-size: 16px;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+    }
+
+    .btn-add-to-cart {
+      width: 100%;
+      padding: 16px 24px;
+      font-size: 18px;
+      font-weight: 600;
+      color: #fff;
+      background: #111;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.2s ease, transform 0.1s ease;
+      margin-top: 8px;
+    }
+
+    .btn-add-to-cart:hover:not(:disabled) {
+      background: #333;
+    }
+
+    .btn-add-to-cart:active:not(:disabled) {
+      transform: scale(0.98);
+    }
+
+    .btn-add-to-cart:disabled {
+      background: #d1d5db;
+      cursor: not-allowed;
+    }
+
+    .widget-empty {
+      padding: 60px 24px;
+      text-align: center;
+      color: #6b7280;
+    }
+
+    .widget-empty p {
+      margin: 0;
+      font-size: 14px;
+    }
+
+    /* Mobile */
+    @media (max-width: 768px) {
+      .widget-single-product {
+        padding: 32px 0;
+      }
+
+      .widget-single-product__inner {
+        padding: 0 16px;
+      }
+
+      .single-product-pdp__layout {
+        grid-template-columns: 1fr;
+        gap: 32px;
+      }
+
+      .product-title {
+        font-size: 24px;
+      }
+
+      .price-current {
+        font-size: 24px;
+      }
+
+      .price-compare {
+        font-size: 18px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .widget-single-product {
+        padding: 24px 0;
+      }
+
+      .widget-single-product__inner {
+        padding: 0 12px;
+      }
+
+      .gallery-thumbnails {
+        gap: 8px;
+      }
+
+      .gallery-thumbnail {
+        width: 60px;
+        height: 60px;
+      }
+
+      .product-title {
+        font-size: 20px;
+      }
+
+      .btn-add-to-cart {
+        padding: 14px 20px;
+        font-size: 16px;
+      }
+    }
+  </style>
+
+  {% if product %}
+    <script>
+    (function() {
+      const form = document.getElementById('singleProductForm');
+      if (!form) return;
+
+      const variantSelect = document.getElementById('singleProductVariant');
+      const priceElement = document.getElementById('singleProductPrice');
+      const addToCartBtn = form.querySelector('.btn-add-to-cart');
+
+      // Handle variant selection
+      if (variantSelect) {
+        variantSelect.addEventListener('change', function() {
+          const selectedOption = this.options[this.selectedIndex];
+          const variantPrice = parseFloat(selectedOption.dataset.variantPrice);
+          const variantMrp = parseFloat(selectedOption.dataset.variantMrp) || 0;
+          const isInStock = selectedOption.dataset.inStock === 'true';
+          
+          // Update price
+          if (priceElement) {
+            const currencySymbol = '{{ shop.settings.currencySymbol | default: shop.currency | default: "$" }}';
+            priceElement.textContent = currencySymbol + variantPrice.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+          }
+
+          // Update add to cart button
+          if (addToCartBtn) {
+            addToCartBtn.setAttribute('data-product-id', selectedOption.value);
+            addToCartBtn.disabled = !isInStock;
+            addToCartBtn.textContent = isInStock ? 'Add to Cart' : 'Out of Stock';
+          }
+        });
+      }
+
+      // Handle form submission
+      form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const productId = addToCartBtn ? addToCartBtn.getAttribute('data-product-id') : form.getAttribute('data-product-id');
+        const quantity = parseInt(document.getElementById('singleProductQuantity')?.value || '1');
+
+        // Prefer Theme.addToCart: unified add-to-cart flow + notifications + CartManager integration
+        if (window.Theme && typeof window.Theme.addToCart === 'function') {
+          window.Theme.addToCart(productId, quantity);
+        } else if (window.CartManager && typeof window.CartManager.addToCart === 'function') {
+          // Fallback to CartManager if Theme.addToCart is not available
+          window.CartManager.addToCart(productId, quantity)
+            .then(function() {
+              console.log('Product added to cart');
+            })
+            .catch(function(error) {
+              console.error('Failed to add to cart:', error);
+              alert('Failed to add product to cart. Please try again.');
+            });
+        } else {
+          console.warn('No add-to-cart handler available (Theme.addToCart / CartManager.addToCart)');
+          alert('Cart functionality not available. Please try again later.');
+        }
+      });
+    })();
+    </script>
+  {% endif %}
+</section>

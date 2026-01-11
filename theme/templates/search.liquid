@@ -1,0 +1,922 @@
+{% layout 'layout/theme' %}
+
+<!--  Search Page -->
+{% hook 'search_before' %}
+<div class="search-page">
+  <div class="search-header">
+    <div class="search-header-content">
+      <h1 class="page-title display-2">
+        {% if search.query %}
+          Search Results for "{{ search.query }}"
+        {% else %}
+          Search Products
+        {% endif %}
+      </h1>
+      
+      <div class="search-form-container">
+        <form class="search-form" action="/search" method="get">
+          <div class="search-input-group">
+            <div class="search-input-wrapper">
+              <svg class="search-input-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"></circle>
+                <path d="m21 21-4.35-4.35"></path>
+              </svg>
+              <input type="text" 
+                     name="q" 
+                     value="{{ search.query }}" 
+                     placeholder="Search for products, collections, or pages..." 
+                     class="search-input"
+                     autocomplete="off">
+            </div>
+            <button type="submit" class="search-button">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"></circle>
+                <path d="m21 21-4.35-4.35"></path>
+              </svg>
+              Search
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  
+  {% if search.query %}
+    <div class="search-results">
+      <div class="search-meta">
+        <p class="results-count">
+          {% if search.results_count > 0 %}
+            Found {{ search.results_count }} result{{ search.results_count | pluralize }} for "{{ search.query }}"
+          {% else %}
+            No results found for "{{ search.query }}"
+          {% endif %}
+        </p>
+        
+        {% if search.results_count > 0 %}
+        <div class="search-filters">
+          <div class="filter-group">
+            <label for="search-type" class="filter-label">Search in:</label>
+            <div class="filter-select-wrapper">
+              <select id="search-type" name="type" class="filter-select">
+                <option value="all" {% if search.type == 'all' %}selected{% endif %}>All</option>
+                <option value="products" {% if search.type == 'products' %}selected{% endif %}>Products</option>
+                <option value="collections" {% if search.type == 'collections' %}selected{% endif %}>Collections</option>
+                <option value="pages" {% if search.type == 'pages' %}selected{% endif %}>Pages</option>
+              </select>
+              <svg class="filter-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="6,9 12,15 18,9"></polyline>
+              </svg>
+            </div>
+          </div>
+          
+          <div class="filter-group">
+            <label for="search-sort" class="filter-label">Sort by:</label>
+            <div class="filter-select-wrapper">
+              <select id="search-sort" name="sort" class="filter-select">
+                <option value="relevance" {% if search.sort == 'relevance' %}selected{% endif %}>Relevance</option>
+                <option value="price-asc" {% if search.sort == 'price-asc' %}selected{% endif %}>Price: Low to High</option>
+                <option value="price-desc" {% if search.sort == 'price-desc' %}selected{% endif %}>Price: High to Low</option>
+                <option value="name-asc" {% if search.sort == 'name-asc' %}selected{% endif %}>Name: A to Z</option>
+                <option value="name-desc" {% if search.sort == 'name-desc' %}selected{% endif %}>Name: Z to A</option>
+              </select>
+              <svg class="filter-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="6,9 12,15 18,9"></polyline>
+              </svg>
+            </div>
+          </div>
+        </div>
+        {% endif %}
+      </div>
+      
+      {% if search.results_count > 0 %}
+        {% hook 'search_results_before' %}
+        <div class="search-results-content">
+          <!-- Products Results -->
+          {% if search.results.products.size > 0 %}
+            <section class="search-section">
+              <h2 class="section-title">Products</h2>
+              <div class="products-grid">
+                {% for product in search.results.products %}
+                  {% include 'snippets/product-card-simple', product: product %}
+                {% endfor %}
+              </div>
+            </section>
+          {% endif %}
+          
+          <!-- Collections Results -->
+          {% if search.results.collections.size > 0 %}
+            <section class="search-section">
+              <h2 class="section-title">Collections</h2>
+              <div class="collections-grid">
+                {% for collection in search.results.collections %}
+                  <div class="collection-card">
+                    <a href="/{{ collection.slug }}">
+                      <div class="collection-image">
+                        {% if collection.image %}
+                          <img src="{{ collection.image }}" 
+                               alt="{{ collection.title }}" 
+                               loading="lazy">
+                        {% else %}
+                          <div class="collection-image-placeholder">
+                            {% raw %}<svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                              <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                              <polyline points="21,15 16,10 5,21"></polyline>
+                            </svg>{% endraw %}
+                          </div>
+                        {% endif %}
+                      </div>
+                      <div class="collection-info">
+                        <h3>{{ collection.title }}</h3>
+                        <p>{{ collection.products.size }} products</p>
+                      </div>
+                    </a>
+                  </div>
+                {% endfor %}
+              </div>
+            </section>
+          {% endif %}
+          
+          <!-- Pages Results -->
+          {% if search.results.pages.size > 0 %}
+            <section class="search-section">
+              <h2 class="section-title">Pages</h2>
+              <div class="pages-list">
+                {% for page in search.results.pages %}
+                  <div class="page-result">
+                    <a href="/pages/{{ page.slug }}" class="page-link">
+                      <h3 class="page-title">{{ page.title }}</h3>
+                      <p class="page-excerpt">{{ page.content | strip_html | truncate: 150 }}</p>
+                    </a>
+                  </div>
+                {% endfor %}
+              </div>
+            </section>
+          {% endif %}
+        </div>
+        {% hook 'search_results_after' %}
+      {% else %}
+        <!--  No Results -->
+        {% hook 'search_no_results_before' %}
+        <div class="no-results">
+          <div class="no-results-content">
+            <div class="no-results-icon">
+              <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                <circle cx="11" cy="11" r="8"></circle>
+                <path d="m21 21-4.35-4.35"></path>
+              </svg>
+            </div>
+            <h2 class="no-results-title text-3xl font-semibold">No results found</h2>
+            <p class="no-results-description lead">We couldn't find anything matching "{{ search.query }}". Try adjusting your search terms or browse our categories.</p>
+            
+            <div class="search-suggestions">
+              <h3 class="suggestions-title">Search suggestions:</h3>
+              <ul class="suggestions-list">
+                <li>Check your spelling</li>
+                <li>Try different keywords</li>
+                <li>Use more general terms</li>
+                <li>Try fewer keywords</li>
+              </ul>
+            </div>
+            
+            <div class="no-results-actions">
+              <a href="/products" class="btn btn-primary btn-lg">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="9" cy="21" r="1"></circle>
+                  <circle cx="20" cy="21" r="1"></circle>
+                  <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+                </svg>
+                Browse Products
+              </a>
+              <a href="/" class="btn btn-outline btn-lg">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                  <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                  <polyline points="21,15 16,10 5,21"></polyline>
+                </svg>
+                View Collections
+              </a>
+            </div>
+          </div>
+        </div>
+        {% hook 'search_no_results_after' %}
+      {% endif %}
+    </div>
+  {% else %}
+    <!--  Search Landing Page -->
+    <div class="search-landing">
+      <div class="search-landing-content">
+        <h2 class="landing-title text-4xl font-bold">What are you looking for?</h2>
+        <p class="landing-description lead">Search our store for products, collections, and helpful information.</p>
+        
+        <div class="search-categories">
+          <div class="category-card">
+            <a href="/products" class="category-link">
+              <div class="category-icon">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="9" cy="21" r="1"></circle>
+                  <circle cx="20" cy="21" r="1"></circle>
+                  <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+                </svg>
+              </div>
+              <h3 class="category-title">Products</h3>
+              <p class="category-description">Browse our product catalog</p>
+            </a>
+          </div>
+          
+          <div class="category-card">
+            <a href="/" class="category-link">
+              <div class="category-icon">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                  <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                  <polyline points="21,15 16,10 5,21"></polyline>
+                </svg>
+              </div>
+              <h3 class="category-title">Collections</h3>
+              <p class="category-description">Shop by category</p>
+            </a>
+          </div>
+          
+          <div class="category-card">
+            <a href="/pages" class="category-link">
+              <div class="category-icon">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                  <polyline points="14,2 14,8 20,8"></polyline>
+                  <line x1="16" y1="13" x2="8" y2="13"></line>
+                  <line x1="16" y1="17" x2="8" y2="17"></line>
+                  <polyline points="10,9 9,9 8,9"></polyline>
+                </svg>
+              </div>
+              <h3 class="category-title">Pages</h3>
+              <p class="category-description">Help and information</p>
+            </a>
+          </div>
+        </div>
+        
+        <div class="popular-searches">
+          <h3 class="popular-title text-xl font-semibold">Popular Searches</h3>
+          <div class="search-tags">
+            <a href="/search?q=electronics" class="search-tag">Electronics</a>
+            <a href="/search?q=clothing" class="search-tag">Clothing</a>
+            <a href="/search?q=home" class="search-tag">Home & Garden</a>
+            <a href="/search?q=sports" class="search-tag">Sports</a>
+            <a href="/search?q=books" class="search-tag">Books</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  {% endif %}
+</div>
+{% hook 'search_after' %}
+
+<!--  Search Page Styles -->
+<style>
+/* Search Page Layout */
+.search-page {
+  padding: var(--space-16) 0;
+  min-height: 60vh;
+}
+
+/* Search Header */
+.search-header {
+  background: linear-gradient(135deg, var(--color-gray-50) 0%, var(--color-white) 100%);
+  padding: var(--space-20) 0;
+  margin-bottom: var(--space-16);
+  position: relative;
+  overflow: hidden;
+}
+
+.search-header::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="50" cy="50" r="1" fill="%23000" opacity="0.02"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+  opacity: 0.3;
+}
+
+.search-header-content {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 0 var(--space-6);
+}
+
+.page-title {
+  margin: 0 0 var(--space-8) 0;
+  color: var(--color-gray-900);
+  line-height: 1.1;
+  letter-spacing: -0.05em;
+}
+
+.search-form-container {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.search-input-group {
+  display: flex;
+  background: var(--color-white);
+  border-radius: var(--radius-2xl);
+  overflow: hidden;
+  box-shadow: var(--shadow-lg);
+  border: 2px solid transparent;
+  transition: all var(--transition-fast);
+}
+
+.search-input-group:focus-within {
+  border-color: var(--color-accent);
+  box-shadow: var(--shadow-primary);
+}
+
+.search-input-wrapper {
+  position: relative;
+  flex: 1;
+  display: flex;
+  align-items: center;
+}
+
+.search-input-icon {
+  position: absolute;
+  left: var(--space-4);
+  color: var(--color-gray-400);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.search-input {
+  width: 100%;
+  border: none;
+  padding: var(--space-4) var(--space-4) var(--space-4) var(--space-12);
+  font-size: var(--text-lg);
+  outline: none;
+  background: transparent;
+  color: var(--color-gray-900);
+}
+
+.search-input::placeholder {
+  color: var(--color-gray-500);
+}
+
+.search-button {
+  background: var(--color-accent);
+  color: var(--color-white);
+  border: none;
+  padding: var(--space-4) var(--space-6);
+  cursor: pointer;
+  font-size: var(--text-base);
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  transition: all var(--transition-fast);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide);
+}
+
+.search-button:hover {
+  background: var(--color-accent-dark);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-lg);
+}
+
+/* Search Results */
+.search-results {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 var(--space-6);
+}
+
+.search-meta {
+  margin-bottom: var(--space-12);
+  padding: var(--space-8);
+  background: var(--color-white);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--color-gray-200);
+}
+
+.results-count {
+  font-size: var(--text-lg);
+  color: var(--color-gray-700);
+  margin-bottom: var(--space-6);
+  font-weight: 500;
+}
+
+.search-filters {
+  display: flex;
+  gap: var(--space-8);
+  flex-wrap: wrap;
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.filter-label {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-gray-700);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide);
+}
+
+.filter-select-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.filter-select {
+  appearance: none;
+  background-color: var(--color-white);
+  border: 1px solid var(--color-gray-300);
+  border-radius: var(--radius-lg);
+  padding: var(--space-3) var(--space-4);
+  padding-right: var(--space-10);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--color-gray-700);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  min-width: 180px;
+}
+
+.filter-select:focus {
+  outline: none;
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+}
+
+.filter-arrow {
+  position: absolute;
+  right: var(--space-3);
+  pointer-events: none;
+  color: var(--color-gray-500);
+  transition: transform var(--transition-fast);
+}
+
+.filter-select:focus + .filter-arrow {
+  transform: rotate(180deg);
+}
+
+/* Search Results Content */
+.search-results-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-12);
+}
+
+.search-section {
+  background: var(--color-white);
+  border-radius: var(--radius-xl);
+  padding: var(--space-8);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--color-gray-200);
+}
+
+.section-title {
+  font-size: var(--text-2xl);
+  margin-bottom: var(--space-8);
+  color: var(--color-gray-900);
+  font-weight: 600;
+  border-bottom: 2px solid var(--color-gray-100);
+  padding-bottom: var(--space-4);
+}
+
+/* Pages List */
+.pages-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.page-result {
+  border: 1px solid var(--color-gray-200);
+  border-radius: var(--radius-lg);
+  padding: var(--space-6);
+  transition: all var(--transition-fast);
+  background: var(--color-white);
+}
+
+.page-result:hover {
+  border-color: var(--color-accent);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+.page-link {
+  text-decoration: none;
+  color: inherit;
+}
+
+.page-result .page-title {
+  font-size: var(--text-xl);
+  margin-bottom: var(--space-3);
+  color: var(--color-gray-900);
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.page-excerpt {
+  color: var(--color-gray-600);
+  line-height: 1.6;
+  margin: 0;
+  font-size: var(--text-base);
+}
+
+/* No Results */
+.no-results {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 400px;
+  text-align: center;
+}
+
+.no-results-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-8);
+  max-width: 500px;
+}
+
+.no-results-icon {
+  color: var(--color-gray-400);
+}
+
+.no-results-title {
+  margin: 0;
+  color: var(--color-gray-900);
+  font-weight: 600;
+}
+
+.no-results-description {
+  margin: 0;
+  color: var(--color-gray-600);
+  line-height: 1.6;
+}
+
+.search-suggestions {
+  text-align: left;
+  margin-bottom: var(--space-8);
+  padding: var(--space-6);
+  background: var(--color-gray-50);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-gray-200);
+}
+
+.suggestions-title {
+  font-size: var(--text-lg);
+  margin-bottom: var(--space-4);
+  color: var(--color-gray-900);
+  font-weight: 600;
+}
+
+.suggestions-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.suggestions-list li {
+  padding: var(--space-2) 0;
+  color: var(--color-gray-600);
+  position: relative;
+  padding-left: var(--space-6);
+}
+
+.suggestions-list li::before {
+  content: '•';
+  position: absolute;
+  left: 0;
+  color: var(--color-accent);
+  font-weight: bold;
+  font-size: var(--text-lg);
+}
+
+.no-results-actions {
+  display: flex;
+  gap: var(--space-4);
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.no-results-actions .btn {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-4) var(--space-6);
+  font-weight: 600;
+  text-decoration: none;
+  transition: all var(--transition-fast);
+}
+
+.no-results-actions .btn-primary {
+  background-color: var(--color-accent);
+  color: var(--color-white);
+  border: none;
+  box-shadow: var(--shadow-primary);
+}
+
+.no-results-actions .btn-primary:hover {
+  background-color: var(--color-accent-dark);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-xl);
+}
+
+.no-results-actions .btn-outline {
+  background-color: transparent;
+  color: var(--color-gray-700);
+  border: 1px solid var(--color-gray-300);
+}
+
+.no-results-actions .btn-outline:hover {
+  background-color: var(--color-gray-50);
+  border-color: var(--color-gray-400);
+}
+
+/* Search Landing */
+.search-landing {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 500px;
+  padding: var(--space-16) 0;
+}
+
+.search-landing-content {
+  text-align: center;
+  max-width: 800px;
+  padding: 0 var(--space-6);
+}
+
+.landing-title {
+  margin: 0 0 var(--space-6) 0;
+  color: var(--color-gray-900);
+  line-height: 1.1;
+  letter-spacing: -0.05em;
+}
+
+.landing-description {
+  margin: 0 0 var(--space-12) 0;
+  color: var(--color-gray-600);
+  line-height: 1.6;
+}
+
+.search-categories {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: var(--space-8);
+  margin-bottom: var(--space-12);
+}
+
+.category-card {
+  background: var(--color-white);
+  border-radius: var(--radius-xl);
+  padding: var(--space-8);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--color-gray-200);
+  transition: all var(--transition-fast);
+}
+
+.category-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--color-accent);
+}
+
+.category-link {
+  text-decoration: none;
+  color: inherit;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.category-icon {
+  color: var(--color-accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 80px;
+  height: 80px;
+  background: var(--color-gray-50);
+  border-radius: var(--radius-xl);
+  transition: all var(--transition-fast);
+}
+
+.category-card:hover .category-icon {
+  background: var(--color-accent);
+  color: var(--color-white);
+  transform: scale(1.1);
+}
+
+.category-title {
+  font-size: var(--text-xl);
+  margin: 0;
+  color: var(--color-gray-900);
+  font-weight: 600;
+}
+
+.category-description {
+  color: var(--color-gray-600);
+  margin: 0;
+  text-align: center;
+  line-height: 1.5;
+}
+
+.popular-searches {
+  margin-top: var(--space-12);
+}
+
+.popular-title {
+  margin: 0 0 var(--space-6) 0;
+  color: var(--color-gray-900);
+  font-weight: 600;
+}
+
+.search-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  justify-content: center;
+}
+
+.search-tag {
+  background: var(--color-gray-100);
+  color: var(--color-accent);
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-full);
+  text-decoration: none;
+  font-weight: 500;
+  font-size: var(--text-sm);
+  transition: all var(--transition-fast);
+  border: 2px solid transparent;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide);
+}
+
+.search-tag:hover {
+  background: var(--color-accent);
+  color: var(--color-white);
+  border-color: var(--color-accent);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .search-page {
+    padding: var(--space-8) 0;
+  }
+  
+  .search-header {
+    padding: var(--space-12) 0;
+  }
+  
+  .page-title {
+    font-size: var(--text-5xl);
+  }
+  
+  .search-filters {
+    flex-direction: column;
+    gap: var(--space-4);
+  }
+  
+  .filter-group {
+    flex-direction: row;
+    align-items: center;
+    gap: var(--space-4);
+  }
+  
+  .filter-select {
+    width: 100%;
+  }
+  
+  .search-categories {
+    grid-template-columns: 1fr;
+    gap: var(--space-6);
+  }
+  
+  .no-results-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .no-results-actions .btn {
+    width: 100%;
+  }
+  
+  .search-tags {
+    justify-content: flex-start;
+  }
+  
+  .landing-title {
+    font-size: var(--text-3xl);
+  }
+}
+
+@media (max-width: 480px) {
+  .search-header {
+    padding: var(--space-8) 0;
+  }
+  
+  .search-input-group {
+    flex-direction: column;
+    border-radius: var(--radius-lg);
+  }
+  
+  .search-button {
+    border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+  }
+  
+  .search-results-content {
+    gap: var(--space-8);
+  }
+  
+  .search-section {
+    padding: var(--space-6);
+  }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Search form enhancement
+  const searchForm = document.querySelector('.search-form');
+  const searchInput = document.querySelector('.search-input');
+  
+  if (searchForm && searchInput) {
+    // Auto-focus search input
+    searchInput.focus();
+    
+    // Handle search form submission
+    searchForm.addEventListener('submit', function(e) {
+      const query = searchInput.value.trim();
+      if (!query) {
+        e.preventDefault();
+        searchInput.focus();
+        return;
+      }
+    });
+  }
+  
+  // Filter change handlers
+  const searchType = document.getElementById('search-type');
+  const searchSort = document.getElementById('search-sort');
+  
+  if (searchType) {
+    searchType.addEventListener('change', function() {
+      updateSearchURL();
+    });
+  }
+  
+  if (searchSort) {
+    searchSort.addEventListener('change', function() {
+      updateSearchURL();
+    });
+  }
+  
+  function updateSearchURL() {
+    const url = new URL(window.location);
+    const params = new URLSearchParams(url.search);
+    
+    if (searchType && searchType.value !== 'all') {
+      params.set('type', searchType.value);
+    } else {
+      params.delete('type');
+    }
+    
+    if (searchSort && searchSort.value !== 'relevance') {
+      params.set('sort', searchSort.value);
+    } else {
+      params.delete('sort');
+    }
+    
+    url.search = params.toString();
+    window.location.href = url.toString();
+  }
+  
+  // Search suggestions (mock implementation)
+  if (searchInput) {
+    searchInput.addEventListener('input', function() {
+      const query = this.value.trim();
+      if (query.length >= 2) {
+        // In a real implementation, this would fetch suggestions from the API
+        console.log('Search suggestions for:', query);
+      }
+    });
+  }
+});
+</script>

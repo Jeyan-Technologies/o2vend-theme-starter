@@ -1,0 +1,235 @@
+{% liquid
+  assign widget_settings = widget.settings
+  assign widget_data = widget.data
+  
+  comment
+    Static Widget: Content comes from widget_data.content (Items array with X, Y, TargetUrl)
+    Settings come from widget_settings
+  endcomment
+
+  assign content_data = widget_data.content | default: widget.content
+  assign items = content_data.Items | default: content_data.items | default: widget_data.Items | default: widget_data.items
+  assign image_url = widget_settings.imageUrl | default: widget_settings.ImageUrl | default: content_data.ImageUrl | default: content_data.imageUrl
+  assign show_container = widget_settings.showContainer | default: content_data.ShowContainer | default: 'Default'
+  assign show_bottom_margin = widget_settings.showWidgetBottomMargin | default: content_data.ShowWidgetBottomMargin | default: 'Default'
+  assign background_color = widget_settings.backgroundColor | default: widget_settings.BackgroundColor | default: content_data.BackgroundColor | default: content_data.backgroundColor
+%}
+
+{% if image_url and image_url != blank and image_url != 'null' %}
+    {% liquid
+    assign bottom_margin_class = 'm-b-25'
+    if show_bottom_margin == 'No' or show_bottom_margin == null or show_bottom_margin == 'null'
+      assign bottom_margin_class = 'm-b-0'
+    elsif show_bottom_margin == 'Yes' or show_bottom_margin == 'Default'
+      assign bottom_margin_class = 'm-b-25'
+    endif
+    
+    comment
+      Container logic based on section and ShowContainer:
+      - section == "hero" + ShowContainer == "No" or ("Default"/null in hero) → no container
+      - section != "hero" + ShowContainer == ("Default"/null) or ShowContainer == "Yes" → with container
+      - ShowContainer == "No" → no container
+      - ShowContainer == "Yes" → with container
+    endcomment
+    assign widget_section = widget.section | default: 'hero'
+    assign use_container = true
+    
+    if show_container == 'No'
+      assign use_container = false
+    else
+      if show_container == 'Yes'
+        assign use_container = true
+      else
+        if widget_section == 'hero'
+          assign use_container = false
+        else
+          assign use_container = true
+        endif
+      endif
+    endif
+  %}
+
+  <section class="widget widget-product-canvas" data-widget-id="{{ widget.id }}"{% if background_color and background_color != blank and background_color != 'null' %} style="background-color: {{ background_color }};"{% endif %}>
+    {% if use_container %}
+      <div class="container canvas {{ bottom_margin_class }} fade-in-animation">
+    {% else %}
+      <div class="{{ bottom_margin_class }}">
+        <div class="canvas fade-in-animation">
+    {% endif %}
+        
+        {% if image_url contains 'http://' or image_url contains 'https://' %}
+          {% assign image_src = image_url %}
+        {% else %}
+          {% assign image_src = image_url | asset_url %}
+        {% endif %}
+        
+        <img src="{{ image_src }}" alt="{{ widget_settings.title | default: 'Product Canvas' | default: 'Canvas' }}" width="1200" height="800" loading="lazy" style="height: auto;">
+        
+        {% if items and items.size > 0 %}
+          {% for item in items %}
+            {% assign item_x = item.X | default: item.x | default: 0 %}
+            {% assign item_y = item.Y | default: item.y | default: 0 %}
+            {% assign item_url = item.TargetUrl | default: item.targetUrl | default: item.Url | default: item.url | default: '#' %}
+            
+            <a style="left: {{ item_x }}%; top: {{ item_y }}%;" class="anchor-icon pulse-grow-on-hover" href="{{ item_url }}" target="_blank" aria-label="Product link {{ forloop.index }}">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate(90deg);">
+                <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path>
+                <line x1="7" y1="7" x2="7.01" y2="7"></line>
+              </svg>
+            </a>
+          {% endfor %}
+        {% endif %}
+        
+    {% if use_container %}
+      </div>
+    {% else %}
+        </div>
+      </div>
+    {% endif %}
+  </section>
+
+  <style>
+    /* Product Canvas Widget */
+    .widget-product-canvas {
+      width: 100%;
+      padding: 0;
+    }
+    
+    .widget-product-canvas .canvas {
+      position: relative;
+      width: 100%;
+      max-width: 100%;
+      margin: 0 auto;
+      overflow: hidden;
+    }
+    
+    .widget-product-canvas .canvas img {
+      width: 100%;
+      height: auto;
+      display: block;
+      object-fit: contain;
+      border-radius: var(--border-radius-medium);
+    }
+    
+    /* Anchor Icons - Positioned at X%, Y% */
+    .widget-product-canvas .anchor-icon {
+      position: absolute;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 48px;
+      height: 48px;
+      background: rgba(255, 255, 255, 0.9);
+      border: 2px solid {{ settings.color_text }};
+      border-radius: 50%;
+      color: {{ settings.color_text }};
+      text-decoration: none;
+      transition: all 0.3s ease;
+      z-index: 10;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+    
+    .widget-product-canvas .anchor-icon svg {
+      width: 20px;
+      height: 20px;
+    }
+    
+    .widget-product-canvas .anchor-icon:hover {
+      background: {{ settings.color_text }};
+      color: {{ settings.color_background }};
+      transform: scale(1.15);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+    }
+    
+    /* Pulse Grow on Hover Animation */
+    .pulse-grow-on-hover {
+      animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+      0%, 100% {
+        transform: scale(1);
+        opacity: 1;
+      }
+      50% {
+        transform: scale(1.05);
+        opacity: 0.9;
+      }
+    }
+    
+    .pulse-grow-on-hover:hover {
+      animation: none;
+    }
+    
+    /* Fade In Animation */
+    .fade-in-animation {
+      animation: fadeIn 0.6s ease-in;
+    }
+    
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    /* Bottom Margin Classes */
+    .m-b-25 {
+      margin-bottom: 25px;
+    }
+    
+    .m-b-0 {
+      margin-bottom: 0;
+    }
+    
+    /* Container */
+    .widget-product-canvas .container {
+      max-width: {{ settings.container_width }}px;
+      margin: 0 auto;
+      padding: 0 {{ settings.container_padding }}px;
+    }
+    
+    /* Mobile Responsive */
+    @media (max-width: 768px) {
+      .widget-product-canvas .anchor-icon {
+        width: 40px;
+        height: 40px;
+      }
+      
+      .widget-product-canvas .anchor-icon svg {
+        width: 16px;
+        height: 16px;
+      }
+      
+      .widget-product-canvas .container {
+        padding: 0 {{ settings.spacing_element }}px;
+      }
+    }
+    
+    @media (max-width: 480px) {
+      .widget-product-canvas .anchor-icon {
+        width: 36px;
+        height: 36px;
+      }
+      
+      .widget-product-canvas .anchor-icon svg {
+        width: 14px;
+        height: 14px;
+      }
+      
+      .widget-product-canvas .container {
+        padding: 0 {{ settings.spacing_small }}px;
+      }
+    }
+  </style>
+{% else %}
+  <section class="widget widget-product-canvas widget-product-canvas--empty" data-widget-id="{{ widget.id }}">
+    <div class="widget-empty" style="padding: {{ settings.spacing_section }}px {{ settings.container_padding }}px; text-align: center;">
+      <p style="color: {{ settings.color_text_muted }}; margin: 0;">{{ widget_settings.empty_state | default: 'Please configure an image URL for the product canvas.' }}</p>
+    </div>
+  </section>
+{% endif %}

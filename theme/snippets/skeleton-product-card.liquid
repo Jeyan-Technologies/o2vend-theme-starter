@@ -1,0 +1,124 @@
+{% comment %}
+  Skeleton Loader for Product Card
+  Shows animated placeholder while product data loads
+{% endcomment %}
+
+<div class="product-card skeleton-card">
+  <div class="product-card-image skeleton-image">
+    <div class="skeleton-shimmer"></div>
+  </div>
+  <div class="product-card-content">
+    <div class="skeleton-text skeleton-vendor"></div>
+    <div class="skeleton-text skeleton-title"></div>
+    <div class="skeleton-text skeleton-price"></div>
+    <div class="skeleton-button"></div>
+  </div>
+</div>
+
+<style>
+.skeleton-card {
+  pointer-events: none;
+}
+
+.skeleton-image {
+  background: #f0f0f0;
+  position: relative;
+  overflow: hidden;
+  border-radius: 12px;
+  aspect-ratio: 1;
+}
+
+.skeleton-shimmer {
+  position: absolute;
+  top: 0;
+  left: -100%;
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.6) 50%,
+    transparent 100%
+  );
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    left: -100%;
+  }
+  100% {
+    left: 100%;
+  }
+}
+
+.skeleton-text {
+  height: 16px;
+  background: #f0f0f0;
+  border-radius: 4px;
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.skeleton-text::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.6) 50%,
+    transparent 100%
+  );
+  animation: shimmer 2s infinite;
+}
+
+.skeleton-vendor {
+  width: 60%;
+  height: 12px;
+  margin-bottom: 6px;
+}
+
+.skeleton-title {
+  width: 90%;
+  height: 18px;
+  margin-bottom: 8px;
+}
+
+.skeleton-price {
+  width: 50%;
+  height: 20px;
+  margin-bottom: 12px;
+}
+
+.skeleton-button {
+  width: 100%;
+  height: 44px;
+  background: #f0f0f0;
+  border-radius: 8px;
+  position: relative;
+  overflow: hidden;
+  margin-top: 8px;
+}
+
+.skeleton-button::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.6) 50%,
+    transparent 100%
+  );
+  animation: shimmer 2s infinite;
+}
+</style>
+

@@ -1,0 +1,695 @@
+{% comment %}
+  Footer Menu Widget
+  
+  Renders footer navigation links dynamically from API.
+  Fetches menus using /webstoreapi/menus endpoint
+  Filters by Type = "Footer Menu" (case-insensitive)
+  Gracefully handles missing/failed menus
+  
+  FIXES:
+  - Proper error handling (footer still shows)
+  - Correct API endpoint structure
+  - Handles no menu items gracefully
+  - No XSS vulnerabilities
+{% endcomment %}
+
+{% liquid
+  if widget
+    assign widget_settings = widget.settings
+  else
+    assign widget_settings = nil
+  endif
+%}
+
+<nav class="widget widget-footer-menu" data-widget-id="{{ widget.id | default: 'auto-fetch' }}" data-footer-menu-nav role="navigation" aria-label="Footer navigation">
+  <div class="widget-footer-menu__loading" data-menu-loading>
+    <span>Loading menu...</span>
+  </div>
+  <div class="widget-footer-menu__error" data-menu-error style="display: none;">
+    <span data-error-message>Menu items unavailable</span>
+  </div>
+  <div class="widget-footer-menu__columns" data-menu-columns>
+    <!-- Menu columns will be dynamically inserted here -->
+  </div>
+</nav>
+
+<style>
+  .widget-footer-menu {
+    padding: 0;
+    margin: 0 auto;
+    max-width: 100%;
+  }
+
+  .widget-footer-menu__loading,
+  .widget-footer-menu__error {
+    padding: 1rem;
+    text-align: center;
+    font-size: 0.875rem;
+    color: #9ca3af;
+  }
+
+  .widget-footer-menu__error {
+    color: #ef4444;
+  }
+
+  .widget-footer-menu__columns {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 2.5rem;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    min-height: 30px;
+  }
+
+  .widget-footer-menu__column {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .widget-footer-menu__column > .widget-footer-menu__title {
+    display: block;
+  }
+
+  .widget-footer-menu__title {
+    margin: 0;
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 600;
+    color: {{ widget_settings.title_color | default: '#ffffff' }};
+    display: none;
+  }
+
+  .widget-footer-menu__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-top: 1rem;
+  }
+  
+  .widget-footer-menu__child-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    padding-left: 1rem;
+    margin-top: 0.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .widget-footer-menu__item--has-children {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .widget-footer-menu__item {
+    display: inline-block;
+    margin: 0;
+  }
+
+  .widget-footer-menu__link {
+    color: {{ widget_settings.link_color | default: '#9ca3af' }};
+    text-decoration: none;
+    font-size: 0.9375rem;
+    font-weight: 400;
+    transition: color 0.2s ease;
+    display: inline-block;
+    padding: 0;
+    white-space: nowrap;
+  }
+
+  .widget-footer-menu__link:hover {
+    color: {{ widget_settings.link_hover_color | default: '#ffffff' }};
+  }
+
+  @media (max-width: 768px) {
+    .widget-footer-menu__columns {
+      gap: 2rem;
+    }
+    
+    .widget-footer-menu__list {
+      gap: 2rem;
+    }
+    
+    .widget-footer-menu__link {
+      font-size: 0.875rem;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .widget-footer-menu__columns {
+      flex-direction: column;
+      align-items: center;
+      gap: 1.5rem;
+    }
+    
+    .widget-footer-menu__list {
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
+      text-align: center;
+    }
+  }
+</style>
+
+<script>
+  (function() {
+    'use strict';
+
+    // Configuration
+    const MENU_API_ENDPOINT = '/webstoreapi/menus';
+    const MENU_TYPE_FOOTER = 'footermenu'; // Normalized comparison
+    const INIT_DELAY_MS = 100;
+    const API_TIMEOUT_MS = 5000;
+
+    /**
+     * Find the menu nav element for this widget
+     */
+    function findMenuNav() {
+      const widgetId = '{{ widget.id }}';
+      
+      // Try multiple selectors for robustness
+      let menuNav = document.querySelector(`[data-footer-menu-nav][data-widget-id="${widgetId}"]`);
+      
+      if (!menuNav) {
+        menuNav = document.querySelector(`[data-widget-id="${widgetId}"][data-footer-menu-nav]`);
+      }
+      
+      if (!menuNav) {
+        menuNav = document.querySelector('.widget-footer-menu[data-widget-id="{{ widget.id }}"]');
+      }
+      
+      if (!menuNav) {
+        menuNav = document.querySelector('[data-footer-menu-nav]');
+      }
+      
+      if (!menuNav) {
+        console.warn('[FooterMenu] Menu nav element not found for widget ID: {{ widget.id }}');
+      }
+      
+      return menuNav;
+    }
+
+    /**
+     * Load footer menu from API with timeout
+     */
+    async function loadFooterMenu(menuNav) {
+      console.log('[FooterMenu] loadFooterMenu called');
+      
+      const menuColumns = menuNav.querySelector('[data-menu-columns]');
+      const loadingEl = menuNav.querySelector('[data-menu-loading]');
+      const errorEl = menuNav.querySelector('[data-menu-error]');
+
+      console.log('[FooterMenu] Found elements:', {
+        menuColumns: !!menuColumns,
+        loadingEl: !!loadingEl,
+        errorEl: !!errorEl
+      });
+
+      if (!menuColumns) {
+        console.error('[FooterMenu] Menu columns container not found');
+        console.error('[FooterMenu] Available data attributes in menuNav:', Array.from(menuNav.querySelectorAll('*')).map(el => ({
+          tag: el.tagName,
+          dataAttributes: Array.from(el.attributes).filter(attr => attr.name.startsWith('data-')).map(attr => attr.name)
+        })));
+        if (errorEl) {
+          const errorMessageEl = errorEl.querySelector('[data-error-message]');
+          if (errorMessageEl) {
+            errorMessageEl.textContent = 'Menu container not found. Please refresh the page.';
+          }
+          errorEl.style.display = 'block';
+        }
+        return;
+      }
+
+      try {
+        // Show loading state
+        console.log('[FooterMenu] Showing loading state');
+        if (loadingEl) loadingEl.style.display = 'block';
+        if (errorEl) errorEl.style.display = 'none';
+        menuColumns.innerHTML = '';
+
+        // Fetch all menus with timeout
+        console.log('[FooterMenu] Fetching menus from', MENU_API_ENDPOINT);
+        console.log('[FooterMenu] Request configuration:', {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+          },
+          timeout: API_TIMEOUT_MS
+        });
+        
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => {
+          console.error('[FooterMenu] Request timeout after', API_TIMEOUT_MS, 'ms');
+          controller.abort();
+        }, API_TIMEOUT_MS);
+
+        const startTime = performance.now();
+        const menusResponse = await fetch(MENU_API_ENDPOINT, {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+          },
+          signal: controller.signal
+        });
+        const fetchTime = performance.now() - startTime;
+
+        clearTimeout(timeoutId);
+
+        console.log('[FooterMenu] Menus API response received:', {
+          status: menusResponse.status,
+          statusText: menusResponse.statusText,
+          ok: menusResponse.ok,
+          contentType: menusResponse.headers.get('content-type'),
+          fetchTime: `${fetchTime.toFixed(2)}ms`
+        });
+
+        if (!menusResponse.ok) {
+          const errorText = await menusResponse.text().catch(() => 'Unable to read error response');
+          console.error('[FooterMenu] API error response:', errorText);
+          throw new Error(`API Error: ${menusResponse.status} ${menusResponse.statusText}`);
+        }
+
+        const menus = await menusResponse.json();
+        
+        console.log('[FooterMenu] Parsed menus response:', {
+          isArray: Array.isArray(menus),
+          length: Array.isArray(menus) ? menus.length : 'N/A',
+          sample: Array.isArray(menus) && menus.length > 0 ? menus[0] : null
+        });
+        
+        if (!Array.isArray(menus)) {
+          console.error('[FooterMenu] Response is not an array:', typeof menus, menus);
+          throw new Error('Invalid response: menus is not an array');
+        }
+
+        console.log('[FooterMenu] Retrieved', menus.length, 'total menus');
+        if (menus.length > 0) {
+          console.log('[FooterMenu] Sample menu types:', menus.slice(0, 3).map(m => ({
+            id: m.id,
+            type: m.type || m.Type,
+            name: m.name || m.Name
+          })));
+        }
+
+        // Filter for "Footer Menu" type (case-insensitive, whitespace-tolerant)
+        const footerMenus = menus.filter(menu => {
+          const menuType = (menu.type || menu.Type || '').toString().toLowerCase().trim();
+          const normalizedType = menuType.replace(/\s+/g, '');
+          const matches = normalizedType === MENU_TYPE_FOOTER;
+          if (matches) {
+            console.log('[FooterMenu] Found footer menu:', {
+              id: menu.id,
+              type: menu.type || menu.Type,
+              name: menu.name || menu.Name
+            });
+          }
+          return matches;
+        });
+
+        console.log('[FooterMenu] Found', footerMenus.length, 'footer menus after filtering');
+        console.log('[FooterMenu] Footer menu IDs:', footerMenus.map(m => m.id));
+
+        if (footerMenus.length === 0) {
+          console.warn('[FooterMenu] No footer menus found - available menu types:', 
+            menus.map(m => (m.type || m.Type || 'unknown').toString().toLowerCase()));
+          if (loadingEl) loadingEl.style.display = 'none';
+          // Don't show error - just let it be empty, footer still renders
+          return;
+        }
+
+        // Fetch each footer menu's items
+        // Use a separate AbortController for menu item fetches to avoid conflicts
+        // with the initial menus fetch
+        const itemsController = new AbortController();
+        const itemsTimeoutId = setTimeout(() => {
+          console.warn('[FooterMenu] Menu items fetch timeout after', API_TIMEOUT_MS, 'ms');
+          itemsController.abort();
+        }, API_TIMEOUT_MS * 2); // Give more time for multiple menu fetches
+        
+        // Store menu data with their items to render grouped menus
+        const menuGroups = [];
+        console.log('[FooterMenu] Starting to fetch menu items for', footerMenus.length, 'footer menu(s)');
+        
+        for (let i = 0; i < footerMenus.length; i++) {
+          const footerMenu = footerMenus[i];
+          try {
+            console.log(`[FooterMenu] [${i + 1}/${footerMenus.length}] Fetching menu items for ID:`, footerMenu.id);
+            console.log('[FooterMenu] Menu details:', {
+              id: footerMenu.id,
+              name: footerMenu.name || footerMenu.Name,
+              type: footerMenu.type || footerMenu.Type
+            });
+            
+            const menuUrl = `${MENU_API_ENDPOINT}/${footerMenu.id}`;
+            console.log('[FooterMenu] Attempting fetch to:', menuUrl);
+            
+            const itemStartTime = performance.now();
+            let menuResponse;
+            try {
+              menuResponse = await fetch(menuUrl, {
+                method: 'GET',
+                headers: {
+                  'Accept': 'application/json',
+                  'X-Requested-With': 'XMLHttpRequest'
+                },
+                signal: itemsController.signal // Use separate controller for menu item fetches
+              });
+            } catch (fetchError) {
+              // Catch network errors, abort errors, etc.
+              console.error('[FooterMenu] Fetch error for menu', footerMenu.id, ':', fetchError);
+              if (fetchError.name === 'AbortError') {
+                console.error('[FooterMenu] Fetch was aborted - check timeout or signal');
+              }
+              throw fetchError; // Re-throw to be caught by outer catch
+            }
+            const itemFetchTime = performance.now() - itemStartTime;
+
+            console.log('[FooterMenu] Menu items API response:', {
+              menuId: footerMenu.id,
+              status: menuResponse.status,
+              statusText: menuResponse.statusText,
+              ok: menuResponse.ok,
+              fetchTime: `${itemFetchTime.toFixed(2)}ms`
+            });
+
+            if (!menuResponse.ok) {
+              const errorText = await menuResponse.text().catch(() => 'Unable to read error response');
+              console.error('[FooterMenu] Error response for menu', footerMenu.id, ':', errorText);
+              throw new Error(`Failed to fetch menu ${footerMenu.id}: ${menuResponse.status}`);
+            }
+
+            const menuData = await menuResponse.json();
+
+            console.log('[FooterMenu] Parsed menu data for', footerMenu.id, ':', {
+              hasItems: !!(menuData && menuData.items),
+              itemsIsArray: !!(menuData && Array.isArray(menuData.items)),
+              itemsLength: menuData && Array.isArray(menuData.items) ? menuData.items.length : 0
+            });
+
+            if (!menuData || !Array.isArray(menuData.items)) {
+              console.warn(`[FooterMenu] Menu ${footerMenu.id} has no items array. Menu data:`, menuData);
+              continue;
+            }
+
+            console.log(`[FooterMenu] Menu ${footerMenu.id} has`, menuData.items.length, 'items');
+            if (menuData.items.length > 0) {
+              console.log('[FooterMenu] Sample menu items:', menuData.items.slice(0, 3).map(item => ({
+                name: item.name || item.title,
+                link: item.link,
+                hasChildren: !!(item.childItems && item.childItems.length > 0)
+              })));
+            }
+            
+            // Store menu group with title and items
+            menuGroups.push({
+              id: footerMenu.id,
+              name: footerMenu.name || footerMenu.Name || `Menu ${i + 1}`,
+              items: menuData.items || []
+            });
+            
+            console.log('[FooterMenu] Stored menu group:', {
+              name: footerMenu.name || footerMenu.Name,
+              itemsCount: menuData.items.length
+            });
+
+          } catch (itemError) {
+            console.error('[FooterMenu] Error fetching menu items for', footerMenu.id, ':', itemError);
+            console.error('[FooterMenu] Error details:', {
+              name: itemError.name,
+              message: itemError.message,
+              stack: itemError.stack
+            });
+            // Check if it's an abort error
+            if (itemError.name === 'AbortError') {
+              console.error('[FooterMenu] Menu items fetch was aborted - likely timeout');
+            }
+            // Continue with other menus even if one fails
+          }
+        }
+
+        // Clear the timeout since all fetches are complete
+        clearTimeout(itemsTimeoutId);
+        
+        console.log('[FooterMenu] Finished fetching all menus. Total menu groups:', menuGroups.length);
+
+        if (menuGroups.length === 0) {
+          console.warn('[FooterMenu] No menu groups found');
+          if (loadingEl) loadingEl.style.display = 'none';
+          return;
+        }
+
+        // Render grouped menu columns
+        console.log('[FooterMenu] Rendering', menuGroups.length, 'menu groups');
+        renderMenuGroups(menuColumns, menuGroups);
+        console.log('[FooterMenu] Menu groups rendered successfully');
+        
+        // Hide loading state
+        if (loadingEl) {
+          loadingEl.style.display = 'none';
+          console.log('[FooterMenu] Loading state hidden');
+        }
+
+      } catch (error) {
+        console.error('[FooterMenu] Error loading menu:', error);
+        console.error('[FooterMenu] Error details:', {
+          name: error.name,
+          message: error.message,
+          stack: error.stack,
+          cause: error.cause
+        });
+        
+        // Hide loading, show error
+        if (loadingEl) {
+          loadingEl.style.display = 'none';
+        }
+        
+        if (errorEl) {
+          // Update error message with more details
+          const errorMessageEl = errorEl.querySelector('[data-error-message]');
+          let errorMessage = 'Menu items unavailable';
+          
+          // Provide more specific error messages
+          if (error.name === 'AbortError') {
+            errorMessage = 'Request timed out. Please refresh the page.';
+            console.error('[FooterMenu] Request aborted - likely timeout');
+          } else if (error.message && error.message.includes('404')) {
+            errorMessage = 'Menu endpoint not found.';
+            console.error('[FooterMenu] 404 error - endpoint may not exist');
+          } else if (error.message && error.message.includes('401') || error.message.includes('403')) {
+            errorMessage = 'Access denied. Please check permissions.';
+            console.error('[FooterMenu] Authentication/authorization error');
+          } else if (error.message && error.message.includes('500')) {
+            errorMessage = 'Server error. Please try again later.';
+            console.error('[FooterMenu] Server error');
+          } else if (error.message) {
+            errorMessage = `Error: ${error.message}`;
+          }
+          
+          if (errorMessageEl) {
+            errorMessageEl.textContent = errorMessage;
+          } else {
+            errorEl.textContent = errorMessage;
+          }
+          
+          errorEl.style.display = 'block';
+          console.log('[FooterMenu] Error message displayed to user:', errorMessage);
+        }
+      }
+    }
+
+    /**
+     * Render grouped menu columns - Each footer menu as a separate column with title
+     */
+    function renderMenuGroups(container, menuGroups) {
+      console.log('[FooterMenu] renderMenuGroups called with', menuGroups ? menuGroups.length : 0, 'menu groups');
+      
+      if (!menuGroups || menuGroups.length === 0) {
+        console.warn('[FooterMenu] renderMenuGroups: No menu groups to render');
+        return;
+      }
+
+      menuGroups.forEach((menuGroup, groupIndex) => {
+        console.log(`[FooterMenu] Rendering menu group ${groupIndex + 1}:`, menuGroup.name);
+        
+        // Create a column for each menu group
+        const column = document.createElement('div');
+        column.className = 'widget-footer-menu__column';
+        
+        // Create and add title
+        const title = document.createElement('h4');
+        title.className = 'widget-footer-menu__title';
+        title.textContent = menuGroup.name || `Menu ${groupIndex + 1}`;
+        column.appendChild(title);
+        
+        // Create list for menu items
+        const list = document.createElement('ul');
+        list.className = 'widget-footer-menu__list';
+        
+        // Sort items by displayOrder
+        const sortedItems = [...(menuGroup.items || [])].sort((a, b) => {
+          const orderA = a.displayOrder !== undefined ? a.displayOrder : 999;
+          const orderB = b.displayOrder !== undefined ? b.displayOrder : 999;
+          return orderA - orderB;
+        });
+        
+        // Render items with their child items
+        sortedItems.forEach((item) => {
+          const listItem = createMenuItemWithChildren(item);
+          if (listItem) {
+            list.appendChild(listItem);
+          }
+        });
+        
+        column.appendChild(list);
+        container.appendChild(column);
+        
+        console.log(`[FooterMenu] Rendered menu group "${menuGroup.name}" with ${sortedItems.length} items`);
+      });
+      
+      console.log('[FooterMenu] All menu groups rendered');
+    }
+
+    /**
+     * Create a menu item element with child items support
+     */
+    function createMenuItemWithChildren(item) {
+      try {
+        const listItem = document.createElement('li');
+        listItem.className = 'widget-footer-menu__item';
+        
+        const itemName = (item.name || item.title || '').trim();
+        if (!itemName) {
+          console.warn('[FooterMenu] Menu item has no name or title:', item);
+          return null;
+        }
+        
+        // Create link for the main item
+        const link = document.createElement('a');
+        link.href = item.link || '#';
+        link.className = 'widget-footer-menu__link';
+        link.textContent = itemName;
+        link.setAttribute('aria-label', itemName);
+        
+        // Handle external links
+        if (item.link && (item.link.startsWith('http://') || item.link.startsWith('https://'))) {
+          try {
+            const currentDomain = window.location.hostname;
+            const linkDomain = new URL(item.link).hostname;
+            if (linkDomain !== currentDomain) {
+              link.setAttribute('target', '_blank');
+              link.setAttribute('rel', 'noopener noreferrer');
+            }
+          } catch (e) {
+            console.warn('[FooterMenu] Invalid URL:', item.link, 'Error:', e.message);
+          }
+        }
+        
+        listItem.appendChild(link);
+        
+        // Add child items if they exist
+        const childItems = item.childItems;
+        if (childItems && Array.isArray(childItems) && childItems.length > 0) {
+          const childList = document.createElement('ul');
+          childList.className = 'widget-footer-menu__child-list';
+          
+          // Sort child items by displayOrder
+          const sortedChildren = [...childItems].sort((a, b) => {
+            const orderA = a.displayOrder !== undefined ? a.displayOrder : 999;
+            const orderB = b.displayOrder !== undefined ? b.displayOrder : 999;
+            return orderA - orderB;
+          });
+          
+          sortedChildren.forEach((childItem) => {
+            const childListItem = createMenuItemWithChildren(childItem);
+            if (childListItem) {
+              childList.appendChild(childListItem);
+            }
+          });
+          
+          if (childList.children.length > 0) {
+            listItem.appendChild(childList);
+            listItem.classList.add('widget-footer-menu__item--has-children');
+          }
+        }
+        
+        return listItem;
+      } catch (error) {
+        console.error('[FooterMenu] Error creating menu item with children:', error, 'Item:', item);
+        return null;
+      }
+    }
+
+
+    /**
+     * Initialize footer menu with retry logic
+     */
+    function initFooterMenu(retryCount = 0) {
+      const MAX_RETRIES = 5;
+      const RETRY_DELAY_MS = 200;
+      
+      console.log(`[FooterMenu] Initialization attempt ${retryCount + 1}/${MAX_RETRIES + 1}`);
+      
+      const menuNav = findMenuNav();
+      
+      if (!menuNav) {
+        if (retryCount < MAX_RETRIES) {
+          console.warn(`[FooterMenu] Menu nav element not found, retrying in ${RETRY_DELAY_MS}ms...`);
+          setTimeout(() => {
+            initFooterMenu(retryCount + 1);
+          }, RETRY_DELAY_MS);
+          return;
+        } else {
+          console.error('[FooterMenu] Cannot initialize - menu nav element not found after maximum retries');
+          console.error('[FooterMenu] Widget ID:', '{{ widget.id }}');
+          console.error('[FooterMenu] Available elements:', {
+            allNavElements: document.querySelectorAll('[data-footer-menu-nav]').length,
+            allWidgetElements: document.querySelectorAll('[data-widget-id]').length,
+            readyState: document.readyState
+          });
+          return;
+        }
+      }
+      
+      console.log('[FooterMenu] Menu nav element found successfully');
+      console.log('[FooterMenu] Initializing footer menu widget with ID:', '{{ widget.id }}');
+      loadFooterMenu(menuNav);
+    }
+    
+    // Enhanced initialization that handles multiple scenarios
+    function startInitialization() {
+      console.log('[FooterMenu] Starting footer menu initialization');
+      console.log('[FooterMenu] Document ready state:', document.readyState);
+      console.log('[FooterMenu] Widget ID:', '{{ widget.id }}');
+      
+      // If DOM is already loaded or complete, initialize immediately
+      if (document.readyState === 'complete' || document.readyState === 'interactive') {
+        console.log('[FooterMenu] DOM already loaded, initializing immediately');
+        // Use setTimeout to ensure DOM is fully ready even if state is 'interactive'
+        setTimeout(() => {
+          initFooterMenu();
+        }, INIT_DELAY_MS);
+      } else {
+        // Wait for DOMContentLoaded
+        console.log('[FooterMenu] Waiting for DOMContentLoaded event');
+        document.addEventListener('DOMContentLoaded', () => {
+          console.log('[FooterMenu] DOMContentLoaded fired');
+          setTimeout(() => {
+            initFooterMenu();
+          }, INIT_DELAY_MS);
+        });
+      }
+    }
+    
+    // Start initialization
+    startInitialization();
+  })();
+</script>

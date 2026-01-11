@@ -1,0 +1,271 @@
+{% liquid
+  assign widget_settings = widget.settings
+  assign widget_data = widget.data
+  
+  comment
+    Gallery Widget - Displays images in a grid layout
+    Static Widget: Content comes from widget_data.content (Items array)
+    Settings come from widget_settings
+  endcomment
+
+  assign content_data = widget_data.content | default: widget.content
+  assign items = content_data.Items | default: content_data.items | default: widget_data.Items | default: widget_data.items | default: widget_data.images
+  
+  assign heading = widget_settings.title | default: widget.Title | default: widget.title
+  assign subtitle = widget_settings.subtitle
+  assign show_widget_title_raw = widget_settings.showWidgetTitle | default: 'Yes'
+  if show_widget_title_raw == null or show_widget_title_raw == blank or show_widget_title_raw == 'null'
+    assign show_widget_title = true
+  else
+    if show_widget_title_raw == 'Yes'
+      assign show_widget_title = true
+    elsif show_widget_title_raw == true
+      assign show_widget_title = true
+    else
+      assign show_widget_title = false
+    endif
+  endif
+  assign widget_title_alignment_raw = widget_settings.widgetTitleAlignment | default: 'center'
+  assign widget_title_alignment = widget_title_alignment_raw | downcase
+  if widget_title_alignment != 'left' and widget_title_alignment != 'right' and widget_title_alignment != 'center'
+    assign widget_title_alignment = 'center'
+  endif
+  assign columns = widget_settings.columns | default: 4
+  assign background_color = widget_settings.backgroundColor
+  assign text_color = widget_settings.textColor
+  assign show_container = widget_settings.showContainer
+  assign gap = widget_settings.gap | default: 16
+%}
+
+<section class="widget widget-gallery" data-widget-id="{{ widget.id }}"{% if background_color and background_color != blank and background_color != 'null' %} style="background-color: {{ background_color }};"{% endif %}>
+  <div class="widget-gallery__inner{% if show_container == 'No' %} widget-gallery__inner--full{% endif %}">
+    {% if show_widget_title %}
+      {% if heading or subtitle %}
+        <header class="widget-header" style="text-align: {{ widget_title_alignment }};{% if text_color and text_color != 'null' %} color: {{ text_color }};{% endif %}">
+          {% if heading %}<h2 class="widget-title">{{ heading }}</h2>{% endif %}
+          {% if subtitle %}<p class="widget-subtitle">{{ subtitle }}</p>{% endif %}
+        </header>
+      {% endif %}
+    {% endif %}
+
+    {% if items and items.size > 0 %}
+      <div class="widget-gallery__grid widget-gallery__grid--{{ columns }}-col">
+        {% for item in items %}
+          {% assign image_url = item.ImageUrl | default: item.imageUrl | default: item.Image | default: item.image | default: item.src | default: item.url %}
+          {% assign image_alt = item.Alt | default: item.alt | default: item.Caption | default: item.caption | default: item.Title | default: item.title | default: heading | default: 'Gallery image' %}
+          {% assign item_caption = item.Caption | default: item.caption %}
+          {% assign item_link = item.Link | default: item.link | default: item.TargetUrl | default: item.targetUrl %}
+          
+          {% if image_url and image_url != blank and image_url != 'null' %}
+            {% if image_url contains 'http://' or image_url contains 'https://' %}
+              {% assign image_src = image_url %}
+            {% else %}
+              {% assign image_src = image_url | asset_url %}
+            {% endif %}
+          {% endif %}
+          
+          {% if item_link and item_link != blank and item_link != 'null' %}
+            <a href="{{ item_link }}" class="widget-gallery__item widget-gallery__item--link">
+              {% if image_url and image_url != blank and image_url != 'null' %}
+                <img src="{{ image_src }}" alt="{{ image_alt }}" width="400" height="400" loading="lazy">
+                {% if item_caption and item_caption != blank %}
+                  <div class="widget-gallery__caption">{{ item_caption }}</div>
+                {% endif %}
+              {% endif %}
+            </a>
+          {% else %}
+            <figure class="widget-gallery__item">
+              {% if image_url and image_url != blank and image_url != 'null' %}
+                <img src="{{ image_src }}" alt="{{ image_alt }}" width="400" height="400" loading="lazy">
+                {% if item_caption and item_caption != blank %}
+                  <figcaption class="widget-gallery__caption">{{ item_caption }}</figcaption>
+                {% endif %}
+              {% endif %}
+            </figure>
+          {% endif %}
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="widget-empty">
+        <p>{{ widget_settings.empty_state | default: 'Add images to build your gallery.' }}</p>
+      </div>
+    {% endif %}
+  </div>
+
+  <style>
+    .widget-gallery {
+      padding: 48px 0;
+      position: relative;
+    }
+    
+    .widget-gallery__inner {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+    
+    .widget-gallery__inner--full {
+      max-width: 100%;
+      padding: 0;
+    }
+    
+    .widget-gallery .widget-header {
+      margin-bottom: 32px;
+      position: static;
+      z-index: auto;
+    }
+    
+    .widget-gallery .widget-title {
+      font-size: 1.4rem;
+      font-weight: 500;
+      line-height: 1.3;
+      color: #111;
+      margin: 0 0 8px 0;
+      letter-spacing: -0.01em;
+    }
+    
+    .widget-gallery .widget-subtitle {
+      font-size: 14px;
+      color: #6b7280;
+      margin: 0;
+    }
+    
+    .widget-gallery__grid {
+      display: grid;
+      gap: {{ gap }}px;
+      grid-auto-rows: 1fr;
+    }
+    
+    .widget-gallery__grid--2-col {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    .widget-gallery__grid--3-col {
+      grid-template-columns: repeat(3, 1fr);
+    }
+    .widget-gallery__grid--4-col {
+      grid-template-columns: repeat(4, 1fr);
+    }
+    .widget-gallery__grid--5-col {
+      grid-template-columns: repeat(5, 1fr);
+    }
+    .widget-gallery__grid--6-col {
+      grid-template-columns: repeat(6, 1fr);
+    }
+    
+    .widget-gallery__item {
+      position: relative;
+      overflow: hidden;      
+      background: #f5f5f5;
+      aspect-ratio: 1 / 1;
+      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      border-radius: var(--border-radius-medium);
+    }
+    
+    .widget-gallery__item:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+    }
+    
+    .widget-gallery__item--link {
+      display: block;
+      text-decoration: none;
+      color: inherit;
+    }
+    
+    .widget-gallery__item img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.3s ease;
+    }
+    
+    .widget-gallery__item:hover img {
+      transform: scale(1.05);
+    }
+    
+    .widget-gallery__caption {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: 16px;
+      background: linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.7) 100%);
+      color: #fff;
+      font-size: 14px;
+      font-weight: 500;
+      line-height: 1.4;
+    }
+    
+    .widget-gallery__item figure {
+      margin: 0;
+      height: 100%;
+    }
+    
+    .widget-gallery__item figcaption {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: 16px;
+      background: linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.7) 100%);
+      color: #fff;
+      font-size: 14px;
+      font-weight: 500;
+      line-height: 1.4;
+    }
+    
+    /* Tablet: 3 columns */
+    @media (max-width: 1024px) {
+      .widget-gallery__grid--4-col,
+      .widget-gallery__grid--5-col,
+      .widget-gallery__grid--6-col {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+    
+    /* Small Tablet: 2 columns */
+    @media (max-width: 768px) {
+      .widget-gallery {
+        padding: 36px 0;
+      }
+      .widget-gallery__inner {
+        padding: 0 16px;
+      }
+      .widget-gallery .widget-header {
+        margin-bottom: 24px;
+      }
+      .widget-gallery .widget-title {
+        font-size: 1.3rem;
+      }
+      .widget-gallery__grid {
+        gap: 12px;
+      }
+      .widget-gallery__grid--3-col,
+      .widget-gallery__grid--4-col,
+      .widget-gallery__grid--5-col,
+      .widget-gallery__grid--6-col {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+    
+    /* Mobile: 2 columns */
+    @media (max-width: 480px) {
+      .widget-gallery__inner {
+        padding: 0 12px;
+      }
+      .widget-gallery__grid {
+        gap: 10px;
+      }
+      .widget-gallery .widget-title {
+        font-size: 1.2rem;
+      }
+      .widget-gallery__caption,
+      .widget-gallery__item figcaption {
+        padding: 12px;
+        font-size: 13px;
+      }
+    }
+  </style>
+</section>

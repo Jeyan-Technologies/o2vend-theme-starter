@@ -1,0 +1,78 @@
+{% comment %}
+  Related Product Card Snippet (for Product Recommendations)
+  
+  Parameters:
+  - product: Product object (required)
+  
+  Usage:
+  {% include 'snippets/product-card-related', product: related %}
+{% endcomment %}
+
+<div class="product-card">
+  <div class="product-card-image">
+    <a href="/{{ product.slug | default: product.id }}">
+      {% if product.thumbnailImage %}
+        <img src="{{ product.thumbnailImage }}" alt="{{ product.name | default: product.title }}" loading="lazy">
+      {% elsif product.images and product.images.first %}
+        <img src="{{ product.images.first }}" alt="{{ product.name | default: product.title }}" loading="lazy">
+      {% else %}
+        <div class="product-placeholder">
+          {% raw %}<svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+            <circle cx="8.5" cy="8.5" r="1.5"></circle>
+            <polyline points="21,15 16,10 5,21"></polyline>
+          </svg>{% endraw %}
+        </div>
+      {% endif %}
+    </a>
+    
+    <div class="product-card-badges">
+      {% assign showSale = false %}
+      {% if product.onSale %}
+        {% assign showSale = true %}
+      {% elsif product.prices.mrp and product.prices.price %}
+        {% if product.prices.mrp > product.prices.price %}
+          {% assign showSale = true %}
+        {% endif %}
+      {% endif %}
+      {% if showSale %}
+        <span class="badge badge-sale">Sale</span>
+      {% endif %}
+    </div>
+    
+    <div class="product-card-actions">
+      <button class="action-btn wishlist-btn" data-product-id="{{ product.productId }}" aria-label="Add to wishlist">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+        </svg>
+      </button>
+      <button class="action-btn quick-view-btn" data-product-id="{{ product.productId }}" aria-label="Quick view">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+          <circle cx="12" cy="12" r="3"></circle>
+        </svg>
+      </button>
+    </div>
+  </div>
+  
+  <div class="product-card-content">
+    {% if product.vendor or product.brand %}
+      <div class="product-card-vendor">{{ product.vendor | default: product.brand }}</div>
+    {% endif %}
+    <h3 class="product-card-title">
+      <a href="/{{ product.slug | default: product.id }}">
+        {{ product.name | default: product.title }}
+      </a>
+    </h3>
+    <div class="product-card-price">
+      <span class="price-current">{{ product.prices.priceString | default: product.prices.price | money_with_settings: shop.settings }}</span>
+      {% if product.prices.mrp and product.prices.mrp > product.prices.price %}
+        <span class="price-compare">{{ product.prices.mrpString | default: product.prices.mrp | money_with_settings: shop.settings }}</span>
+      {% endif %}
+    </div>
+    <button class="btn btn-primary btn-sm add-to-cart-quick" data-product-id="{{ product.productId }}">
+      Quick Add
+    </button>
+  </div>
+</div>
+

@@ -1,0 +1,758 @@
+{% layout 'layout/theme' %}
+
+<section class="account-page">
+  <div class="container">
+    <div class="account-header">
+      <h1 class="account-title">My Profile</h1>
+      <p class="account-subtitle">Manage your account information and preferences</p>
+    </div>
+
+    <div class="account-layout">
+      <!-- Account Sidebar -->
+      <aside class="account-sidebar">
+        {% render 'snippets/account-sidebar' %}
+      </aside>
+
+      <!-- Profile Content -->
+      <div class="account-content">
+        {% hook 'account_profile_before' %}
+        
+       
+
+        <div class="profile-form-container">
+          <div class="form-section-header">
+            <h3 class="form-section-title">Personal Information</h3>
+            <p class="form-section-description">Update your personal details and contact information</p>
+          </div>
+
+          <form id="profile-form" class="profile-form">
+            <div class="form-grid">
+              <div class="form-group">
+                <label for="profile-first-name" class="form-label">
+                  <svg class="label-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                  </svg>
+                  Full Name
+                </label>
+                <input 
+                  type="text" 
+                  id="profile-first-name" 
+                  name="firstName" 
+                  class="form-input" 
+                  value="{{ customer.fullName }}"
+                  placeholder="Enter your full name"
+                  required
+                >
+              </div>
+
+              <div class="form-group">
+                <label for="profile-email" class="form-label">
+                  <svg class="label-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                    <polyline points="22,6 12,13 2,6"></polyline>
+                  </svg>
+                  Email Address
+                </label>
+                <div class="input-with-badge">
+                  <input 
+                    type="email" 
+                    id="profile-email" 
+                    name="email" 
+                    class="form-input" 
+                    value="{{ customer.email }}" 
+                    readonly
+                  >
+                  <span class="input-badge">Verified</span>
+                </div>
+                <p class="form-help-text">Contact support to change your email address</p>
+              </div>
+
+              <div class="form-group">
+                <label for="profile-phone" class="form-label">
+                  <svg class="label-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+                  </svg>
+                  Phone Number
+                </label>
+                <input 
+                  type="tel" 
+                  id="profile-phone" 
+                  name="phone" 
+                  class="form-input" 
+                  value="{{ customer.phone }}"
+                  placeholder="+1 (555) 000-0000"
+                >
+              </div>
+            </div>
+
+            <div class="form-actions">
+              <button type="submit" class="btn btn-primary" id="save-profile-btn">
+                <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                  <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                  <polyline points="7 3 7 8 15 8"></polyline>
+                </svg>
+                <span class="btn-text">Save Changes</span>
+                <span class="btn-loading" style="display: none;">
+                  <span class="btn-spinner"></span>
+                  <span>Saving...</span>
+                </span>
+              </button>
+              <button type="reset" class="btn btn-outline">Cancel</button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Danger Zone -->
+        <div class="danger-zone">
+          <div class="danger-zone-header">
+            <svg class="danger-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+              <line x1="12" y1="9" x2="12" y2="13"></line>
+              <line x1="12" y1="17" x2="12.01" y2="17"></line>
+            </svg>
+            <div>
+              <h3 class="danger-zone-title">Danger Zone</h3>
+              <p class="danger-zone-text">
+                Permanently delete your account and all associated data. This action cannot be undone.
+              </p>
+            </div>
+          </div>
+          <button type="button" class="btn btn-danger" id="request-account-deletion-btn">
+            <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="3 6 5 6 21 6"></polyline>
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+            </svg>
+            Request Account Deletion
+          </button>
+        </div>
+
+        {% hook 'account_profile_after' %}
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Initialize intl-tel-input for profile phone
+    const profilePhoneInput = document.getElementById('profile-phone');
+    let profilePhoneIti = null;
+    
+    if (profilePhoneInput && typeof intlTelInput !== 'undefined') {
+      const existingPhone = profilePhoneInput.value || '';
+      
+      profilePhoneIti = intlTelInput(profilePhoneInput, {
+        utilsScript: 'https://cdn.jsdelivr.net/npm/intl-tel-input@23.0.0/build/js/utils.js',
+        initialCountry: 'auto',
+        geoIpLookup: function(callback) {
+          fetch('https://ipapi.co/json/')
+            .then(res => res.json())
+            .then(data => callback(data.country_code ? data.country_code.toLowerCase() : 'us'))
+            .catch(() => callback('us'));
+        },
+        preferredCountries: ['us', 'gb', 'ca', 'au', 'in'],
+        separateDialCode: true,
+        nationalMode: false
+      });
+      
+      // Store instance for form submission
+      window.profilePhoneIti = profilePhoneIti;
+      
+      // Set existing phone number if available (after a small delay to ensure utils are loaded)
+      if (existingPhone) {
+        setTimeout(function() {
+          profilePhoneIti.setNumber(existingPhone);
+        }, 100);
+      }
+    }
+    
+    // Button loading utility function
+    function setButtonLoading(button, loading, loadingText = null) {
+      if (!button) return;
+      
+      const btnText = button.querySelector('.btn-text');
+      const btnLoading = button.querySelector('.btn-loading');
+      
+      if (loading) {
+        button.disabled = true;
+        button.classList.add('loading');
+        if (btnText) btnText.style.display = 'none';
+        if (btnLoading) {
+          btnLoading.style.display = 'flex';
+          if (loadingText && btnLoading.querySelector('span:last-child')) {
+            btnLoading.querySelector('span:last-child').textContent = loadingText;
+          }
+        } else if (loadingText) {
+          button.textContent = loadingText;
+        }
+      } else {
+        button.disabled = false;
+        button.classList.remove('loading');
+        if (btnText) btnText.style.display = 'inline';
+        if (btnLoading) btnLoading.style.display = 'none';
+      }
+    }
+
+    // Handle form submission
+    const profileForm = document.getElementById('profile-form');
+    if (profileForm) {
+      profileForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const submitBtn = document.getElementById('save-profile-btn');
+        setButtonLoading(submitBtn, true, 'Saving...');
+        
+        const formData = new FormData(this);
+        
+        // Get phone number from intl-tel-input if available
+        let phoneNumber = formData.get('phone');
+        if (window.profilePhoneIti) {
+          const fullPhoneNumber = window.profilePhoneIti.getNumber();
+          if (fullPhoneNumber) {
+            // Remove leading + sign
+            phoneNumber = fullPhoneNumber.replace(/^\+/, '');
+          }
+        }
+        
+        const data = {
+          fullName: formData.get('firstName'),
+          phone: phoneNumber
+        };
+        
+        try {
+          const response = await fetch('/webstoreapi/customer/profile', {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify(data)
+          });
+          
+          if (response.ok) {
+            window.location.reload();
+          } else {
+            const error = await response.json();
+            setButtonLoading(submitBtn, false);
+            alert('Error updating profile: ' + (error.error || error.message || 'Unknown error'));
+          }
+        } catch (error) {
+          console.error('Error updating profile:', error);
+          setButtonLoading(submitBtn, false);
+          alert('Error updating profile. Please try again.');
+        }
+      });
+    }
+  });
+</script>
+
+<style>
+/* Account profile page uses theme.css variables - no local :root needed */
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+.account-page {
+  padding: 2rem 1rem;
+  background: linear-gradient(to bottom, var(--color-background) 0%, #ffffff 100%);
+  min-height: 100vh;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+.account-header {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+.account-title {
+  font-size: clamp(2rem, 5vw, 2.5rem);
+  font-weight: 700;
+  color: var(--color-text);
+  margin: 0 0 0.5rem 0;
+  letter-spacing: -0.025em;
+}
+
+.account-subtitle {
+  font-size: clamp(0.9375rem, 2vw, 1.125rem);
+  color: var(--color-text-muted);
+  margin: 0;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.account-layout {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 2rem;
+  align-items: start;
+}
+
+.account-sidebar {
+  position: sticky;
+  top: 2rem;
+  background: var(--color-background);
+  border-radius: var(--radius-xl);
+  padding: 1.5rem;
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--color-border);
+  transition: var(--transition);
+}
+
+.account-sidebar:hover {
+  box-shadow: var(--shadow-lg);
+}
+
+.account-content {
+  background: var(--color-background);
+  border-radius: var(--radius-xl);
+  padding: 0;
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--color-border);
+  overflow: hidden;
+}
+
+/* Profile Header */
+.profile-header {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 2rem;
+  background: linear-gradient(135deg, var(--color-primary-light) 0%, #ffffff 100%);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.profile-avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-hover) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow-lg);
+  flex-shrink: 0;
+}
+
+.avatar-icon {
+  width: 45px;
+  height: 45px;
+  color: white;
+}
+
+.profile-header-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.profile-name {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--color-text);
+  margin: 0 0 0.25rem 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.profile-email {
+  font-size: 1.4rem;
+  color: var(--color-text-muted);
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Form Container */
+.profile-form-container {
+  padding: 2rem;
+}
+
+.form-section-header {
+  margin-bottom: 2rem;
+}
+
+.form-section-title {
+  font-size: 1.4em;
+  font-weight: 600;
+  color: var(--color-text);
+  margin: 0 0 0.5rem 0;
+}
+
+.form-section-description {
+  font-size:1.4rem;
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+/* Form Styles */
+.profile-form {
+  width: 100%;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.form-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: var(--color-text);
+  letter-spacing: 0.01em;
+}
+
+.label-icon {
+  width: 16px;
+  height: 16px;
+  color: var(--color-primary);
+}
+
+.form-input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  font-size: 1.4rem;
+  color: var(--color-text);
+  background: var(--color-background);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-md);
+  transition: var(--transition);
+  outline: none;
+}
+
+/* intl-tel-input styling for profile */
+#profile-phone {
+  padding-left: 3.5rem;
+}
+
+.iti {
+  width: 100%;
+}
+
+.iti__flag-container {
+  z-index: 1;
+}
+
+.iti__selected-flag {
+  padding: 0 0.75rem 0 0.5rem;
+  border-right: 1.5px solid var(--color-border);
+}
+
+.iti__selected-flag:hover {
+  background-color: var(--color-background);
+}
+
+.iti__country-list {
+  z-index: 1000;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-md);
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.iti__country {
+  padding: 0.5rem 0.75rem;
+}
+
+.iti__country:hover,
+.iti__country.iti__highlight {
+  background-color: var(--color-primary-light);
+}
+
+.form-input:hover {
+  border-color: var(--color-text-light);
+}
+
+.form-input:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-light);
+}
+
+.form-input:disabled,
+.form-input:read-only {
+  background: var(--color-background);
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.form-input::placeholder {
+  color: var(--color-text-light);
+}
+
+.input-with-badge {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-badge {
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  padding: 0.25rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-success);
+  background: var(--color-success-light);
+  border-radius: var(--radius-sm);
+  pointer-events: none;
+}
+
+.form-help-text {
+  font-size: 0.8125rem;
+  color: var(--color-text-light);
+  margin: 0;
+}
+
+/* Buttons */
+.form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--color-surface);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.75rem;
+  font-size: 1.4rem;
+  font-weight: 600;
+  text-decoration: none;
+  border-radius: var(--radius-md);
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: var(--transition);
+  white-space: nowrap;
+}
+
+.btn-icon {
+  width: 18px;
+  height: 18px;
+}
+
+.btn-primary {
+  background: var(--color-primary);
+  color: white;
+  border-color: var(--color-primary);
+}
+
+.btn-primary:hover {
+  background: var(--color-primary-hover);
+  border-color: var(--color-primary-hover);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+.btn-outline {
+  background: transparent;
+  color: var(--color-text);
+  border-color: var(--color-border);
+}
+
+.btn-outline:hover {
+  background: var(--color-background);
+  border-color: var(--color-text-light);
+}
+
+.btn-danger {
+  background: var(--color-danger);
+  color: white;
+  border-color: var(--color-danger);
+}
+
+.btn-danger:hover {
+  background: var(--color-danger-hover);
+  border-color: var(--color-danger-hover);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+/* Danger Zone */
+.danger-zone {
+  margin: 2rem;
+  padding: 1.5rem;
+  background: var(--color-danger-light);
+  border: 2px solid var(--color-danger);
+  border-radius: var(--radius-lg);
+}
+
+.danger-zone-header {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.danger-icon {
+  width: 24px;
+  height: 24px;
+  color: var(--color-danger);
+  flex-shrink: 0;
+}
+
+.danger-zone-title {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--color-danger-hover);
+  margin: 0 0 0.5rem 0;
+}
+
+.danger-zone-text {
+  font-size: 1.2rem;
+  color: var(--color-text-muted);
+  margin: 0;
+  line-height: 1.6;
+}
+
+/* Responsive Design */
+@media (min-width: 640px) {
+  .form-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .form-group:nth-child(2) {
+    grid-column: span 2;
+  }
+}
+
+@media (max-width: 1024px) {
+  .account-layout {
+    grid-template-columns: 1fr;
+  }
+  
+ 
+  
+  .account-content {
+    order: 1;
+  }
+}
+
+@media (max-width: 640px) {
+  .account-page {
+    padding: 1.5rem 0.5rem;
+  }
+
+  .profile-header {
+    flex-direction: column;
+    text-align: center;
+    padding: 1.5rem;
+  }
+
+  .profile-avatar {
+    width: 70px;
+    height: 70px;
+  }
+
+  .avatar-icon {
+    width: 38px;
+    height: 38px;
+  }
+
+  .profile-form-container {
+    padding: 1.5rem;
+  }
+
+  .form-actions {
+    flex-direction: column;
+  }
+
+  /* Button loading states */
+  .btn.loading {
+    opacity: 0.7;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+
+  .btn-loading {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .btn-spinner {
+    width: 14px;
+    height: 14px;
+    border: 2px solid currentColor;
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+  }
+
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+  }
+
+  .btn {
+    width: 100%;
+  }
+
+  .danger-zone {
+    margin: 1.5rem;
+    padding: 1.25rem;
+  }
+
+  .danger-zone-header {
+    flex-direction: column;
+    text-align: center;
+  }
+}
+
+@media (max-width: 400px) {
+  .container {
+    padding: 0 0.5rem;
+  }
+
+  .account-title {
+    font-size: 1.75rem;
+  }
+
+  .profile-form-container {
+    padding: 1rem;
+  }
+
+  .danger-zone {
+    margin: 1rem;
+  }
+}
+</style>

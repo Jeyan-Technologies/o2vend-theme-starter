@@ -1,0 +1,932 @@
+{% comment %}
+  Header Menu Widget
+  
+  This widget ONLY handles menu navigation logic:
+  - Desktop navigation menu (bottom row)
+  - Mobile drawer menu
+  - Menu fetching and rendering from API
+{% endcomment %}
+
+{% liquid
+  assign widget_settings = widget.settings
+  assign widget_data = widget.data
+%}
+
+{% comment %}Desktop Navigation Menu{% endcomment %}
+<nav class="header-menu-nav" data-widget-id="{{ widget.id }}" data-header-menu-nav role="navigation" aria-label="Main navigation">
+  <div class="header-menu-nav__loading" data-menu-loading data-menu-loading-hidden>
+    <span>Loading menu...</span>
+  </div>
+  <div class="header-menu-nav__error" data-menu-error data-menu-error-hidden>
+    <span>Menu items unavailable</span>
+  </div>
+  <ul class="header-menu-nav__list" data-menu-list>
+    <!-- Menu items will be dynamically inserted here -->
+            </ul>
+</nav>
+
+    {% comment %}Mobile Navigation Drawer{% endcomment %}
+<div class="header-menu-nav__mobile-drawer" id="header-menu-mobile-drawer-{{ widget.id }}" aria-hidden="true">
+  <div class="header-menu-nav__mobile-drawer-content">
+    <div class="header-menu-nav__mobile-drawer-header">
+      <h2 class="header-menu-nav__mobile-drawer-title">Menu</h2>
+      <button type="button" class="header-menu-nav__mobile-drawer-close" aria-label="Close menu" data-header-menu-close>
+        <svg class="header-menu-nav__drawer-close-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+    <nav class="header-menu-nav__mobile-drawer-nav" role="navigation" aria-label="Mobile navigation">
+      <ul class="header-menu-nav__mobile-drawer-list" data-mobile-menu-list>
+        <!-- Mobile menu items will be dynamically inserted here -->
+        <li class="header-menu-nav__mobile-drawer-item" data-mobile-menu-loading data-mobile-menu-loading-hidden>
+          <span class="header-menu-nav__mobile-drawer-link">Loading menu...</span>
+        </li>
+        <li class="header-menu-nav__mobile-drawer-item" data-mobile-menu-error data-mobile-menu-error-hidden>
+          <span class="header-menu-nav__mobile-drawer-link">Menu items unavailable</span>
+        </li>
+          </ul>
+        </nav>
+      </div>
+    </div>
+
+<style>
+  /* Menu Navigation Styles */
+  .header-menu-nav {
+    flex: 1 1 auto;
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    min-width: 0;
+      width: 100%;
+  }
+  
+  @media (max-width: 768px) {
+    .header-menu-nav {
+      display: none !important;
+    }
+  }
+
+  .header-menu-nav__loading,
+  .header-menu-nav__error {
+    padding: var(--space-2, 0.5rem) 0;
+    color: var(--menu-text, var(--header-text, #000));
+      font-size: var(--text-base, 1rem);
+    opacity: 0.6;
+  }
+
+  .header-menu-nav__error {
+      opacity: 0.5;
+  }
+
+  .header-menu-nav__list {
+      display: flex;
+      align-items: center;
+    gap: var(--space-6, 1.5rem);
+    list-style: none;
+        margin: 0;
+    padding: 0;
+      }
+
+  .header-menu-nav__item {
+    position: relative;
+      display: flex;
+      align-items: center;
+  }
+
+  .header-menu-nav__link {
+      display: flex;
+      align-items: center;
+    gap: var(--space-1, 0.25rem);
+    color: var(--menu-text, var(--header-text, #000));
+    text-decoration: none;
+      font-size: var(--text-base, 1rem);
+    font-weight: var(--font-weight-medium, 500);
+      line-height: var(--leading-normal, 1.5);
+      padding: var(--space-2, 0.5rem) 0;
+    transition: color var(--transition-fast, 150ms ease);
+      position: relative;
+      white-space: nowrap;
+  }
+
+  .header-menu-nav__link:hover {
+    color: var(--menu-text-hover, var(--header-text, #333));
+  }
+
+  /* Dropdown arrow icon */
+  .header-menu-nav__item.has-children .header-menu-nav__link::after {
+    content: '';
+    display: inline-block;
+    width: 0;
+    height: 0;
+    border-left: var(--space-1, 0.25rem) solid transparent;
+    border-right: var(--space-1, 0.25rem) solid transparent;
+    border-top: var(--space-1-25, 0.3125rem) solid var(--menu-text, var(--header-text, #000));
+    margin-left: var(--space-1, 0.25rem);
+    transition: border-top-color var(--transition-fast, 150ms ease);
+  }
+
+  .header-menu-nav__item.has-children:hover .header-menu-nav__link::after {
+    border-top-color: var(--menu-text-hover, var(--header-text, #333));
+  }
+
+  /* Submenu */
+  .header-menu-nav__item.has-children {
+    position: relative;
+  }
+
+  .header-menu-nav__submenu {
+    position: absolute;
+    top: calc(100% + var(--space-2, 0.5rem));
+    left: 0;
+    display: none;
+    flex-direction: column;
+    gap: 0;
+    background: var(--dropdown-bg, #fff);
+    padding: var(--space-2, 0.5rem) 0;
+      border-radius: var(--border-radius-medium, 8px);
+    box-shadow: 0 var(--space-4, 1rem) var(--space-6, 1.5rem) rgba(0, 0, 0, 0.1);
+    min-width: var(--space-50, 12.5rem);
+    list-style: none;
+    margin: 0;
+    z-index: 100;
+    border: var(--space-0-5, 0.125rem) solid var(--header-divider, rgba(0, 0, 0, 0.08));
+    }
+
+  .header-menu-nav__item.has-children:hover .header-menu-nav__submenu {
+      display: flex;
+    }
+
+  .header-menu-nav__submenu-item {
+      margin: 0;
+  }
+
+  .header-menu-nav__submenu-link {
+    display: block;
+      padding: var(--space-2-5, 0.625rem) var(--space-5, 1.25rem);
+    color: var(--menu-text, var(--header-text, #000));
+    text-decoration: none;
+      font-size: var(--text-sm, 0.875rem);
+      line-height: var(--leading-normal, 1.5);
+    transition: background-color var(--transition-fast, 150ms ease);
+    font-weight: var(--font-weight-normal, 400);
+  }
+
+  .header-menu-nav__submenu-link:hover {
+    background-color: var(--submenu-hover, rgba(0, 0, 0, 0.04));
+  }
+
+  /* Mobile Drawer */
+  @media (max-width: 768px) {
+    .header-menu-nav__mobile-drawer {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        width: 100% !important;
+        height: 100vh !important;
+        background-color: rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(2px);
+        z-index: 9999 !important;
+        pointer-events: none;
+        display: block !important;
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 300ms ease, visibility 300ms ease;
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+
+    .header-menu-nav__mobile-drawer.active {
+        pointer-events: auto !important;
+        opacity: 1 !important;
+        visibility: visible !important;
+      }
+
+    .header-menu-nav__mobile-drawer-content {
+        position: absolute !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 280px !important;
+        max-width: 85vw !important;
+        height: 100% !important;
+      background-color: var(--header-bg, #fff) !important;
+        padding: var(--space-6, 1.5rem) !important;
+        overflow-y: auto !important;
+        overflow-x: hidden;
+        -webkit-overflow-scrolling: touch;
+        transform: translateX(-100%);
+      transition: transform var(--transition-slow, var(--duration-300, 300ms) var(--ease-out, ease));
+      box-shadow: var(--space-0-5, 0.125rem) 0 var(--space-2, 0.5rem) rgba(0, 0, 0, 0.15);
+        display: flex !important;
+        flex-direction: column !important;
+        margin: 0 !important;
+      }
+
+    .header-menu-nav__mobile-drawer.active .header-menu-nav__mobile-drawer-content {
+        transform: translateX(0) !important;
+      }
+
+    .header-menu-nav__mobile-drawer-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: var(--space-6, 1.5rem);
+        padding-bottom: var(--space-3, 0.75rem);
+      border-bottom: var(--space-0-5, 0.125rem) solid var(--header-divider, rgba(0, 0, 0, 0.08));
+        flex-shrink: 0;
+      }
+
+    .header-menu-nav__mobile-drawer-title {
+        font-size: var(--text-lg, 1.125rem);
+        font-weight: var(--font-weight-semibold, 600);
+        line-height: var(--leading-normal, 1.5);
+      color: var(--header-text, #000);
+        margin: 0;
+      }
+
+    .header-menu-nav__mobile-drawer-close {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      width: var(--space-10, 2.5rem);
+      height: var(--space-10, 2.5rem);
+        background: none;
+        border: none;
+      color: var(--header-text, #000);
+        cursor: pointer;
+        border-radius: var(--border-radius-small, var(--space-1, 0.25rem));
+      transition: background-color var(--transition-fast, var(--duration-150, 150ms) var(--ease-out, ease));
+    }
+
+    .header-menu-nav__mobile-drawer-close:hover,
+    .header-menu-nav__mobile-drawer-close:focus {
+      background-color: var(--submenu-hover, rgba(0, 0, 0, 0.04));
+    }
+
+    .header-menu-nav__drawer-close-icon {
+      width: var(--icon-size-lg, var(--space-6, 1.5rem));
+      height: var(--icon-size-lg, var(--space-6, 1.5rem));
+    }
+
+    .header-menu-nav__mobile-drawer-nav {
+        flex: 1;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        min-height: 0;
+      }
+
+    .header-menu-nav__mobile-drawer-list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+      }
+
+    .header-menu-nav__mobile-drawer-item {
+      border-bottom: var(--space-0-5, 0.125rem) solid var(--header-divider, rgba(0, 0, 0, 0.08));
+      }
+
+    .header-menu-nav__mobile-drawer-item:last-child {
+        border-bottom: none;
+      }
+
+    .header-menu-nav__mobile-drawer-link {
+        display: block;
+        padding: var(--space-4, 1rem) 0;
+      color: var(--header-text, #000);
+        text-decoration: none;
+        font-weight: var(--font-weight-medium, 500);
+        font-size: var(--text-base, 1rem);
+        line-height: var(--leading-normal, 1.5);
+      transition: color var(--transition-fast, 150ms ease);
+    }
+
+    .header-menu-nav__mobile-drawer-link:hover,
+    .header-menu-nav__mobile-drawer-link:focus {
+      color: var(--menu-text-hover, var(--header-text, #333));
+        opacity: 0.7;
+      }
+
+    .header-menu-nav__mobile-drawer-sublist {
+        list-style: none;
+        margin: 0;
+        padding: 0 0 0 var(--space-4, 1rem);
+      border-left: var(--space-0-5, 0.125rem) solid var(--header-divider, rgba(0, 0, 0, 0.08));
+      display: none;
+      }
+
+    .header-menu-nav__mobile-drawer-item.open .header-menu-nav__mobile-drawer-sublist {
+      display: block;
+    }
+
+    .header-menu-nav__mobile-drawer-subitem {
+      border-bottom: var(--space-0-5, 0.125rem) solid rgba(0, 0, 0, 0.05);
+      }
+
+    .header-menu-nav__mobile-drawer-sublink {
+        display: block;
+        padding: var(--space-3, 0.75rem) 0;
+      color: var(--header-text, #000);
+        text-decoration: none;
+        font-weight: var(--font-weight-normal, 400);
+      font-size: var(--text-sm, 0.875rem);
+        line-height: var(--leading-normal, 1.5);
+      transition: color var(--transition-fast, 150ms ease);
+    }
+
+    .header-menu-nav__mobile-drawer-sublink:hover,
+    .header-menu-nav__mobile-drawer-sublink:focus {
+      color: var(--menu-text-hover, var(--header-text, #333));
+        opacity: 0.6;
+      }
+  }
+
+  /* Hide mobile drawer on desktop */
+  @media (min-width: 769px) {
+    .header-menu-nav__mobile-drawer {
+      display: none !important;
+    }
+  }
+</style>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+    const menuNav = document.querySelector('[data-widget-id="{{ widget.id }}"][data-header-menu-nav]');
+    if (!menuNav) return;
+
+    // Move drawer to body level to avoid parent display:none issues
+    const drawerId = 'header-menu-mobile-drawer-{{ widget.id }}';
+    const drawer = document.getElementById(drawerId);
+    if (drawer && drawer.parentElement && drawer.parentElement !== document.body) {
+      console.log('[HeaderMenu Widget] Moving drawer to body level');
+      document.body.appendChild(drawer);
+    }
+
+    // Shared menu data storage
+    let sharedMenuData = null;
+
+    // Load Main Menu from API (for both desktop and mobile)
+    loadMainMenu(menuNav);
+
+    // Setup hamburger menu with retry logic (only on mobile)
+    if (window.innerWidth <= 768) {
+      setupHamburgerMenu();
+    }
+    
+    // Re-setup on window resize
+    let resizeTimeout;
+    window.addEventListener('resize', function() {
+      clearTimeout(resizeTimeout);
+      resizeTimeout = setTimeout(function() {
+        if (window.innerWidth <= 768) {
+          setupHamburgerMenu();
+        }
+      }, 250);
+    });
+
+    function setupHamburgerMenu() {
+      const drawerId = 'header-menu-mobile-drawer-{{ widget.id }}';
+      let attempts = 0;
+      const maxAttempts = 15;
+
+      function trySetup() {
+        // Only setup on mobile
+        if (window.innerWidth > 768) {
+          return false;
+        }
+
+        const drawer = document.getElementById(drawerId);
+        const drawerClose = document.querySelector('[data-header-menu-close]');
+        const toggle = document.querySelector('[data-header-menu-toggle]');
+
+        if (toggle && drawer) {
+          console.log('[HeaderMenu Widget] Setting up hamburger menu', {
+            widgetId: '{{ widget.id }}',
+            toggleFound: !!toggle,
+            drawerFound: !!drawer,
+            drawerCloseFound: !!drawerClose,
+            windowWidth: window.innerWidth
+          });
+
+          // Use a flag to prevent duplicate listeners
+          if (toggle.dataset.menuListenerAttached === 'true') {
+            console.log('[HeaderMenu Widget] Listener already attached, skipping');
+            return true;
+          }
+          toggle.dataset.menuListenerAttached = 'true';
+
+          // Mobile menu toggle - Open drawer (only on mobile)
+          toggle.addEventListener('click', (e) => {
+            // Double check we're on mobile
+            if (window.innerWidth > 768) {
+              console.log('[HeaderMenu Widget] Ignoring toggle click on desktop');
+              return;
+            }
+            e.preventDefault();
+            e.stopPropagation();
+            const currentDrawer = document.getElementById(drawerId);
+            if (!currentDrawer) {
+              console.error('[HeaderMenu Widget] Drawer not found when toggling');
+              return;
+            }
+            const isOpen = currentDrawer.classList.contains('active');
+            console.log('[HeaderMenu Widget] Toggle clicked, drawer state:', isOpen ? 'open' : 'closed');
+            if (isOpen) {
+              closeDrawer(currentDrawer, toggle);
+            } else {
+              openDrawer(currentDrawer, toggle);
+            }
+          });
+
+          function openDrawer(currentDrawer, currentToggle) {
+            if (!currentDrawer) {
+              console.error('[HeaderMenu Widget] Cannot open drawer - drawer not found');
+              return;
+            }
+            if (window.innerWidth > 768) {
+              console.log('[HeaderMenu Widget] Ignoring open on desktop');
+              return;
+            }
+            console.log('[HeaderMenu Widget] Opening drawer');
+            currentDrawer.classList.add('active');
+            currentDrawer.setAttribute('aria-hidden', 'false');
+            if (currentToggle) {
+              currentToggle.setAttribute('aria-expanded', 'true');
+              currentToggle.classList.add('is-open');
+            }
+            // Prevent body scroll
+            const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+            document.body.style.paddingRight = scrollbarWidth + 'px';
+            document.body.style.overflow = 'hidden';
+            document.documentElement.style.overflow = 'hidden';
+            console.log('[HeaderMenu Widget] Drawer opened successfully');
+          }
+
+          function closeDrawer(currentDrawer, currentToggle) {
+            if (!currentDrawer) {
+              console.error('[HeaderMenu Widget] Cannot close drawer - drawer not found');
+              return;
+            }
+            console.log('[HeaderMenu Widget] Closing drawer');
+            currentDrawer.classList.remove('active');
+            currentDrawer.setAttribute('aria-hidden', 'true');
+            if (currentToggle) {
+              currentToggle.setAttribute('aria-expanded', 'false');
+              currentToggle.classList.remove('is-open');
+            }
+            // Restore body scroll
+            document.body.style.paddingRight = '';
+            document.body.style.overflow = '';
+            document.documentElement.style.overflow = '';
+            console.log('[HeaderMenu Widget] Drawer closed successfully');
+          }
+
+          // Close drawer button
+          if (drawerClose && drawer) {
+            drawerClose.addEventListener('click', (e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              console.log('[HeaderMenu Widget] Close button clicked');
+              const currentDrawer = document.getElementById(drawerId);
+              if (currentDrawer) {
+                closeDrawer(currentDrawer, toggle);
+              }
+            });
+          }
+
+          // Close on Escape key (only add once)
+          if (!window.__headerMenuWidgetEscapeHandler) {
+            window.__headerMenuWidgetEscapeHandler = function(e) {
+              if (e.key === 'Escape' && window.innerWidth <= 768) {
+                const currentDrawer = document.getElementById(drawerId);
+                if (currentDrawer && currentDrawer.classList.contains('active')) {
+                  console.log('[HeaderMenu Widget] Escape key pressed');
+                  closeDrawer(currentDrawer, toggle);
+                }
+              }
+            };
+            document.addEventListener('keydown', window.__headerMenuWidgetEscapeHandler);
+          }
+
+          // Close on outside click (only add once)
+          if (!window.__headerMenuWidgetOverlayHandler) {
+            window.__headerMenuWidgetOverlayHandler = function(e) {
+              if (window.innerWidth > 768) return;
+              const currentDrawer = document.getElementById(drawerId);
+              if (currentDrawer && currentDrawer.classList.contains('active')) {
+                const drawerContent = currentDrawer.querySelector('.header-menu-nav__mobile-drawer-content');
+                // Close if clicking the backdrop (drawer itself) but not the content
+                if (e.target === currentDrawer || (drawerContent && !drawerContent.contains(e.target) && currentDrawer.contains(e.target))) {
+                  console.log('[HeaderMenu Widget] Backdrop clicked - closing drawer');
+                  closeDrawer(currentDrawer, toggle);
+                }
+              }
+            };
+            document.addEventListener('click', window.__headerMenuWidgetOverlayHandler);
+          }
+
+          // Close on outside click
+          const overlayClickHandler = (e) => {
+            const currentDrawer = document.getElementById(drawerId);
+            if (currentDrawer && currentDrawer.classList.contains('active')) {
+              if (e.target === currentDrawer) {
+                closeDrawer(currentDrawer, newToggle);
+              }
+            }
+          };
+          document.addEventListener('click', overlayClickHandler);
+
+          console.log('[HeaderMenu Widget] Hamburger menu setup complete');
+          return true;
+        } else {
+          attempts++;
+          if (attempts < maxAttempts) {
+            setTimeout(trySetup, 100);
+          } else {
+            console.warn('[HeaderMenu Widget] Could not find hamburger menu elements after', maxAttempts, 'attempts', {
+              toggleFound: !!toggle,
+              drawerFound: !!drawer,
+              drawerId: drawerId,
+              windowWidth: window.innerWidth
+            });
+          }
+          return false;
+        }
+      }
+
+      trySetup();
+    }
+
+    // Submenu toggles for mobile
+    function setupSubmenuToggles() {
+      // Find all mobile drawer items with children (both in menuNav and in the drawer)
+      const drawerId = 'header-menu-mobile-drawer-{{ widget.id }}';
+      const drawer = document.getElementById(drawerId);
+      const drawerContainer = drawer ? drawer.querySelector('[data-mobile-menu-list]') : null;
+      
+      // Get items from both locations
+      const itemsFromNav = menuNav ? menuNav.querySelectorAll('.header-menu-nav__mobile-drawer-item.has-children') : [];
+      const itemsFromDrawer = drawerContainer ? drawerContainer.querySelectorAll('.header-menu-nav__mobile-drawer-item.has-children') : [];
+      
+      // Combine and deduplicate
+      const allItems = new Set([...itemsFromNav, ...itemsFromDrawer]);
+      
+      console.log('[HeaderMenu Widget] Setting up submenu toggles, found', allItems.size, 'items with children');
+      
+      allItems.forEach(item => {
+        const link = item.querySelector('.header-menu-nav__mobile-drawer-link');
+        if (link) {
+          // Remove existing listener if any
+          const newLink = link.cloneNode(true);
+          link.parentNode.replaceChild(newLink, link);
+          
+          newLink.addEventListener('click', (e) => {
+            const submenu = item.querySelector('.header-menu-nav__mobile-drawer-sublist');
+            if (submenu) {
+              e.preventDefault();
+              e.stopPropagation();
+              const isOpen = item.classList.contains('open');
+              item.classList.toggle('open');
+              console.log('[HeaderMenu Widget] Submenu toggled:', item.classList.contains('open') ? 'opened' : 'closed');
+            }
+          });
+        }
+      });
+    }
+
+    /**
+     * Load Main Menu from API
+     * Fetches menus, filters for "Main Menu" type, and renders menu items
+     */
+    async function loadMainMenu(menuNav) {
+      const menuList = menuNav.querySelector('[data-menu-list]');
+      const loadingEl = menuNav.querySelector('[data-menu-loading]');
+      const errorEl = menuNav.querySelector('[data-menu-error]');
+      const mobileMenuList = document.querySelector('[data-mobile-menu-list]');
+      const mobileLoading = document.querySelector('[data-mobile-menu-loading]');
+      const mobileError = document.querySelector('[data-mobile-menu-error]');
+
+      if (!menuList) {
+        console.error('[HeaderMenu] Menu list not found');
+        return;
+      }
+
+      try {
+        // Show loading state
+        if (loadingEl) loadingEl.style.display = 'block';
+        if (errorEl) errorEl.style.display = 'none';
+        if (mobileLoading) mobileLoading.style.display = 'block';
+        if (mobileError) mobileError.style.display = 'none';
+        menuList.innerHTML = '';
+
+        // Step 1: Fetch all menus
+        const menusResponse = await fetch('/webstoreapi/menus', {
+          headers: {
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+          }
+        });
+
+        if (!menusResponse.ok) {
+          throw new Error(`Failed to fetch menus: ${menusResponse.status}`);
+        }
+
+        const menus = await menusResponse.json();
+        if (!Array.isArray(menus)) {
+          throw new Error('Invalid menus response format');
+        }
+
+        // Step 2: Filter for "Main Menu" type (case-insensitive)
+        const mainMenu = menus.find(menu => {
+          const menuType = menu.type || '';
+          return menuType.toLowerCase().trim() === 'main menu';
+        });
+
+        if (!mainMenu || !mainMenu.id) {
+          throw new Error('Main Menu not found');
+        }
+
+        // Step 3: Fetch full menu details with items
+        const menuResponse = await fetch(`/webstoreapi/menus/${mainMenu.id}`, {
+          method: 'GET',
+              headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+              }
+            });
+
+        if (!menuResponse.ok) {
+          throw new Error(`Failed to fetch menu details: ${menuResponse.status}`);
+        }
+
+        const menuData = await menuResponse.json();
+        
+        if (!menuData || !menuData.items || !Array.isArray(menuData.items)) {
+          throw new Error('Menu items not found');
+        }
+
+        // Step 4: Render menu items
+        if (menuData.items.length === 0) {
+          throw new Error('No menu items available');
+        }
+
+        // Store menu data for sharing between desktop and mobile
+        sharedMenuData = menuData.items;
+
+        // Render desktop menu
+        renderMenuItems(menuList, menuData.items);
+
+        // Render mobile menu
+        if (mobileMenuList) {
+          renderMobileMenuItems(mobileMenuList, menuData.items);
+        }
+
+        // Setup mobile submenu toggles
+        setupSubmenuToggles();
+
+        // Hide loading state
+        if (loadingEl) {
+          loadingEl.setAttribute('data-menu-loading-hidden', '');
+          loadingEl.style.display = 'none';
+        }
+        if (mobileLoading) {
+          mobileLoading.setAttribute('data-mobile-menu-loading-hidden', '');
+          mobileLoading.style.display = 'none';
+        }
+
+      } catch (error) {
+        console.error('[HeaderMenu] Error loading menu:', error);
+        
+        // Hide loading, show error
+        if (loadingEl) {
+          loadingEl.setAttribute('data-menu-loading-hidden', '');
+          loadingEl.style.display = 'none';
+        }
+        if (mobileLoading) {
+          mobileLoading.setAttribute('data-mobile-menu-loading-hidden', '');
+          mobileLoading.style.display = 'none';
+        }
+        
+        if (errorEl) {
+          errorEl.removeAttribute('data-menu-error-hidden');
+          errorEl.style.display = 'block';
+        } else {
+          menuList.innerHTML = '<li class="header-menu-nav__item"><span class="header-menu-nav__link">Menu items unavailable</span></li>';
+        }
+        
+        // Show error in mobile menu too
+        if (mobileError) {
+          mobileError.removeAttribute('data-mobile-menu-error-hidden');
+          mobileError.style.display = 'block';
+        } else if (mobileMenuList) {
+          mobileMenuList.innerHTML = '<li class="header-menu-nav__mobile-drawer-item"><span class="header-menu-nav__mobile-drawer-link">Menu items unavailable</span></li>';
+        }
+      }
+    }
+
+    /**
+     * Normalize menu link to ensure it's an absolute URL
+     * @param {string} link - Menu link from API
+     * @returns {string} Normalized absolute URL
+     */
+    function normalizeMenuLink(link) {
+      if (!link || link === '#' || link.trim() === '') {
+        return '#';
+      }
+      
+      const trimmedLink = link.trim();
+      
+      // If already an absolute URL (http:// or https://), return as-is
+      if (trimmedLink.startsWith('http://') || trimmedLink.startsWith('https://')) {
+        return trimmedLink;
+      }
+      
+      // If already starts with /, it's absolute from root, return as-is
+      if (trimmedLink.startsWith('/')) {
+        return trimmedLink;
+      }
+      
+      // Otherwise, prepend base URL to make it absolute
+      const baseUrl = window.location.origin;
+      // Remove leading slash from link if present, then add it back with baseUrl
+      const cleanLink = trimmedLink.startsWith('/') ? trimmedLink : '/' + trimmedLink;
+      return baseUrl + cleanLink;
+    }
+
+    /**
+     * Render menu items recursively
+     * @param {HTMLElement} container - Container element to append menu items
+     * @param {Array} items - Array of menu items
+     */
+    function renderMenuItems(container, items) {
+      if (!items || items.length === 0) return;
+
+      // Sort items by displayOrder if available
+      const sortedItems = [...items].sort((a, b) => {
+        const orderA = a.displayOrder !== undefined ? a.displayOrder : 999;
+        const orderB = b.displayOrder !== undefined ? b.displayOrder : 999;
+        return orderA - orderB;
+      });
+
+      sortedItems.forEach(item => {
+        const hasChildren = item.childItems && Array.isArray(item.childItems) && item.childItems.length > 0;
+        
+        // Create list item
+        const li = document.createElement('li');
+        li.className = 'header-menu-nav__item';
+        if (hasChildren) {
+          li.classList.add('has-children');
+        }
+
+        // Create link
+        const link = document.createElement('a');
+        link.href = normalizeMenuLink(item.link);
+        link.className = 'header-menu-nav__link';
+        
+        // Escape HTML to prevent XSS
+        const textNode = document.createTextNode(item.name || item.title || '');
+        link.appendChild(textNode);
+        link.setAttribute('aria-label', item.name || item.title || 'Menu item');
+
+        li.appendChild(link);
+
+        // Create submenu for items with children
+        if (hasChildren) {
+          const submenu = document.createElement('ul');
+          submenu.className = 'header-menu-nav__submenu';
+
+          // Recursively render child items
+          renderSubmenuItems(submenu, item.childItems);
+          li.appendChild(submenu);
+        }
+
+        container.appendChild(li);
+      });
+    }
+
+    /**
+     * Render submenu items recursively
+     * @param {HTMLElement} container - Container element for submenu
+     * @param {Array} items - Array of child menu items
+     */
+    function renderSubmenuItems(container, items) {
+      if (!items || items.length === 0) return;
+
+      // Sort items by displayOrder if available
+      const sortedItems = [...items].sort((a, b) => {
+        const orderA = a.displayOrder !== undefined ? a.displayOrder : 999;
+        const orderB = b.displayOrder !== undefined ? b.displayOrder : 999;
+        return orderA - orderB;
+      });
+
+      sortedItems.forEach(item => {
+        const li = document.createElement('li');
+        li.className = 'header-menu-nav__submenu-item';
+
+        const link = document.createElement('a');
+        link.href = normalizeMenuLink(item.link);
+        link.className = 'header-menu-nav__submenu-link';
+        
+        // Escape HTML to prevent XSS
+        const textNode = document.createTextNode(item.name || item.title || '');
+        link.appendChild(textNode);
+        link.setAttribute('aria-label', item.name || item.title || 'Submenu item');
+
+        li.appendChild(link);
+        container.appendChild(li);
+      });
+    }
+
+    /**
+     * Render mobile menu items recursively
+     * @param {HTMLElement} container - Container element to append menu items
+     * @param {Array} items - Array of menu items
+     */
+    function renderMobileMenuItems(container, items) {
+      if (!items || items.length === 0) {
+        container.innerHTML = '<li class="header-menu-nav__mobile-drawer-item"><span class="header-menu-nav__mobile-drawer-link">No menu items</span></li>';
+            return;
+          }
+
+      // Clear existing content
+      container.innerHTML = '';
+
+      // Sort items by displayOrder if available
+      const sortedItems = [...items].sort((a, b) => {
+        const orderA = a.displayOrder !== undefined ? a.displayOrder : 999;
+        const orderB = b.displayOrder !== undefined ? b.displayOrder : 999;
+        return orderA - orderB;
+      });
+
+      sortedItems.forEach(item => {
+        const hasChildren = item.childItems && Array.isArray(item.childItems) && item.childItems.length > 0;
+        
+        // Create list item
+        const li = document.createElement('li');
+        li.className = 'header-menu-nav__mobile-drawer-item';
+        if (hasChildren) {
+          li.classList.add('has-children');
+        }
+
+        // Create link
+        const link = document.createElement('a');
+        link.href = normalizeMenuLink(item.link);
+        link.className = 'header-menu-nav__mobile-drawer-link';
+
+        // Escape HTML to prevent XSS
+        const textNode = document.createTextNode(item.name || item.title || '');
+        link.appendChild(textNode);
+        link.setAttribute('aria-label', item.name || item.title || 'Menu item');
+
+        li.appendChild(link);
+
+        // Create submenu for items with children
+        if (hasChildren) {
+          const submenu = document.createElement('ul');
+          submenu.className = 'header-menu-nav__mobile-drawer-sublist';
+
+          // Recursively render child items
+          renderMobileSubmenuItems(submenu, item.childItems);
+          li.appendChild(submenu);
+        }
+
+        container.appendChild(li);
+      });
+    }
+
+    /**
+     * Render mobile submenu items recursively
+     * @param {HTMLElement} container - Container element for submenu
+     * @param {Array} items - Array of child menu items
+     */
+    function renderMobileSubmenuItems(container, items) {
+      if (!items || items.length === 0) return;
+
+      // Sort items by displayOrder if available
+      const sortedItems = [...items].sort((a, b) => {
+        const orderA = a.displayOrder !== undefined ? a.displayOrder : 999;
+        const orderB = b.displayOrder !== undefined ? b.displayOrder : 999;
+        return orderA - orderB;
+      });
+
+      sortedItems.forEach(item => {
+        const li = document.createElement('li');
+        li.className = 'header-menu-nav__mobile-drawer-subitem';
+
+        const link = document.createElement('a');
+        link.href = normalizeMenuLink(item.link);
+        link.className = 'header-menu-nav__mobile-drawer-sublink';
+        
+        // Escape HTML to prevent XSS
+        const textNode = document.createTextNode(item.name || item.title || '');
+        link.appendChild(textNode);
+        link.setAttribute('aria-label', item.name || item.title || 'Submenu item');
+
+        li.appendChild(link);
+        container.appendChild(li);
+        });
+      }
+    });
+  </script>

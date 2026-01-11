@@ -1,0 +1,68 @@
+/**
+ * Example Migration Script
+ * 
+ * This is an example migration script template.
+ * Rename to match your version pattern: v{fromVersion}-to-v{toVersion}.js
+ * 
+ * Example: v1.0.0-to-v1.0.1.js
+ */
+
+module.exports = async function(context) {
+  const { tenantId, themeId, fromVersion, toVersion, s3Client, tenantBucket } = context;
+  
+  console.log(`Migrating ${themeId} from ${fromVersion} to ${toVersion} for tenant ${tenantId}`);
+  
+  try {
+    // Example: Update settings_data.json
+    // Uncomment and modify as needed:
+    
+    /*
+    const { GetObjectCommand, PutObjectCommand } = require('@aws-sdk/client-s3');
+    
+    const settingsPath = `themes/${tenantId}/${themeId}/config/settings_data.json`;
+    
+    // Get current settings
+    const getCommand = new GetObjectCommand({
+      Bucket: tenantBucket,
+      Key: settingsPath
+    });
+    
+    const response = await s3Client.send(getCommand);
+    const chunks = [];
+    for await (const chunk of response.Body) {
+      chunks.push(chunk);
+    }
+    
+    const settings = JSON.parse(Buffer.concat(chunks).toString('utf-8'));
+    
+    // Transform settings
+    if (!settings.current) {
+      settings.current = {};
+    }
+    
+    // Add new setting
+    if (!settings.current.myNewFeature) {
+      settings.current.myNewFeature = {
+        enabled: true,
+        value: 'default'
+      };
+    }
+    
+    // Save updated settings
+    const putCommand = new PutObjectCommand({
+      Bucket: tenantBucket,
+      Key: settingsPath,
+      ContentType: 'application/json',
+      Body: JSON.stringify(settings, null, 2)
+    });
+    
+    await s3Client.send(putCommand);
+    */
+    
+    console.log(`Migration completed successfully for tenant ${tenantId}`);
+  } catch (error) {
+    console.error(`Migration error for tenant ${tenantId}:`, error.message);
+    // Re-throw to fail the migration (or handle gracefully)
+    throw error;
+  }
+};

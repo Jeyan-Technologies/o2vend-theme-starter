@@ -1,0 +1,339 @@
+{% liquid
+  assign widget_settings = widget.settings
+  assign widget_content = widget.content
+  assign widget_data = widget.data
+
+  assign widget_products = products
+  if widget_products == nil and widget_data and widget_data.products
+    assign widget_products = widget_data.products
+  endif
+  if widget_products == nil and widget_content and widget_content.products
+    assign widget_products = widget_content.products
+  endif
+  if widget_products == nil and widget_settings and widget_settings.products
+    assign widget_products = widget_settings.products
+  endif
+
+  assign heading = heading
+  if heading == nil and widget_settings and widget_settings.title
+    assign heading = widget_settings.title
+  endif
+  if heading == nil and widget_content and widget_content.title
+    assign heading = widget_content.title
+  endif
+
+  assign description = description
+  if description == nil and widget_settings and widget_settings.subtitle
+    assign description = widget_settings.subtitle
+  endif
+  if description == nil and widget_content and widget_content.subtitle
+    assign description = widget_content.subtitle
+  endif
+
+  assign columns = columns
+  if columns == nil and widget_settings and widget_settings.columns
+    assign columns = widget_settings.columns
+  endif
+  if columns == nil and widget_content and widget_content.columns
+    assign columns = widget_content.columns
+  endif
+  if columns == nil
+    assign columns = 4
+  endif
+
+  assign show_price = show_price
+  if show_price == nil and widget_settings and widget_settings.show_price != nil
+    assign show_price = widget_settings.show_price
+  endif
+  if show_price == nil and widget_content and widget_content.show_price != nil
+    assign show_price = widget_content.show_price
+  endif
+  if show_price == nil
+    assign show_price = true
+  endif
+
+  assign show_add_to_cart = show_add_to_cart
+  if show_add_to_cart == nil and widget_settings and widget_settings.show_add_to_cart != nil
+    assign show_add_to_cart = widget_settings.show_add_to_cart
+  endif
+  if show_add_to_cart == nil and widget_content and widget_content.show_add_to_cart != nil
+    assign show_add_to_cart = widget_content.show_add_to_cart
+  endif
+  if show_add_to_cart == nil
+    assign show_add_to_cart = true
+  endif
+%}
+
+{% assign show_title_raw = show_widget_title | default: 'Yes' %}
+{% if show_title_raw == null or show_title_raw == blank or show_title_raw == 'null' %}
+  {% assign show_title = true %}
+{% else %}
+  {% assign show_title = show_title_raw == 'Yes' or show_title_raw == true %}
+{% endif %}
+{% assign title_alignment_raw = widget_title_alignment | default: 'center' %}
+{% assign title_alignment = title_alignment_raw | downcase %}
+{% if title_alignment != 'left' and title_alignment != 'right' and title_alignment != 'center' %}
+  {% assign title_alignment = 'center' %}
+{% endif %}
+
+{% if widget_products and widget_products.size > 0 %}
+  <section class="widget widget-products" data-widget-id="{{ widget.id }}">
+    {% if show_title %}
+      {% if heading %}
+        <header class="widget-header" style="text-align: {{ title_alignment }};">
+          <h2 class="widget-title">{{ heading }}</h2>
+          {% if description %}
+            <p class="widget-subtitle">{{ description }}</p>
+          {% endif %}
+        </header>
+      {% endif %}
+    {% endif %}
+
+    <div class="widget-products-grid widget-products-grid--{{ columns }}-col">
+      {% for product in widget_products %}
+        <div class="widget-product-card">
+          {% if render_snippet %}
+            {% render render_snippet, product: product, widget: widget %}
+          {% elsif widget_settings and widget_settings.card_snippet %}
+            {% render widget_settings.card_snippet, product: product, widget: widget %}
+          {% else %}
+            {% render 'snippets/product-card', product: product, widget: widget, show_price: show_price, show_add_to_cart: show_add_to_cart %}
+          {% endif %}
+        </div>
+      {% endfor %}
+    </div>
+  </section>
+{% else %}
+  <section class="widget widget-products widget-products--empty" data-widget-id="{{ widget.id }}">
+    <div class="widget-empty">
+      <h3>{{ heading | default: 'Products coming soon' }}</h3>
+      {% if description %}
+        <p>{{ description }}</p>
+      {% else %}
+        <p>{{ 'We could not find any products for this widget.' | t }}</p>
+      {% endif %}
+    </div>
+  </section>
+{% endif %}
+
+<style>
+  /* Widget Products Grid - Responsive Layout */
+  /* CRITICAL: All product cards MUST be identical size */
+  
+  .widget.widget-products {
+    padding: 40px 0;
+    width: 100%;
+    box-sizing: border-box;
+    position: relative;
+  }
+  
+  .widget.widget-products .widget-header {
+    text-align: center;
+    margin-bottom: 32px;
+    padding: 0 16px;
+    position: static;
+    z-index: auto;
+  }
+  
+  .widget-title {
+    font-size: 1.4rem;
+    font-weight: 500;
+    line-height: 1.3;
+    color: #111;
+    margin: 0 0 8px 0;
+    letter-spacing: -0.01em;
+  }
+  
+  .widget-subtitle {
+    font-size: 14px;
+    color: #6b7280;
+    margin: 0;
+  }
+  
+  /* Base grid - Desktop: 4 columns */
+  .widget-products-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    grid-auto-rows: auto;
+    gap: 24px;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 24px;
+    box-sizing: border-box;
+  }
+  
+  /* Column variations - Desktop */
+  .widget-products-grid--2-col {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .widget-products-grid--3-col {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  
+  .widget-products-grid--4-col {
+    grid-template-columns: repeat(4, 1fr);
+  }
+  
+  .widget-products-grid--5-col {
+    grid-template-columns: repeat(5, 1fr);
+  }
+  
+  .widget-products-grid--6-col {
+    grid-template-columns: repeat(6, 1fr);
+  }
+  
+  /* FORCE all widget product cards to be identical */
+  .widget-product-card {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    grid-column: span 1;
+    grid-row: span 1;
+    overflow: hidden;
+    box-sizing: border-box;
+  }
+  
+  /* FORCE all product cards inside widget to be identical */
+  .widget-products-grid .product-card {
+    width: 100%;
+    max-width: 100%;
+    grid-column: span 1;
+    grid-row: span 1;
+    box-sizing: border-box;
+  }
+  
+  /* FORCE all image containers to have same aspect ratio */
+  .widget-products-grid .product-image-container {
+    aspect-ratio: 1;
+    width: 100%;
+    max-width: 100%;
+    overflow: hidden;
+    position: relative;
+  }
+  
+  /* FORCE all images to cover container */
+  .widget-products-grid .product-image {
+    width: 100%;
+    height: 100%;
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: cover;
+    position: absolute;
+    top: 0;
+    left: 0;
+  }
+  
+  /* Override asymmetric grid for ALL nth-child variations */
+  .widget-products-grid .widget-product-card:nth-child(n),
+  .widget-products-grid .widget-product-card:first-child,
+  .widget-products-grid .widget-product-card:nth-child(3n),
+  .widget-products-grid .widget-product-card:nth-child(5n),
+  .widget-products-grid .product-card:nth-child(n),
+  .widget-products-grid .product-card:first-child,
+  .widget-products-grid .product-card:nth-child(3n),
+  .widget-products-grid .product-card:nth-child(5n) {
+    grid-column: span 1;
+    grid-row: span 1;
+    width: 100%;
+    max-width: 100%;
+  }
+  
+  .widget-products--empty {
+    text-align: center;
+    padding: 60px 24px;
+  }
+  
+  .widget-empty h3 {
+    font-size: 18px;
+    font-weight: 500;
+    color: #374151;
+    margin: 0 0 8px 0;
+  }
+  
+  .widget-empty p {
+    font-size: 14px;
+    color: #6b7280;
+    margin: 0;
+  }
+  
+  /* Tablet: 3 columns - max-width 1024px */
+  @media screen and (max-width: 1024px) {
+    .widget-products-grid,
+    .widget-products-grid--4-col,
+    .widget-products-grid--5-col,
+    .widget-products-grid--6-col {
+      grid-template-columns: repeat(3, 1fr) !important;
+      gap: 20px;
+    }
+  }
+  
+  /* Small tablet / Large mobile: 2 columns - max-width 768px */
+  @media screen and (max-width: 768px) {
+    .widget.widget-products {
+      padding: 32px 0;
+    }
+    
+    .widget.widget-products .widget-header {
+      margin-bottom: 24px;
+      position: static;
+    }
+    
+    .widget-title {
+      font-size: 1.3rem;
+    }
+    
+    .widget-products-grid,
+    .widget-products-grid--2-col,
+    .widget-products-grid--3-col,
+    .widget-products-grid--4-col,
+    .widget-products-grid--5-col,
+    .widget-products-grid--6-col {
+      grid-template-columns: repeat(2, 1fr) !important;
+      gap: 16px;
+      padding: 0 16px;
+    }
+  }
+  
+  /* Mobile: 2 columns - max-width 480px */
+  @media screen and (max-width: 480px) {
+    .widget.widget-products {
+      padding: 24px 0;
+    }
+    
+    .widget-products-grid,
+    .widget-products-grid--2-col,
+    .widget-products-grid--3-col,
+    .widget-products-grid--4-col,
+    .widget-products-grid--5-col,
+    .widget-products-grid--6-col {
+      grid-template-columns: repeat(2, 1fr) !important;
+      gap: 12px;
+      padding: 0 12px;
+    }
+    
+    .widget-title {
+      font-size: 1.2rem;
+    }
+    
+    .widget.widget-products .widget-header {
+      margin-bottom: 16px;
+      position: static;
+    }
+  }
+  
+  /* Extra small mobile: still 2 columns but tighter spacing */
+  @media screen and (max-width: 360px) {
+    .widget-products-grid,
+    .widget-products-grid--2-col,
+    .widget-products-grid--3-col,
+    .widget-products-grid--4-col,
+    .widget-products-grid--5-col,
+    .widget-products-grid--6-col {
+      grid-template-columns: repeat(2, 1fr) !important;
+      gap: 8px;
+      padding: 0 8px;
+    }
+  }
+</style>
+

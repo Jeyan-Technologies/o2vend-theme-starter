@@ -1,0 +1,19 @@
+{
+  "id": "default",
+  "name": "Default Theme",
+  "version": "1.0.0",
+  "author": "O2VEND",
+  "description": "Default e-commerce theme for O2VEND",
+  "migration": {
+    "files": {
+      "modified": [],
+      "added": [],
+      "deleted": []
+    },
+    "script": null
+  },
+  "compatibility": {
+    "minO2VENDVersion": "1.0.0",
+    "dependencies": []
+  }
+}

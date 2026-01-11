@@ -1,0 +1,40 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "O2VEND: Serve Theme",
+      "type": "shell",
+      "command": "o2vend",
+      "args": ["theme", "serve", "--cwd", "${workspaceFolder}/theme"],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "O2VEND: Validate Theme",
+      "type": "shell",
+      "command": "o2vend",
+      "args": ["theme", "validate", "--cwd", "${workspaceFolder}/theme"],
+      "group": "test",
+      "presentation": {
+        "reveal": "always"
+      }
+    },
+    {
+      "label": "O2VEND: Check Theme",
+      "type": "shell",
+      "command": "o2vend",
+      "args": ["theme", "check", "--cwd", "${workspaceFolder}/theme"],
+      "group": "test",
+      "presentation": {
+        "reveal": "always"
+      }
+    }
+  ]
+}

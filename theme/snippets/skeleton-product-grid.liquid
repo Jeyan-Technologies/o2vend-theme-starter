@@ -1,0 +1,34 @@
+{% comment %}
+  Skeleton Loader for Product Grid
+  Parameters:
+    - count: Number of skeleton cards to display (default: 4)
+{% endcomment %}
+
+{% assign skeletonCount = count | default: 4 %}
+
+<div class="products-grid skeleton-grid">
+  {% if skeletonCount >= 1 %}{% include 'snippets/skeleton-product-card' %}{% endif %}
+  {% if skeletonCount >= 2 %}{% include 'snippets/skeleton-product-card' %}{% endif %}
+  {% if skeletonCount >= 3 %}{% include 'snippets/skeleton-product-card' %}{% endif %}
+  {% if skeletonCount >= 4 %}{% include 'snippets/skeleton-product-card' %}{% endif %}
+  {% if skeletonCount >= 5 %}{% include 'snippets/skeleton-product-card' %}{% endif %}
+  {% if skeletonCount >= 6 %}{% include 'snippets/skeleton-product-card' %}{% endif %}
+  {% if skeletonCount >= 7 %}{% include 'snippets/skeleton-product-card' %}{% endif %}
+  {% if skeletonCount >= 8 %}{% include 'snippets/skeleton-product-card' %}{% endif %}
+</div>
+
+<style>
+.skeleton-grid {
+  animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+</style>
+

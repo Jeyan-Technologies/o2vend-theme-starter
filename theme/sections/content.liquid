@@ -1,0 +1,64 @@
+{% comment %}
+  Content Section
+  
+  This section renders widgets from the "content" section in order.
+  Widgets are rendered one below another, sorted by Position field.
+  Supports drag-and-drop ordering in visual editor.
+{% endcomment %}
+
+{% assign content_widgets = widgets.content %}
+{% if content_widgets and content_widgets.size > 0 %}
+  <section class="theme-section theme-section--content" data-section="content" data-section-id="{{ section.id }}">
+    {% for widget in content_widgets %}
+      <div class="theme-widget-wrapper" 
+           data-widget-id="{{ widget.id }}" 
+           data-widget-type="{{ widget.type }}"
+           data-widget-position="{{ widget.Position | default: widget.position | default: forloop.index }}">
+        {% if widget and widget.template_path %}
+          {% render widget.template_path, widget: widget, settings: settings %}
+        {% else %}
+          <div class="widget-error" data-widget-error>
+            <p>Widget template not found: {{ widget.template_path | default: 'unknown' }}</p>
+            <p>Widget type: {{ widget.type | default: 'unknown' }}</p>
+          </div>
+        {% endif %}
+      </div>
+    {% endfor %}
+  </section>
+  <style>
+    .theme-section--content .theme-widget-wrapper {
+      display: block;
+      margin-bottom: 2rem;
+    }
+    .theme-section--content .theme-widget-wrapper:last-child {
+      margin-bottom: 0;
+    }
+    .widget-error {
+      padding: 1rem;
+      background: #fee2e2;
+      border: 1px solid #fecaca;
+      border-radius: 0.5rem;
+      color: #991b1b;
+      font-size: 0.875rem;
+    }
+  </style>
+{% else %}
+  {% render 'sections/content-fallback' %}
+{% endif %}
+
+{% schema %}
+{
+  "name": "Content",
+  "settings": [
+    {
+      "type": "paragraph",
+      "content": "This section displays widgets from the 'content' section. Widgets are automatically ordered by their Position field and can be reordered in the visual editor."
+    }
+  ],
+  "presets": [
+    {
+      "name": "Content"
+    }
+  ]
+}
+{% endschema %}

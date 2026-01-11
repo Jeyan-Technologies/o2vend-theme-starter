@@ -1,0 +1,843 @@
+{% liquid
+  assign widget_settings = widget.settings
+  assign widget_data = widget.data
+  
+  comment
+    Static Widget: Content comes from widget_data.content (Items array)
+    Settings come from widget_settings
+  endcomment
+  
+  assign content_data = widget_data.content | default: widget.content
+  assign items = content_data.Items | default: content_data.items | default: widget_data.items | default: widget_data.Items | default: widget_data.slides
+  
+  assign show_container = widget_settings.showContainer | default: 'Yes'
+  assign show_bottom_margin = widget_settings.showWidgetBottomMargin | default: 'Yes'
+  assign background_color = widget_settings.backgroundColor
+  assign text_color = widget_settings.textColor
+  assign image_height = widget_settings.imageHeight
+  assign image_width = widget_settings.imageWidth
+  assign hide_dot = widget_settings.hideDot | default: false
+  assign hide_arrow = widget_settings.hideArrow | default: false
+  assign autoplay = widget_settings.autoplay | default: true
+  assign interval = widget_settings.interval | default: 5000
+%}
+
+<section class="modern-carousel" 
+         data-widget-id="{{ widget.id }}" 
+         data-autoplay="{{ autoplay }}" 
+         data-interval="{{ interval }}"
+         {% if background_color and background_color != 'null' %}style="background-color: {{ background_color }};"{% endif %}>
+  {% if items and items.size > 0 %}
+    <div class="modern-carousel__container{% if show_container == 'Yes' %} modern-carousel__container--contained{% endif %}">
+      <div class="modern-carousel__viewport" data-carousel-viewport>
+        <div class="modern-carousel__track" data-carousel-track>
+          {% for item in items %}
+            <article class="modern-carousel__slide{% if forloop.first %} is-active{% endif %}" data-slide="{{ forloop.index0 }}">
+              {% assign image_url = item.imageUrl | default: item.ImageUrl | default: item.image | default: item.Image %}
+              
+              {% if image_url and image_url != 'null' %}
+                {% if image_url contains 'http://' or image_url contains 'https://' %}
+                  {% assign image_src = image_url %}
+                {% else %}
+                  {% assign image_src = image_url | asset_url %}
+                {% endif %}
+                
+                <div class="modern-carousel__image-wrapper">
+                  <img src="{{ image_src }}" 
+                       alt="{{ item.caption | default: item.Caption | default: item.title | default: 'Carousel image' }}" 
+                       class="modern-carousel__image"
+                       loading="{% if forloop.first %}eager{% else %}lazy{% endif %}"
+                       {% if image_height %}style="height: {{ image_height }}px;"{% endif %}>
+                  <div class="modern-carousel__overlay"></div>
+                </div>
+              {% endif %}
+              
+              {% assign caption = item.caption | default: item.Caption %}
+              {% assign sub_caption = item.subCaption | default: item.SubCaption | default: item.sub_caption | default: item.subtitle %}
+              {% assign link_text = item.linkText | default: item.LinkText | default: item.link_text | default: item.cta_label %}
+              {% assign target_url = item.targetUrl | default: item.TargetUrl | default: item.target_url | default: item.cta_link %}
+              
+              {% if caption or sub_caption or link_text %}
+                <div class="modern-carousel__content" {% if text_color and text_color != 'null' %}style="color: {{ text_color }};"{% endif %}>
+                  <div class="modern-carousel__content-inner">
+                    {% if caption %}
+                      <h2 class="modern-carousel__title animate-fade-up">{{ caption }}</h2>
+                    {% endif %}
+                    {% if sub_caption %}
+                      <p class="modern-carousel__subtitle animate-fade-up animate-delay-1">{{ sub_caption }}</p>
+                    {% endif %}
+                    {% if link_text and link_text != '' and target_url and target_url != 'null' %}
+                      <a href="{{ target_url }}" class="modern-carousel__cta animate-fade-up animate-delay-2">
+                        <span>{{ link_text }}</span>
+                        <svg class="modern-carousel__cta-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                          <path d="M5 12h14M12 5l7 7-7 7"/>
+                        </svg>
+                      </a>
+                    {% endif %}
+                  </div>
+                </div>
+              {% endif %}
+            </article>
+          {% endfor %}
+        </div>
+      </div>
+
+      {% unless hide_arrow == true %}
+        <div class="modern-carousel__controls">
+          <button class="modern-carousel__arrow modern-carousel__arrow--prev" 
+                  data-carousel-prev 
+                  aria-label="Previous slide">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+              <path d="M15 18l-6-6 6-6"/>
+            </svg>
+          </button>
+          <button class="modern-carousel__arrow modern-carousel__arrow--next" 
+                  data-carousel-next 
+                  aria-label="Next slide">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+              <path d="M9 18l6-6-6-6"/>
+            </svg>
+          </button>
+        </div>
+      {% endunless %}
+
+      {% unless hide_dot == true %}
+        <div class="modern-carousel__pagination" data-carousel-dots>
+          {% for item in items %}
+            <button class="modern-carousel__dot{% if forloop.first %} is-active{% endif %}" 
+                    data-index="{{ forloop.index0 }}" 
+                    aria-label="Go to slide {{ forloop.index }}">
+              <span class="modern-carousel__dot-inner"></span>
+            </button>
+          {% endfor %}
+        </div>
+      {% endunless %}
+
+      <!-- Progress Bar -->
+      {% if autoplay %}
+        <div class="modern-carousel__progress">
+          <div class="modern-carousel__progress-bar" data-progress-bar></div>
+        </div>
+      {% endif %}
+    </div>
+  {% else %}
+    <div class="modern-carousel__empty">
+      <svg class="modern-carousel__empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+        <circle cx="8.5" cy="8.5" r="1.5"></circle>
+        <polyline points="21 15 16 10 5 21"></polyline>
+      </svg>
+      <p>{{ widget_settings.empty_state | default: 'Add slides to display your carousel.' }}</p>
+    </div>
+  {% endif %}
+</section>
+
+<style>
+/* ============================================
+   MODERN CAROUSEL - ROOT VARIABLES
+   ============================================ */
+
+:root {
+  --carousel-height-desktop: 600px;
+  --carousel-height-tablet: 500px;
+  --carousel-height-mobile: 400px;
+  --carousel-radius: 20px;
+  --carousel-padding: 60px;
+  --carousel-gap: 24px;
+  --overlay-gradient: linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.7) 100%);
+  --transition-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+  --color-white: #ffffff;
+  --color-black: #000000;
+  --color-primary: {{ settings.color_primary | default: '#3b82f6' }};
+}
+
+/* ============================================
+   CAROUSEL CONTAINER
+   ============================================ */
+
+.modern-carousel {
+  position: relative;
+  width: 100%;
+  {% if show_bottom_margin == 'Yes' %}
+    margin-bottom: 60px;
+  {% endif %}
+  overflow: hidden;
+}
+
+.modern-carousel__container {
+  position: relative;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.modern-carousel__container--contained {
+  max-width: {{ settings.container_width | default: 1200 }}px;
+  padding: 0 20px;
+}
+
+/* ============================================
+   VIEWPORT & TRACK
+   ============================================ */
+
+.modern-carousel__viewport {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  {% if show_container == 'Yes' %}
+    border-radius: var(--carousel-radius);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+  {% endif %}
+}
+
+.modern-carousel__track {
+  display: flex;
+  transition: transform 0.7s var(--transition-smooth);
+  width: 100%;
+}
+
+/* ============================================
+   SLIDES
+   ============================================ */
+
+.modern-carousel__slide {
+  position: relative;
+  flex: 0 0 100%;
+  min-width: 100%;
+  height: var(--carousel-height-desktop);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: var(--border-radius-medium);
+}
+
+.modern-carousel__image-wrapper {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+}
+
+.modern-carousel__image {
+  width: 100%;
+  height: 100%;
+  {% comment %} object-fit: cover; {% endcomment %}
+  transform: scale(1);
+  transition: transform 8s var(--transition-smooth);
+}
+
+.modern-carousel__slide.is-active .modern-carousel__image {
+  transform: scale(1.08);
+}
+
+.modern-carousel__overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--overlay-gradient);
+  z-index: 2;
+}
+
+/* ============================================
+   CONTENT
+   ============================================ */
+
+.modern-carousel__content {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 3;
+  padding: var(--carousel-padding);
+}
+
+.modern-carousel__content-inner {
+  max-width: 800px;
+  text-align: center;
+}
+
+.modern-carousel__title {
+  margin: 0 0 20px;
+  font-size: clamp(2rem, 5vw, 4.5rem);
+  font-weight: 800;
+  line-height: 1.1;
+  color: var(--color-white);
+  text-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  letter-spacing: -0.03em;
+}
+
+.modern-carousel__subtitle {
+  margin: 0 0 32px;
+  font-size: clamp(1rem, 2vw, 1.5rem);
+  font-weight: 400;
+  line-height: 1.6;
+  color: var(--color-white);
+  opacity: 0.95;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.modern-carousel__cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 18px 40px;
+  background: var(--color-white);
+  color: var(--color-black);
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 16px;
+  letter-spacing: 0.5px;
+  border-radius: 50px;
+  transition: all 0.4s var(--transition-smooth);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
+  text-transform: uppercase;
+  position: relative;
+  overflow: hidden;
+}
+
+.modern-carousel__cta::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: var(--color-primary);
+  transition: left 0.4s var(--transition-smooth);
+  z-index: -1;
+}
+
+.modern-carousel__cta:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+  color: var(--color-white);
+}
+
+.modern-carousel__cta:hover::before {
+  left: 0;
+}
+
+.modern-carousel__cta-icon {
+  width: 20px;
+  height: 20px;
+  transition: transform 0.4s var(--transition-smooth);
+}
+
+.modern-carousel__cta:hover .modern-carousel__cta-icon {
+  transform: translateX(4px);
+}
+
+/* ============================================
+   ANIMATIONS
+   ============================================ */
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.modern-carousel__slide.is-active .animate-fade-up {
+  animation: fadeUp 0.8s var(--transition-smooth) forwards;
+}
+
+.modern-carousel__slide.is-active .animate-delay-1 {
+  animation-delay: 0.2s;
+  opacity: 0;
+}
+
+.modern-carousel__slide.is-active .animate-delay-2 {
+  animation-delay: 0.4s;
+  opacity: 0;
+}
+
+/* ============================================
+   CONTROLS (ARROWS)
+   ============================================ */
+
+.modern-carousel__controls {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  transform: translateY(-50%);
+  display: flex;
+  justify-content: space-between;
+  padding: 0 30px;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.modern-carousel__arrow {
+  width: 56px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(12px);
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  pointer-events: all;
+  transition: all 0.3s var(--transition-smooth);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+.modern-carousel__arrow svg {
+  width: 24px;
+  height: 24px;
+  color: var(--color-black);
+  transition: transform 0.3s var(--transition-smooth);
+}
+
+.modern-carousel__arrow:hover {
+  background: var(--color-white);
+  transform: scale(1.1);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
+}
+
+.modern-carousel__arrow--prev:hover svg {
+  transform: translateX(-3px);
+}
+
+.modern-carousel__arrow--next:hover svg {
+  transform: translateX(3px);
+}
+
+.modern-carousel__arrow:active {
+  transform: scale(0.95);
+}
+
+/* ============================================
+   PAGINATION (DOTS)
+   ============================================ */
+
+.modern-carousel__pagination {
+  position: absolute;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 12px;
+  z-index: 10;
+  padding: 12px 20px;
+  background: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(12px);
+  border-radius: 50px;
+}
+
+.modern-carousel__dot {
+  width: 44px;
+  height: 8px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  border-radius: 4px;
+}
+
+.modern-carousel__dot-inner {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.4);
+  transition: all 0.4s var(--transition-smooth);
+  border-radius: 4px;
+}
+
+.modern-carousel__dot:hover .modern-carousel__dot-inner {
+  background: rgba(255, 255, 255, 0.7);
+}
+
+.modern-carousel__dot.is-active .modern-carousel__dot-inner {
+  background: var(--color-white);
+}
+
+/* ============================================
+   PROGRESS BAR
+   ============================================ */
+
+.modern-carousel__progress {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.2);
+  z-index: 10;
+  overflow: hidden;
+}
+
+.modern-carousel__progress-bar {
+  height: 100%;
+  background: var(--color-white);
+  width: 0%;
+  transition: width 0.1s linear;
+}
+
+/* ============================================
+   EMPTY STATE
+   ============================================ */
+
+.modern-carousel__empty {
+  padding: 100px 40px;
+  text-align: center;
+  color: #9ca3af;
+}
+
+.modern-carousel__empty-icon {
+  width: 80px;
+  height: 80px;
+  margin: 0 auto 24px;
+  opacity: 0.5;
+}
+
+.modern-carousel__empty p {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 500;
+}
+
+/* ============================================
+   TABLET RESPONSIVE (768px - 1024px)
+   ============================================ */
+
+@media screen and (max-width: 1024px) and (min-width: 769px) {
+  .modern-carousel__slide {
+    height: var(--carousel-height-tablet);
+  }
+
+  .modern-carousel__content {
+    padding: 50px 40px;
+  }
+
+  .modern-carousel__title {
+    font-size: clamp(1.75rem, 4vw, 3.5rem);
+    margin-bottom: 16px;
+  }
+
+  .modern-carousel__subtitle {
+    font-size: clamp(0.9rem, 1.8vw, 1.25rem);
+    margin-bottom: 28px;
+  }
+
+  .modern-carousel__cta {
+    padding: 16px 36px;
+    font-size: 15px;
+  }
+
+  .modern-carousel__arrow {
+    width: 50px;
+    height: 50px;
+  }
+
+  .modern-carousel__controls {
+    padding: 0 24px;
+  }
+}
+
+/* ============================================
+   MOBILE RESPONSIVE (max-width: 768px)
+   ============================================ */
+
+@media screen and (max-width: 768px) {
+  :root {
+    --carousel-padding: 30px 20px;
+    --carousel-radius: 16px;
+  }
+
+  .modern-carousel__slide {
+    height: var(--carousel-height-mobile);
+  }
+
+  .modern-carousel__content {
+    padding: var(--carousel-padding);
+  }
+
+  .modern-carousel__content-inner {
+    max-width: 100%;
+  }
+
+  .modern-carousel__title {
+    font-size: clamp(1.5rem, 6vw, 2.5rem);
+    margin-bottom: 12px;
+  }
+
+  .modern-carousel__subtitle {
+    font-size: clamp(0.875rem, 3vw, 1.125rem);
+    margin-bottom: 20px;
+  }
+
+  .modern-carousel__cta {
+    padding: 14px 28px;
+    font-size: 14px;
+    gap: 8px;
+  }
+
+  .modern-carousel__cta-icon {
+    width: 16px;
+    height: 16px;
+  }
+
+  .modern-carousel__controls {
+    padding: 0 16px;
+  }
+
+  .modern-carousel__arrow {
+    width: 44px;
+    height: 44px;
+  }
+
+  .modern-carousel__arrow svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .modern-carousel__pagination {
+    bottom: 20px;
+    padding: 10px 16px;
+    gap: 10px;
+  }
+
+  .modern-carousel__dot {
+    width: 36px;
+    height: 6px;
+  }
+
+  .modern-carousel__empty {
+    padding: 60px 24px;
+  }
+
+  .modern-carousel__empty-icon {
+    width: 60px;
+    height: 60px;
+  }
+}
+
+/* ============================================
+   SMALL MOBILE (max-width: 480px)
+   ============================================ */
+
+@media screen and (max-width: 480px) {
+  .modern-carousel__slide {
+    height: 350px;
+  }
+
+  .modern-carousel__title {
+    font-size: clamp(1.25rem, 7vw, 2rem);
+  }
+
+  .modern-carousel__subtitle {
+    font-size: 0.875rem;
+    margin-bottom: 16px;
+  }
+
+  .modern-carousel__cta {
+    padding: 12px 24px;
+    font-size: 13px;
+  }
+
+  .modern-carousel__arrow {
+    width: 40px;
+    height: 40px;
+  }
+
+  .modern-carousel__arrow svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .modern-carousel__controls {
+    padding: 0 12px;
+  }
+
+  .modern-carousel__pagination {
+    bottom: 16px;
+    padding: 8px 12px;
+    gap: 8px;
+  }
+
+  .modern-carousel__dot {
+    width: 28px;
+  }
+}
+</style>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const carouselEl = document.querySelector('[data-widget-id="{{ widget.id }}"]');
+    if (!carouselEl) return;
+
+    const track = carouselEl.querySelector('[data-carousel-track]');
+    const dots = carouselEl.querySelectorAll('.modern-carousel__dot');
+    const prevBtn = carouselEl.querySelector('[data-carousel-prev]');
+    const nextBtn = carouselEl.querySelector('[data-carousel-next]');
+    const progressBar = carouselEl.querySelector('[data-progress-bar]');
+    const autoplay = carouselEl.dataset.autoplay === 'true';
+    const interval = parseInt(carouselEl.dataset.interval || '5000', 10);
+
+    if (!track || dots.length === 0) return;
+
+    let currentIndex = 0;
+    const totalSlides = dots.length;
+    let autoplayTimer = null;
+    let progressTimer = null;
+    let progressWidth = 0;
+
+    // Go to specific slide
+    function goToSlide(index) {
+      // Remove active class from all slides and dots
+      const slides = carouselEl.querySelectorAll('.modern-carousel__slide');
+      slides.forEach(slide => slide.classList.remove('is-active'));
+      dots.forEach(dot => dot.classList.remove('is-active'));
+
+      // Set new index
+      currentIndex = (index + totalSlides) % totalSlides;
+
+      // Update transform
+      track.style.transform = `translateX(-${currentIndex * 100}%)`;
+
+      // Add active class
+      slides[currentIndex].classList.add('is-active');
+      dots[currentIndex].classList.add('is-active');
+
+      // Reset progress
+      if (progressBar) {
+        progressWidth = 0;
+        progressBar.style.width = '0%';
+      }
+
+      // Restart autoplay
+      if (autoplay) {
+        startAutoplay();
+      }
+    }
+
+    // Next slide
+    function nextSlide() {
+      goToSlide(currentIndex + 1);
+    }
+
+    // Previous slide
+    function prevSlide() {
+      goToSlide(currentIndex - 1);
+    }
+
+    // Start autoplay with progress
+    function startAutoplay() {
+      stopAutoplay();
+      
+      if (progressBar) {
+        // Update progress bar smoothly
+        const progressInterval = 50; // Update every 50ms
+        const progressIncrement = (progressInterval / interval) * 100;
+        
+        progressTimer = setInterval(() => {
+          progressWidth += progressIncrement;
+          if (progressWidth >= 100) {
+            progressWidth = 100;
+            progressBar.style.width = '100%';
+            clearInterval(progressTimer);
+          } else {
+            progressBar.style.width = progressWidth + '%';
+          }
+        }, progressInterval);
+      }
+
+      autoplayTimer = setTimeout(nextSlide, interval);
+    }
+
+    // Stop autoplay
+    function stopAutoplay() {
+      if (autoplayTimer) {
+        clearTimeout(autoplayTimer);
+        autoplayTimer = null;
+      }
+      if (progressTimer) {
+        clearInterval(progressTimer);
+        progressTimer = null;
+      }
+    }
+
+    // Event listeners for arrows
+    if (prevBtn) {
+      prevBtn.addEventListener('click', prevSlide);
+    }
+
+    if (nextBtn) {
+      nextBtn.addEventListener('click', nextSlide);
+    }
+
+    // Event listeners for dots
+    dots.forEach((dot, index) => {
+      dot.addEventListener('click', () => goToSlide(index));
+    });
+
+    // Pause on hover
+    if (autoplay) {
+      carouselEl.addEventListener('mouseenter', stopAutoplay);
+      carouselEl.addEventListener('mouseleave', startAutoplay);
+      
+      // Start initial autoplay
+      startAutoplay();
+    }
+
+    // Keyboard navigation
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowLeft') {
+        prevSlide();
+      } else if (e.key === 'ArrowRight') {
+        nextSlide();
+      }
+    });
+
+    // Touch/swipe support
+    let touchStartX = 0;
+    let touchEndX = 0;
+
+    carouselEl.addEventListener('touchstart', (e) => {
+      touchStartX = e.changedTouches[0].screenX;
+    }, { passive: true });
+
+    carouselEl.addEventListener('touchend', (e) => {
+      touchEndX = e.changedTouches[0].screenX;
+      handleSwipe();
+    }, { passive: true });
+
+    function handleSwipe() {
+      const swipeThreshold = 50;
+      const diff = touchStartX - touchEndX;
+
+      if (Math.abs(diff) > swipeThreshold) {
+        if (diff > 0) {
+          // Swipe left - next slide
+          nextSlide();
+        } else {
+          // Swipe right - previous slide
+          prevSlide();
+        }
+      }
+    }
+  });
+</script>

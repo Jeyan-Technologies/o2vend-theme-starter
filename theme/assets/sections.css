@@ -1,0 +1,48 @@
+/**
+ * Section Styles
+ * 
+ * Styles for theme sections that contain multiple widgets.
+ * Supports drag-and-drop visual editor functionality.
+ */
+
+/* Section Container */
+.theme-section {
+  position: relative;
+  width: 100%;
+}
+
+.theme-section--header {
+  /* Header specific styles */
+}
+
+.theme-section--hero {
+  /* Hero specific styles */
+}
+
+.theme-section--content {
+  /* Content specific styles */
+}
+
+.theme-section--footer {
+  /* Footer specific styles */
+}
+
+/* Widget Wrapper */
+.theme-widget-wrapper {
+  position: relative;
+  width: 100%;
+  margin-bottom: 0;
+}
+
+/* Ensure widgets stack vertically */
+.theme-section .theme-widget-wrapper + .theme-widget-wrapper {
+  margin-top: 0;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .theme-widget-wrapper {
+    margin-bottom: 0;
+  }
+}
+

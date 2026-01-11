@@ -1,0 +1,185 @@
+{% layout 'layout/theme' %}
+{% comment %}
+  Customer Login Template
+{% endcomment %}
+
+<div class="customer-login">
+  <div class="customer-login-container">
+    <div class="customer-login-header">
+      <h1 class="customer-login-title">Sign In</h1>
+      <p class="customer-login-subtitle">Welcome back! Please sign in to your account.</p>
+    </div>
+
+    <div class="customer-login-form-wrapper">
+      <form class="customer-login-form" action="/webstoreapi/customer/login" method="post" id="customer-login-form">
+        {% if form.errors %}
+          <div class="form-errors">
+            {% for error in form.errors %}
+              <p class="form-error">{{ error }}</p>
+            {% endfor %}
+          </div>
+        {% endif %}
+
+        <div class="form-group">
+          <label for="customer-email" class="form-label">Email</label>
+          <input type="email" 
+                 id="customer-email" 
+                 name="email" 
+                 class="form-input" 
+                 placeholder="Enter your email"
+                 required
+                 autocomplete="email">
+        </div>
+
+        <div class="form-group">
+          <label for="customer-password" class="form-label">Password</label>
+          <input type="password" 
+                 id="customer-password" 
+                 name="password" 
+                 class="form-input" 
+                 placeholder="Enter your password"
+                 required
+                 autocomplete="current-password">
+        </div>
+
+        <div class="form-group form-group-row">
+          <label class="form-checkbox">
+            <input type="checkbox" name="remember" id="remember-me">
+            <span>Remember me</span>
+          </label>
+          <a href="/customer/forgot-password" class="form-link">Forgot password?</a>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-block">Sign In</button>
+      </form>
+
+      <div class="customer-login-footer">
+        <p>Don't have an account? <a href="/customer/register">Create one</a></p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .customer-login {
+    min-height: 60vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4rem 1rem;
+    background: {{ settings.color_background }};
+  }
+
+  .customer-login-container {
+    max-width: 400px;
+    width: 100%;
+  }
+
+  .customer-login-header {
+    text-align: center;
+    margin-bottom: 2rem;
+  }
+
+  .customer-login-title {
+    font-size: 2rem;
+    font-weight: 700;
+    margin: 0 0 0.5rem 0;
+    color: {{ settings.color_text }};
+  }
+
+  .customer-login-subtitle {
+    font-size: 1rem;
+    color: {{ settings.color_text_light }};
+    margin: 0;
+  }
+
+  .customer-login-form-wrapper {
+    background: white;
+    padding: 2rem;
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  }
+
+  .form-group {
+    margin-bottom: 1.5rem;
+  }
+
+  .form-group-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .form-label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: {{ settings.color_text }};
+  }
+
+  .form-input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.375rem;
+    font-size: 1rem;
+    transition: border-color 0.2s ease;
+  }
+
+  .form-input:focus {
+    outline: none;
+    border-color: {{ settings.color_primary }};
+  }
+
+  .form-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+  }
+
+  .form-link {
+    color: {{ settings.color_primary }};
+    text-decoration: none;
+    font-size: 0.875rem;
+  }
+
+  .form-link:hover {
+    text-decoration: underline;
+  }
+
+  .form-errors {
+    background: #fee2e2;
+    border: 1px solid #fecaca;
+    border-radius: 0.375rem;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .form-error {
+    color: #991b1b;
+    margin: 0;
+    font-size: 0.875rem;
+  }
+
+  .btn-block {
+    width: 100%;
+  }
+
+  .customer-login-footer {
+    text-align: center;
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid #e5e7eb;
+  }
+
+  .customer-login-footer a {
+    color: {{ settings.color_primary }};
+    text-decoration: none;
+  }
+
+  .customer-login-footer a:hover {
+    text-decoration: underline;
+  }
+</style>
+

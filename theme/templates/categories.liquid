@@ -1,0 +1,452 @@
+{% layout 'layout/theme' %}
+
+<div class="collections-page">
+  <div class="collections-header">
+    <h1 class="page-title">Our Collections</h1>
+    <p class="page-description">Discover our curated collections of amazing products</p>
+  </div>
+  <div class="collections-content">
+    {% if collections.size > 0 %}
+      <div class="collections-grid">
+        {% for collection in collections %}
+          <div class="collection-card">
+            <a href="/{{ collection.slug }}" class="collection-link">
+              <div class="collection-image">
+                {% if collection.image %}
+                  <img src="{{ collection.image }}" 
+                       alt="{{ collection.title | default: collection.name }}" 
+                       width="100%"
+                       height="200"
+                       loading="lazy">
+                {% else %}
+                  <div class="collection-image-placeholder">
+                    <div class="camera-icon">
+                      {% raw %}<svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                        <circle cx="12" cy="13" r="4"></circle>
+                      </svg>{% endraw %}
+                    </div>
+                    <div class="image-not-available">
+                      <span class="sorry-text">Sorry</span>
+                      <span class="image-text">IMAGE</span>
+                      <span class="not-available-text">Not Available</span>
+                    </div>
+                  </div>
+                {% endif %}
+              </div>
+              <div class="collection-info">
+                <h3 class="collection-title">{{ collection.title | default: collection.name }}</h3>
+                {% if collection.description %}
+                  <p class="collection-description">{{ collection.description }}</p>
+                {% else %}
+                  <p class="collection-description">Setup your products and images in Catalog - Category</p>
+                {% endif %}
+              </div>
+            </a>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <!-- No Collections -->
+      <div class="no-collections">
+        <div class="no-collections-content">
+          <div class="no-collections-icon">📂</div>
+          <h2>No Collections Available</h2>
+          <p>We're working on creating amazing collections for you. Check back soon!</p>
+          <a href="/products" class="btn btn-primary">Browse All Products</a>
+        </div>
+      </div>
+    {% endif %}
+    
+    <!-- Pagination -->
+    {% if pagination and pagination.totalPages > 1 %}
+      {% include 'snippets/pagination', pagination: pagination %}
+    {% endif %}
+  </div>
+</div>
+
+<style>
+/* Collection Toolbar Styles */
+.collection-toolbar {
+  background-color: #fff;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  padding: 1.5rem 0;
+  margin-bottom: 2rem;
+}
+
+.collections-page {
+  padding: 40px 0;
+}
+
+.collections-header {
+  text-align: center;
+  margin-bottom: 60px;
+  padding: 50px 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: 12px;
+}
+
+.page-title {
+  font-size: 3rem;
+  margin-bottom: 20px;
+  font-weight: 700;
+}
+
+.page-description {
+  font-size: 1.2rem;
+  opacity: 0.9;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.collections-content {
+  margin-bottom: 80px;
+}
+
+.collections-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 24px;
+  margin-bottom: 60px;
+  align-items: stretch;
+}
+
+.collection-card {
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: box-shadow 0.3s ease;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.collection-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.collection-link {
+  text-decoration: none;
+  color: inherit;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.collection-image {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  height: 200px;
+  background: #f8f9fa;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.collection-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.collection-image-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  background: #ffffff;
+  color: #000;
+  padding: 20px;
+}
+
+.camera-icon {
+  margin-bottom: 10px;
+  color: #000;
+}
+
+.camera-icon svg {
+  width: 60px;
+  height: 60px;
+  stroke-width: 1.5;
+}
+
+.image-not-available {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 2px;
+}
+
+.sorry-text {
+  font-size: 0.875rem;
+  color: #000;
+  font-weight: 400;
+}
+
+.image-text {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #000;
+  letter-spacing: 0.5px;
+}
+
+.not-available-text {
+  font-size: 0.875rem;
+  color: #000;
+  font-weight: 400;
+}
+
+.collection-info {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  background: #ffffff;
+}
+
+.collection-title {
+  font-size: 1rem;
+  margin-bottom: 8px;
+  color: #000;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.collection-description {
+  color: #666;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  margin-bottom: 0;
+  font-weight: 400;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: auto;
+}
+
+.updated-date {
+  color: #999;
+}
+
+.no-collections {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 400px;
+}
+
+.no-collections-content {
+  text-align: center;
+  max-width: 400px;
+}
+
+.no-collections-icon {
+  font-size: 4rem;
+  margin-bottom: 20px;
+}
+
+.no-collections h2 {
+  font-size: 1.8rem;
+  margin-bottom: 15px;
+  color: #333;
+}
+
+.no-collections p {
+  color: #666;
+  margin-bottom: 30px;
+  line-height: 1.5;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .collections-grid {
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 25px;
+  }
+}
+
+@media (max-width: 768px) {
+  .collections-grid {
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 25px;
+  }
+  
+  .page-title {
+    font-size: 2.5rem;
+  }
+  
+  .collection-info {
+    padding: 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .collections-header {
+    padding: 30px 15px;
+  }
+  
+  .collections-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  
+  .collection-info {
+    padding: 18px;
+  }
+  
+  .collection-title {
+    font-size: 1.2rem;
+  }
+  
+  .collection-description {
+    font-size: 0.9rem;
+  }
+  
+  .page-title {
+    font-size: 2rem;
+  }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Parse URL parameters
+  const urlParams = new URLSearchParams(window.location.search);
+  
+  // Initialize sort from URL parameters
+  function initializeSortFromURL() {
+    const sortToggleLabel = document.getElementById('sort-toggle-label');
+    const sortMenu = document.getElementById('sort-menu');
+    
+    if (urlParams.has('sort')) {
+      const sortParam = urlParams.get('sort');
+      const orderParam = urlParams.get('order') || 'asc';
+      let sortLabel = 'Display Order, Asc';
+      
+      if (sortParam === 'name' && orderParam === 'asc') {
+        sortLabel = 'Name, A-Z';
+      } else if (sortParam === 'name' && orderParam === 'desc') {
+        sortLabel = 'Name, Z-A';
+      } else if (sortParam === 'order' && orderParam === 'desc') {
+        sortLabel = 'Display Order, Desc';
+      }
+      
+      if (sortToggleLabel) {
+        sortToggleLabel.textContent = `Sort: ${sortLabel}`;
+      }
+      
+      // Mark the selected option as active
+      if (sortMenu) {
+        const sortOptions = sortMenu.querySelectorAll('.sort-option');
+        sortOptions.forEach(option => {
+          option.classList.remove('active', 'selected');
+          const optionSort = option.getAttribute('data-sort');
+          const optionOrder = option.getAttribute('data-order');
+          if (optionSort === sortParam && optionOrder === orderParam) {
+            option.classList.add('active', 'selected');
+            option.setAttribute('aria-selected', 'true');
+          } else {
+            option.setAttribute('aria-selected', 'false');
+          }
+        });
+      }
+    }
+  }
+  
+  // Initialize sort on page load
+  initializeSortFromURL();
+  
+  // Sorting functionality
+  const sortDropdown = document.getElementById('sort-dropdown');
+  const sortToggle = document.getElementById('sort-toggle');
+  const sortMenu = document.getElementById('sort-menu');
+  const sortLabel = document.getElementById('sort-toggle-label');
+
+  function applySort(sortValue, orderValue) {
+    const params = new URLSearchParams(window.location.search);
+    if (sortValue) {
+      params.set('sort', sortValue);
+      params.set('order', orderValue || 'asc');
+    } else {
+      params.delete('sort');
+      params.delete('order');
+    }
+    params.set('page', '1'); // Reset to page 1 when sorting changes
+    
+    window.location.href = `${window.location.pathname}?${params.toString()}`;
+  }
+
+  // Toggle sort dropdown
+  if (sortToggle && sortMenu) {
+    sortToggle.addEventListener('click', function(e) {
+      e.stopPropagation();
+      sortMenu.classList.toggle('active');
+      sortToggle.setAttribute('aria-expanded', sortMenu.classList.contains('active'));
+    });
+  }
+
+  // Close sort dropdown when clicking outside
+  document.addEventListener('click', function(e) {
+    if (sortDropdown && !sortDropdown.contains(e.target)) {
+      sortMenu.classList.remove('active');
+      sortToggle.setAttribute('aria-expanded', 'false');
+    }
+  });
+
+  // Handle sort option selection
+  if (sortMenu) {
+    const sortOptions = sortMenu.querySelectorAll('.sort-option');
+    sortOptions.forEach(option => {
+      option.addEventListener('click', function() {
+        const sortValue = this.getAttribute('data-sort');
+        const orderValue = this.getAttribute('data-order');
+        const label = this.getAttribute('data-label');
+        
+        if (sortLabel) {
+          sortLabel.textContent = `Sort: ${label}`;
+        }
+        
+        // Update active state
+        sortOptions.forEach(opt => {
+          opt.classList.remove('active', 'selected');
+          opt.setAttribute('aria-selected', 'false');
+        });
+        this.classList.add('active', 'selected');
+        this.setAttribute('aria-selected', 'true');
+        
+        // Close dropdown
+        sortMenu.classList.remove('active');
+        sortToggle.setAttribute('aria-expanded', 'false');
+        
+        // Apply sort
+        applySort(sortValue, orderValue);
+      });
+    });
+  }
+  
+  // Collection card hover effects
+  const collectionCards = document.querySelectorAll('.collection-card');
+  
+  collectionCards.forEach(card => {
+    card.addEventListener('mouseenter', function() {
+      this.style.transform = 'translateY(-8px)';
+    });
+    
+    card.addEventListener('mouseleave', function() {
+      this.style.transform = 'translateY(0)';
+    });
+  });
+});
+</script>
+

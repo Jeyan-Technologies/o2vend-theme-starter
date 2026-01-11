@@ -1,0 +1,134 @@
+{% comment %}
+  Breadcrumb Navigation Snippet
+  
+  Renders breadcrumb navigation based on current page context.
+  Usage: {% render 'snippets/breadcrumbs' %}
+{% endcomment %}
+
+{% liquid
+  assign breadcrumbs = breadcrumbs | default: null
+  
+  if breadcrumbs == null
+    assign breadcrumbs = ''
+    
+    # Home
+    assign breadcrumbs = breadcrumbs | append: '<a href="/">Home</a>'
+    
+    # Collection page
+    if collection
+      assign breadcrumbs = breadcrumbs | append: ' / <a href="/collections">Collections</a>'
+      assign breadcrumbs = breadcrumbs | append: ' / <span>' | append: collection.title | append: '</span>'
+    endif
+    
+    # Product page
+    if product
+      if collection
+        assign breadcrumbs = breadcrumbs | append: ' / <a href="' | append: collection.url | append: '">' | append: collection.title | append: '</a>'
+      else
+        assign breadcrumbs = breadcrumbs | append: ' / <a href="/products">Products</a>'
+      endif
+      assign breadcrumbs = breadcrumbs | append: ' / <span>' | append: product.title | append: '</span>'
+    endif
+    
+    # Page
+    if page and page.title
+      assign breadcrumbs = breadcrumbs | append: ' / <span>' | append: page.title | append: '</span>'
+    endif
+    
+    # Article/Blog
+    if article
+      assign breadcrumbs = breadcrumbs | append: ' / <a href="/blogs">Blog</a>'
+      if blog
+        assign breadcrumbs = breadcrumbs | append: ' / <a href="' | append: blog.url | append: '">' | append: blog.title | append: '</a>'
+      endif
+      assign breadcrumbs = breadcrumbs | append: ' / <span>' | append: article.title | append: '</span>'
+    endif
+  endif
+%}
+
+<nav class="breadcrumbs" aria-label="Breadcrumb">
+  <ol class="breadcrumbs-list">
+    {% if breadcrumbs %}
+      {{ breadcrumbs }}
+    {% else %}
+      <li class="breadcrumbs-item">
+        <a href="/" class="breadcrumbs-link">Home</a>
+      </li>
+      {% if collection %}
+        <li class="breadcrumbs-item">
+          <span class="breadcrumbs-separator">/</span>
+          <a href="/collections" class="breadcrumbs-link">Collections</a>
+        </li>
+        <li class="breadcrumbs-item">
+          <span class="breadcrumbs-separator">/</span>
+          <span class="breadcrumbs-current">{{ collection.title }}</span>
+        </li>
+      {% elsif product %}
+        {% if collection %}
+          <li class="breadcrumbs-item">
+            <span class="breadcrumbs-separator">/</span>
+            <a href="{{ collection.url }}" class="breadcrumbs-link">{{ collection.title }}</a>
+          </li>
+        {% else %}
+          <li class="breadcrumbs-item">
+            <span class="breadcrumbs-separator">/</span>
+            <a href="/products" class="breadcrumbs-link">Products</a>
+          </li>
+        {% endif %}
+        <li class="breadcrumbs-item">
+          <span class="breadcrumbs-separator">/</span>
+          <span class="breadcrumbs-current">{{ product.title }}</span>
+        </li>
+      {% elsif page %}
+        <li class="breadcrumbs-item">
+          <span class="breadcrumbs-separator">/</span>
+          <span class="breadcrumbs-current">{{ page.title }}</span>
+        </li>
+      {% endif %}
+    {% endif %}
+  </ol>
+</nav>
+
+<style>
+  .breadcrumbs {
+    padding: 1rem 0;
+    font-size: 0.875rem;
+  }
+
+  .breadcrumbs-list {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    gap: 0.5rem;
+  }
+
+  .breadcrumbs-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .breadcrumbs-separator {
+    color: {{ settings.color_text_light }};
+  }
+
+  .breadcrumbs-link {
+    color: {{ settings.color_text_light }};
+    text-decoration: none;
+    transition: color 0.2s ease;
+  }
+
+  .breadcrumbs-link:hover {
+    color: {{ settings.color_primary }};
+    text-decoration: underline;
+  }
+
+  .breadcrumbs-current {
+    color: {{ settings.color_text }};
+    font-weight: 500;
+  }
+</style>
+

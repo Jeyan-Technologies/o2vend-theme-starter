@@ -1,0 +1,279 @@
+{% liquid
+  assign widget_settings = widget.settings
+  assign widget_data = widget.data
+  
+  comment
+    Static Widget: Content comes from widget_data.content or widget.content
+    Settings come from widget_settings
+  endcomment
+
+  assign content_data = widget_data.content | default: widget.content
+  comment
+    Handle both formats:
+    1. Direct array: content_data is an array (when widget-service stores array directly)
+    2. Object with Items: content_data.Items or content_data.items (when stored as object)
+  endcomment
+  if content_data.Items
+    assign items = content_data.Items
+  elsif content_data.items
+    assign items = content_data.items
+  else
+    assign items = content_data
+  endif
+  assign background_color = content_data.backgroundColor | default: content_data.BackgroundColor | default: widget_settings.backgroundColor | default: '#ffffff'
+  assign text_color = content_data.textColor | default: content_data.TextColor | default: widget_settings.textColor | default: '#000000'
+%}
+
+<section class="widget widget-spacebar" data-widget-id="{{ widget.id }}" style="background-color: {{ background_color }};">
+  <div class="spacebar-inner">
+    {% if items and items.size > 0 %}
+      <div class="spacebar-grid">
+        {% for item in items %}
+          {% liquid
+            assign item_title = item.title | default: item.Title
+            assign item_description = item.description | default: item.Description
+            assign item_icon = item.iconHtml | default: item.IconHtml
+            assign item_image = item.imageUrl | default: item.ImageUrl | default: item.image | default: item.Image
+            assign item_bg = item.backgroundColor | default: item.BackgroundColor | default: '#ffffff'
+            assign item_text = item.textColor | default: item.TextColor | default: text_color
+          %}
+          
+          <div class="spacebar-item" style="background-color: {{ item_bg }};">
+            {% if item_image and item_image != blank %}
+              {% comment %} Handle external URLs vs local assets {% endcomment %}
+              {% if item_image contains 'http://' or item_image contains 'https://' %}
+                {% assign item_image_src = item_image %}
+              {% else %}
+                {% assign item_image_src = item_image | asset_url %}
+              {% endif %}
+              <div class="spacebar-item__icon spacebar-item__icon--image">
+                <img src="{{ item_image_src }}" alt="{{ item_title | escape }}" loading="lazy">
+              </div>
+            {% elsif item_icon and item_icon != blank %}
+              <div class="spacebar-item__icon spacebar-item__icon--html">
+                {{ item_icon }}
+              </div>
+            {% endif %}
+            
+            <div class="spacebar-item__content" style="color: {{ item_text }};">
+              {% if item_title and item_title != blank %}
+                <h4 class="spacebar-item__title">{{ item_title }}</h4>
+              {% endif %}
+              {% if item_description and item_description != blank %}
+                <p class="spacebar-item__desc">{{ item_description }}</p>
+              {% endif %}
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="widget-empty">
+        <p style="color: {{ text_color }};">No items to display.</p>
+      </div>
+    {% endif %}
+  </div>
+
+  <style>
+    .widget-spacebar {
+      padding: 32px 0;
+      width: 100%;
+    }
+    
+    .widget-spacebar .spacebar-inner {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+    
+    .widget-spacebar .spacebar-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 24px;
+      align-items: stretch;
+    }
+    
+    .widget-spacebar .spacebar-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      cursor: pointer;
+    }
+    
+    .widget-spacebar .spacebar-item:hover {
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+      transform: translateY(-4px);
+    }
+    
+    .widget-spacebar .spacebar-item__icon {
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 72px;
+      height: 72px;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    
+    .widget-spacebar .spacebar-item__icon--image {
+      background: transparent;
+      padding: 0;
+    }
+    
+    .widget-spacebar .spacebar-item__icon--image img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    
+    .widget-spacebar .spacebar-item__icon--html {
+      font-size: 36px;
+      background: rgba(0, 0, 0, 0.05);
+    }
+    
+    .widget-spacebar .spacebar-item__icon--html svg {
+      width: 40px;
+      height: 40px;
+    }
+    
+    .widget-spacebar .spacebar-item__content {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      flex: 1;
+      min-width: 0;
+    }
+    
+    .widget-spacebar .spacebar-item__title {
+      font-size: 18px;
+      font-weight: 600;
+      margin: 0;
+      line-height: 1.4;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+    }
+    
+    .widget-spacebar .spacebar-item__desc {
+      font-size: 14px;
+      margin: 0;
+      line-height: 1.6;
+      opacity: 0.85;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+    }
+    
+    .widget-spacebar .widget-empty {
+      text-align: center;
+      padding: 40px 20px;
+    }
+    
+    .widget-spacebar .widget-empty p {
+      margin: 0;
+      font-size: 16px;
+      opacity: 0.6;
+    }
+    
+    /* Tablet (768px - 1024px) */
+    @media (max-width: 1024px) {
+      .widget-spacebar .spacebar-grid {
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 20px;
+      }
+      
+      .widget-spacebar .spacebar-item {
+        padding: 18px;
+      }
+    }
+    
+    /* Mobile (481px - 768px) */
+    @media (max-width: 768px) {
+      .widget-spacebar {
+        padding: 24px 0;
+      }
+      
+      .widget-spacebar .spacebar-inner {
+        padding: 0 16px;
+      }
+      
+      .widget-spacebar .spacebar-grid {
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 16px;
+      }
+      
+      .widget-spacebar .spacebar-item {
+        gap: 14px;
+        padding: 16px;
+      }
+      
+      .widget-spacebar .spacebar-item__icon {
+        width: 64px;
+        height: 64px;
+      }
+      
+      .widget-spacebar .spacebar-item__icon--html {
+        font-size: 32px;
+      }
+      
+      .widget-spacebar .spacebar-item__icon--html svg {
+        width: 36px;
+        height: 36px;
+      }
+      
+      .widget-spacebar .spacebar-item__title {
+        font-size: 16px;
+      }
+      
+      .widget-spacebar .spacebar-item__desc {
+        font-size: 13px;
+      }
+    }
+    
+    /* Small Mobile (max 480px) */
+    @media (max-width: 480px) {
+      .widget-spacebar {
+        padding: 20px 0;
+      }
+      
+      .widget-spacebar .spacebar-inner {
+        padding: 0 12px;
+      }
+      
+      .widget-spacebar .spacebar-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+      }
+      
+      .widget-spacebar .spacebar-item {
+        gap: 12px;
+        padding: 14px;
+      }
+      
+      .widget-spacebar .spacebar-item__icon {
+        width: 56px;
+        height: 56px;
+      }
+      
+      .widget-spacbar .spacebar-item__icon--html {
+        font-size: 28px;
+      }
+      
+      .widget-spacebar .spacebar-item__icon--html svg {
+        width: 32px;
+        height: 32px;
+      }
+      
+      .widget-spacebar .spacebar-item__title {
+        font-size: 15px;
+      }
+      
+      .widget-spacebar .spacebar-item__desc {
+        font-size: 13px;
+      }
+    }
+  </style>
+</section>

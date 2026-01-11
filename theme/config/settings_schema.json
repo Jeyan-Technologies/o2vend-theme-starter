@@ -1,0 +1,1050 @@
+[
+  {
+    "name": "theme_info",
+    "theme_name": "O2VEND ",
+    "theme_version": "2.0.0",
+    "theme_author": "O2VEND",
+    "theme_documentation_url": "https://docs.o2vend.com/themes/",
+    "theme_support_url": "https://support.o2vend.com"
+  },
+  {
+    "name": "Color Scheme",
+    "settings": [
+      {
+        "type": "header",
+        "content": "Primary Colors"
+      },
+      {
+        "type": "color",
+        "id": "color_primary",
+        "label": "Primary Color",
+        "default": "#1a1a1a",
+        "info": "Main brand color for buttons, links, and primary elements"
+      },
+      {
+        "type": "color",
+        "id": "color_primary_light",
+        "label": "Primary Light",
+        "default": "#2d2d2d",
+        "info": "Lighter variant of primary color"
+      },
+      {
+        "type": "color",
+        "id": "color_primary_dark",
+        "label": "Primary Dark",
+        "default": "#0f0f0f",
+        "info": "Darker variant of primary color"
+      },
+      {
+        "type": "color",
+        "id": "color_secondary",
+        "label": "Secondary Color",
+        "default": "#6b7280",
+        "info": "Secondary brand color for accents and highlights"
+      },
+      {
+        "type": "color",
+        "id": "color_accent",
+        "label": "Accent Color",
+        "default": "#8b5cf6",
+        "info": "Accent color for highlights and call-to-action elements"
+      },
+      {
+        "type": "color",
+        "id": "color_accent_light",
+        "label": "Accent Light",
+        "default": "#a78bfa",
+        "info": "Light accent color"
+      },
+      {
+        "type": "color",
+        "id": "color_accent_dark",
+        "label": "Accent Dark",
+        "default": "#7c3aed",
+        "info": "Dark accent color"
+      },
+      {
+        "type": "header",
+        "content": "Background Colors"
+      },
+      {
+        "type": "color",
+        "id": "color_background",
+        "label": "Background Color",
+        "default": "#ffffff",
+        "info": "Main background color"
+      },
+      {
+        "type": "color",
+        "id": "color_surface",
+        "label": "Surface Color",
+        "default": "#f8fafc",
+        "info": "Surface color for cards and elevated elements"
+      },
+      {
+        "type": "color",
+        "id": "color_border",
+        "label": "Border Color",
+        "default": "#e2e8f0",
+        "info": "Color for borders and dividers"
+      },
+      {
+        "type": "header",
+        "content": "Text Colors"
+      },
+      {
+        "type": "color",
+        "id": "color_text",
+        "label": "Text Color",
+        "default": "#0f172a",
+        "info": "Main text color"
+      },
+      {
+        "type": "color",
+        "id": "color_text_muted",
+        "label": "Muted Text Color",
+        "default": "#64748b",
+        "info": "Secondary text color for captions and metadata"
+      },
+      {
+        "type": "color",
+        "id": "color_text_light",
+        "label": "Light Text Color",
+        "default": "#6b7280",
+        "info": "Light text color for secondary information"
+      },
+      {
+        "type": "header",
+        "content": "Semantic Colors"
+      },
+      {
+        "type": "color",
+        "id": "color_success",
+        "label": "Success Color",
+        "default": "#059669",
+        "info": "Color for success states and positive feedback"
+      },
+      {
+        "type": "color",
+        "id": "color_error",
+        "label": "Error Color",
+        "default": "#dc2626",
+        "info": "Color for error states and negative feedback"
+      },
+      {
+        "type": "color",
+        "id": "color_warning",
+        "label": "Warning Color",
+        "default": "#d97706",
+        "info": "Color for warning states and caution"
+      },
+      {
+        "type": "color",
+        "id": "color_info",
+        "label": "Info Color",
+        "default": "#0284c7",
+        "info": "Color for informational states"
+      }
+    ]
+  },
+  {
+    "name": "Typography",
+    "settings": [
+      {
+        "type": "header",
+        "content": "Font Families"
+      },
+      {
+        "type": "font_picker",
+        "id": "font_primary",
+        "label": "Primary Font",
+        "default": "Inter",
+        "info": "Main font for body text and UI elements"
+      },
+      {
+        "type": "font_picker",
+        "id": "font_display",
+        "label": "Display Font",
+        "default": "Playfair Display",
+        "info": "Font for headings and display text"
+      },
+      {
+        "type": "font_picker",
+        "id": "font_mono",
+        "label": "Monospace Font",
+        "default": "SF Mono",
+        "info": "Font for code and technical content"
+      },
+      {
+        "type": "header",
+        "content": "Font Sizes"
+      },
+      {
+        "type": "range",
+        "id": "font_size_base",
+        "label": "Base Font Size",
+        "min": 14,
+        "max": 20,
+        "step": 1,
+        "unit": "px",
+        "default": 14,
+        "info": "Base font size for body text"
+      },
+      {
+        "type": "range",
+        "id": "font_size_heading",
+        "label": "Heading Font Size",
+        "min": 24,
+        "max": 48,
+        "step": 2,
+        "unit": "px",
+        "default": 32,
+        "info": "Base font size for headings"
+      },
+      {
+        "type": "range",
+        "id": "font_size_heading_scale",
+        "label": "Heading Scale",
+        "min": 1.1,
+        "max": 1.5,
+        "step": 0.1,
+        "default": 1.25,
+        "info": "Scale factor for heading sizes"
+      },
+      {
+        "type": "header",
+        "content": "Font Weights"
+      },
+      {
+        "type": "select",
+        "id": "font_weight_normal",
+        "label": "Normal Weight",
+        "options": [
+          {
+            "value": "300",
+            "label": "Light (300)"
+          },
+          {
+            "value": "400",
+            "label": "Regular (400)"
+          },
+          {
+            "value": "500",
+            "label": "Medium (500)"
+          }
+        ],
+        "default": "400"
+      },
+      {
+        "type": "select",
+        "id": "font_weight_medium",
+        "label": "Medium Weight",
+        "options": [
+          {
+            "value": "400",
+            "label": "Regular (400)"
+          },
+          {
+            "value": "500",
+            "label": "Medium (500)"
+          },
+          {
+            "value": "600",
+            "label": "Semi Bold (600)"
+          }
+        ],
+        "default": "500",
+        "info": "Medium font weight for labels and UI elements"
+      },
+      {
+        "type": "select",
+        "id": "font_weight_bold",
+        "label": "Bold Weight",
+        "options": [
+          {
+            "value": "600",
+            "label": "Semi Bold (600)"
+          },
+          {
+            "value": "700",
+            "label": "Bold (700)"
+          },
+          {
+            "value": "800",
+            "label": "Extra Bold (800)"
+          }
+        ],
+        "default": "700"
+      },
+      {
+        "type": "header",
+        "content": "Line Heights"
+      },
+      {
+        "type": "range",
+        "id": "line_height_base",
+        "label": "Base Line Height",
+        "min": 1.4,
+        "max": 1.8,
+        "step": 0.1,
+        "default": 1.6,
+        "info": "Line height for body text"
+      },
+      {
+        "type": "range",
+        "id": "line_height_heading",
+        "label": "Heading Line Height",
+        "min": 1.1,
+        "max": 1.4,
+        "step": 0.1,
+        "default": 1.2,
+        "info": "Line height for headings"
+      },
+      {
+        "type": "header",
+        "content": "Letter Spacing"
+      },
+      {
+        "type": "range",
+        "id": "letter_spacing_heading",
+        "label": "Heading Letter Spacing",
+        "min": -0.05,
+        "max": 0.1,
+        "step": 0.01,
+        "unit": "em",
+        "default": -0.02,
+        "info": "Letter spacing for headings"
+      },
+      {
+        "type": "range",
+        "id": "letter_spacing_uppercase",
+        "label": "Uppercase Letter Spacing",
+        "min": 0.01,
+        "max": 0.1,
+        "step": 0.01,
+        "unit": "em",
+        "default": 0.05,
+        "info": "Letter spacing for uppercase text"
+      }
+    ]
+  },
+  {
+    "name": "Layout & Spacing",
+    "settings": [
+      {
+        "type": "header",
+        "content": "Container Settings"
+      },
+      {
+        "type": "range",
+        "id": "container_width",
+        "label": "Container Width",
+        "min": 1200,
+        "max": 1600,
+        "step": 50,
+        "unit": "px",
+        "default": 1400,
+        "info": "Maximum width of the main container"
+      },
+      {
+        "type": "range",
+        "id": "container_padding",
+        "label": "Container Padding",
+        "min": 16,
+        "max": 48,
+        "step": 4,
+        "unit": "px",
+        "default": 24,
+        "info": "tal padding for container"
+      },
+      {
+        "type": "header",
+        "content": "Spacing System"
+      },
+      {
+        "type": "range",
+        "id": "spacing_section",
+        "label": "Section Spacing",
+        "min": 40,
+        "max": 120,
+        "step": 10,
+        "unit": "px",
+        "default": 80,
+        "info": "Vertical spacing between major sections"
+      },
+      {
+        "type": "range",
+        "id": "spacing_component",
+        "label": "Component Spacing",
+        "min": 16,
+        "max": 48,
+        "step": 4,
+        "unit": "px",
+        "default": 24,
+        "info": "Spacing between components"
+      },
+      {
+        "type": "range",
+        "id": "spacing_element",
+        "label": "Element Spacing",
+        "min": 8,
+        "max": 24,
+        "step": 2,
+        "unit": "px",
+        "default": 16,
+        "info": "Spacing between related elements"
+      },
+      {
+        "type": "range",
+        "id": "spacing_large",
+        "label": "Large Spacing",
+        "min": 24,
+        "max": 48,
+        "step": 4,
+        "unit": "px",
+        "default": 32,
+        "info": "Large spacing for major gaps and padding"
+      },
+      {
+        "type": "range",
+        "id": "spacing_small",
+        "label": "Small Spacing",
+        "min": 4,
+        "max": 12,
+        "step": 2,
+        "unit": "px",
+        "default": 8,
+        "info": "Small spacing for tight gaps"
+      },
+      {
+        "type": "range",
+        "id": "spacing_xsmall",
+        "label": "Extra Small Spacing",
+        "min": 2,
+        "max": 8,
+        "step": 2,
+        "unit": "px",
+        "default": 4,
+        "info": "Extra small spacing for minimal gaps"
+      },
+      {
+        "type": "header",
+        "content": "Layout Style"
+      },
+      {
+        "type": "select",
+        "id": "layout_style",
+        "label": "Layout Style",
+        "options": [
+          {
+            "value": "boxed",
+            "label": "Boxed"
+          },
+          {
+            "value": "full_width",
+            "label": "Full Width"
+          },
+          {
+            "value": "fluid",
+            "label": "Fluid"
+          }
+        ],
+        "default": "boxed"
+      },
+      {
+        "type": "checkbox",
+        "id": "enable_asymmetric_grid",
+        "label": "Enable Asymmetric Grid",
+        "default": true,
+        "info": "Use asymmetric grid layouts for visual interest"
+      },
+      {
+        "type": "header",
+        "content": "Border Radius"
+      },
+      {
+        "type": "range",
+        "id": "border_radius_small",
+        "label": "Small Border Radius",
+        "min": 2,
+        "max": 8,
+        "step": 1,
+        "unit": "px",
+        "default": 6,
+        "info": "Border radius for small elements"
+      },
+      {
+        "type": "range",
+        "id": "border_radius_medium",
+        "label": "Medium Border Radius",
+        "min": 6,
+        "max": 16,
+        "step": 2,
+        "unit": "px",
+        "default": 10,
+        "info": "Border radius for medium elements"
+      },
+      {
+        "type": "range",
+        "id": "border_radius_large",
+        "label": "Large Border Radius",
+        "min": 12,
+        "max": 32,
+        "step": 4,
+        "unit": "px",
+        "default": 16,
+        "info": "Border radius for large elements"
+      }
+    ]
+  },
+  {
+    "name": "Header",
+    "settings": [
+      {
+        "type": "header",
+        "content": "Header Settings"
+      },
+      {
+        "type": "image_picker",
+        "id": "logo",
+        "label": "Logo",
+        "info": "Upload your store logo"
+      },
+      {
+        "type": "range",
+        "id": "logo_width",
+        "label": "Logo Width",
+        "min": 100,
+        "max": 300,
+        "step": 10,
+        "unit": "px",
+        "default": 150
+      },
+      {
+        "type": "checkbox",
+        "id": "show_search",
+        "label": "Show Search",
+        "default": true
+      },
+      {
+        "type": "checkbox",
+        "id": "show_cart_icon",
+        "label": "Show Cart Icon",
+        "default": true
+      },
+      {
+        "type": "link_list",
+        "id": "menu",
+        "label": "Main Menu",
+        "default": "main-menu"
+      }
+    ]
+  },
+  {
+    "name": "Footer",
+    "settings": [
+      {
+        "type": "header",
+        "content": "Footer Settings"
+      },
+      {
+        "type": "text",
+        "id": "footer_text",
+        "label": "Footer Text",
+        "default": "© 2024 Your Store Name. All rights reserved."
+      },
+      {
+        "type": "link_list",
+        "id": "footer_menu",
+        "label": "Footer Menu"
+      },
+      {
+        "type": "checkbox",
+        "id": "show_newsletter",
+        "label": "Show Newsletter Signup",
+        "default": true
+      },
+      {
+        "type": "checkbox",
+        "id": "show_social_links",
+        "label": "Show Social Links",
+        "default": true
+      }
+    ]
+  },
+  {
+    "name": "Product Display",
+    "settings": [
+      {
+        "type": "header",
+        "content": "Product Settings"
+      },
+      {
+        "type": "range",
+        "id": "products_per_page",
+        "label": "Products Per Page",
+        "min": 8,
+        "max": 48,
+        "step": 4,
+        "default": 24
+      },
+      {
+        "type": "select",
+        "id": "product_image_ratio",
+        "label": "Product Image Ratio",
+        "options": [
+          {
+            "value": "square",
+            "label": "Square (1:1)"
+          },
+          {
+            "value": "portrait",
+            "label": "Portrait (3:4)"
+          },
+          {
+            "value": "landscape",
+            "label": "Landscape (4:3)"
+          }
+        ],
+        "default": "square"
+      },
+      {
+        "type": "checkbox",
+        "id": "show_vendor",
+        "label": "Show Product Vendor",
+        "default": true
+      },
+      {
+        "type": "checkbox",
+        "id": "show_sku",
+        "label": "Show Product SKU",
+        "default": false
+      }
+    ]
+  },
+  {
+    "name": "Cart",
+    "settings": [
+      {
+        "type": "header",
+        "content": "Cart Settings"
+      },
+      {
+        "type": "select",
+        "id": "cart_type",
+        "label": "Cart Type",
+        "options": [
+          {
+            "value": "drawer",
+            "label": "Drawer"
+          },
+          {
+            "value": "page",
+            "label": "Page"
+          }
+        ],
+        "default": "drawer"
+      },
+      {
+        "type": "checkbox",
+        "id": "show_continue_shopping",
+        "label": "Show Continue Shopping Link",
+        "default": true
+      },
+      {
+        "type": "checkbox",
+        "id": "show_notes",
+        "label": "Show Order Notes",
+        "default": true
+      }
+    ]
+  },
+  {
+    "name": "Social Media",
+    "settings": [
+      {
+        "type": "header",
+        "content": "Social Media Links"
+      },
+      {
+        "type": "url",
+        "id": "social_facebook",
+        "label": "Facebook URL"
+      },
+      {
+        "type": "url",
+        "id": "social_instagram",
+        "label": "Instagram URL"
+      },
+      {
+        "type": "url",
+        "id": "social_twitter",
+        "label": "Twitter URL"
+      },
+      {
+        "type": "url",
+        "id": "social_youtube",
+        "label": "YouTube URL"
+      },
+      {
+        "type": "url",
+        "id": "social_pinterest",
+        "label": "Pinterest URL"
+      }
+    ]
+  },
+  {
+    "name": "Animations & Effects",
+    "settings": [
+      {
+        "type": "header",
+        "content": "Animation Settings"
+      },
+      {
+        "type": "checkbox",
+        "id": "enable_animations",
+        "label": "Enable Animations",
+        "default": true,
+        "info": "Enable smooth animations and transitions"
+      },
+      {
+        "type": "select",
+        "id": "animation_speed",
+        "label": "Animation Speed",
+        "options": [
+          {
+            "value": "slow",
+            "label": "Slow (400ms)"
+          },
+          {
+            "value": "normal",
+            "label": "Normal (300ms)"
+          },
+          {
+            "value": "fast",
+            "label": "Fast (200ms)"
+          }
+        ],
+        "default": "normal"
+      },
+      {
+        "type": "checkbox",
+        "id": "enable_parallax",
+        "label": "Enable Parallax Effects",
+        "default": false,
+        "info": "Enable subtle parallax scrolling effects"
+      },
+      {
+        "type": "checkbox",
+        "id": "enable_hover_effects",
+        "label": "Enable Hover Effects",
+        "default": true,
+        "info": "Enable hover animations and effects"
+      },
+      {
+        "type": "header",
+        "content": "Scroll Effects"
+      },
+      {
+        "type": "checkbox",
+        "id": "enable_fade_in",
+        "label": "Enable Fade In on Scroll",
+        "default": true,
+        "info": "Elements fade in as they come into view"
+      },
+      {
+        "type": "checkbox",
+        "id": "enable_stagger_animation",
+        "label": "Enable Staggered Animations",
+        "default": true,
+        "info": "Animate elements in sequence for visual flow"
+      }
+    ]
+  },
+  {
+    "name": "Shadows & Depth",
+    "settings": [
+      {
+        "type": "header",
+        "content": "Shadow System"
+      },
+      {
+        "type": "range",
+        "id": "shadow_opacity",
+        "label": "Shadow Opacity",
+        "min": 0.05,
+        "max": 0.3,
+        "step": 0.05,
+        "default": 0.1,
+        "info": "Overall shadow opacity"
+      },
+      {
+        "type": "range",
+        "id": "shadow_blur",
+        "label": "Shadow Blur",
+        "min": 4,
+        "max": 24,
+        "step": 2,
+        "unit": "px",
+        "default": 8,
+        "info": "Shadow blur radius"
+      },
+      {
+        "type": "range",
+        "id": "shadow_spread",
+        "label": "Shadow Spread",
+        "min": 0,
+        "max": 8,
+        "step": 1,
+        "unit": "px",
+        "default": 0,
+        "info": "Shadow spread radius"
+      },
+      {
+        "type": "header",
+        "content": "Depth Levels"
+      },
+      {
+        "type": "range",
+        "id": "depth_level_1",
+        "label": "Level 1 Depth",
+        "min": 0,
+        "max": 4,
+        "step": 1,
+        "unit": "px",
+        "default": 1,
+        "info": "Depth for subtle elevation"
+      },
+      {
+        "type": "range",
+        "id": "depth_level_2",
+        "label": "Level 2 Depth",
+        "min": 2,
+        "max": 8,
+        "step": 1,
+        "unit": "px",
+        "default": 4,
+        "info": "Depth for cards and panels"
+      },
+      {
+        "type": "range",
+        "id": "depth_level_3",
+        "label": "Level 3 Depth",
+        "min": 4,
+        "max": 16,
+        "step": 2,
+        "unit": "px",
+        "default": 8,
+        "info": "Depth for modals and overlays"
+      }
+    ]
+  },
+  {
+    "name": "Button Styles",
+    "settings": [
+      {
+        "type": "header",
+        "content": "Button Appearance"
+      },
+      {
+        "type": "select",
+        "id": "button_style",
+        "label": "Button Style",
+        "options": [
+          {
+            "value": "modern",
+            "label": "Modern"
+          },
+          {
+            "value": "minimal",
+            "label": "Minimal"
+          },
+          {
+            "value": "classic",
+            "label": "Classic"
+          }
+        ],
+        "default": "modern"
+      },
+      {
+        "type": "range",
+        "id": "button_padding_vertical",
+        "label": "Button Vertical Padding",
+        "min": 8,
+        "max": 20,
+        "step": 2,
+        "unit": "px",
+        "default": 12,
+        "info": "Vertical padding for buttons"
+      },
+      {
+        "type": "range",
+        "id": "button_padding_tal",
+        "label": "Button tal Padding",
+        "min": 16,
+        "max": 32,
+        "step": 2,
+        "unit": "px",
+        "default": 24,
+        "info": "tal padding for buttons"
+      },
+      {
+        "type": "header",
+        "content": "Button Effects"
+      },
+      {
+        "type": "checkbox",
+        "id": "button_hover_lift",
+        "label": "Hover Lift Effect",
+        "default": true,
+        "info": "Buttons lift slightly on hover"
+      },
+      {
+        "type": "checkbox",
+        "id": "button_ripple_effect",
+        "label": "Ripple Effect",
+        "default": false,
+        "info": "Add ripple effect on click"
+      },
+      {
+        "type": "range",
+        "id": "button_transition_speed",
+        "label": "Transition Speed",
+        "min": 150,
+        "max": 400,
+        "step": 50,
+        "unit": "ms",
+        "default": 200,
+        "info": "Button transition speed"
+      }
+    ]
+  },
+  {
+    "name": "Performance",
+    "settings": [
+      {
+        "type": "header",
+        "content": "Performance Settings"
+      },
+      {
+        "type": "checkbox",
+        "id": "lazy_load_images",
+        "label": "Lazy Load Images",
+        "default": true,
+        "info": "Load images only when they come into view"
+      },
+      {
+        "type": "checkbox",
+        "id": "preload_critical_css",
+        "label": "Preload Critical CSS",
+        "default": true,
+        "info": "Preload critical CSS for faster rendering"
+      },
+      {
+        "type": "checkbox",
+        "id": "optimize_animations",
+        "label": "Optimize Animations",
+        "default": true,
+        "info": "Use GPU-accelerated animations for better performance"
+      },
+      {
+        "type": "header",
+        "content": "Loading States"
+      },
+      {
+        "type": "checkbox",
+        "id": "show_loading_skeletons",
+        "label": "Show Loading Skeletons",
+        "default": true,
+        "info": "Show skeleton loading states for better UX"
+      },
+      {
+        "type": "select",
+        "id": "loading_animation",
+        "label": "Loading Animation",
+        "options": [
+          {
+            "value": "spinner",
+            "label": "Spinner"
+          },
+          {
+            "value": "pulse",
+            "label": "Pulse"
+          },
+          {
+            "value": "wave",
+            "label": "Wave"
+          }
+        ],
+        "default": "spinner"
+      }
+    ]
+  },
+  {
+    "name": "Widgets & Sections",
+    "settings": [
+      {
+        "type": "header",
+        "content": "Widget Integration"
+      },
+      {
+        "type": "checkbox",
+        "id": "enable_widgets",
+        "label": "Enable Widget System",
+        "default": true,
+        "info": "Enable API-driven widgets for dynamic content"
+      },
+      {
+        "type": "checkbox",
+        "id": "widget_fallback_enabled",
+        "label": "Enable Widget Fallbacks",
+        "default": true,
+        "info": "Show fallback content when widgets are unavailable"
+      },
+      {
+        "type": "range",
+        "id": "widget_cache_ttl",
+        "label": "Widget Cache TTL",
+        "min": 60,
+        "max": 3600,
+        "step": 60,
+        "unit": "seconds",
+        "default": 300,
+        "info": "Time to cache widget data (5 minutes default)"
+      },
+      {
+        "type": "header",
+        "content": "Section Defaults"
+      },
+      {
+        "type": "checkbox",
+        "id": "sections_use_widgets_by_default",
+        "label": "Sections Use Widgets by Default",
+        "default": false,
+        "info": "When enabled, new sections will use widgets by default"
+      },
+      {
+        "type": "select",
+        "id": "default_widget_section",
+        "label": "Default Widget Section",
+        "options": [
+          {
+            "value": "content",
+            "label": "Content"
+          },
+          {
+            "value": "hero",
+            "label": "Hero"
+          },
+          {
+            "value": "sidebar",
+            "label": "Sidebar"
+          }
+        ],
+        "default": "content",
+        "info": "Default section name for widgets when not specified"
+      }
+    ]
+  }
+]
+

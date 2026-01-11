@@ -1,0 +1,159 @@
+{% comment %}
+  Header Widget - HTML Content/Announcement Bar Only
+  This widget displays only the HTML content announcement bar.
+  The actual header menu (logo, navigation, search, cart) should be handled by HeaderMenuWidget.
+{% endcomment %}
+
+{% liquid
+  assign widget_settings = widget.settings
+  assign widget_data = widget.data
+
+  comment
+    Static Widget: Content comes from widget_data.content (header configuration)
+    Settings come from widget_settings
+  endcomment
+
+  assign content_data = widget_data.content | default: widget.content
+  if content_data.size > 0
+    assign header_config = content_data.first
+  else
+    assign header_config = content_data
+  endif
+
+  assign html_content_raw = header_config.HtmlContent | default: header_config.htmlContent
+  assign html_content = blank
+  if html_content_raw and html_content_raw != blank and html_content_raw != 'null'
+    assign html_content = html_content_raw
+  endif
+  assign hide_close_button = widget_settings.hideCloseButton
+  if hide_close_button == nil and header_config and header_config.HideCloseButton != nil
+    assign hide_close_button = header_config.HideCloseButton
+  endif
+  assign background_color = widget_settings.backgroundColor
+  if background_color == nil and header_config and header_config.BackgroundColor != nil
+    assign background_color = header_config.BackgroundColor
+  endif
+  assign text_color = widget_settings.textColor
+  if text_color == nil and header_config and header_config.TextColor != nil
+    assign text_color = header_config.TextColor
+  endif
+%}
+
+{% if html_content and html_content != blank and html_content != 'null' %}
+  <div class="widget-header-announcement" data-widget-id="{{ widget.id }}">
+    <div class="widget-header-announcement__bar"{% if background_color and background_color != 'null' and background_color != blank %} style="background-color: {{ background_color }};"{% endif %}>
+      <div class="widget-header-announcement__content"{% if text_color and text_color != 'null' and text_color != blank %} style="color: {{ text_color }};"{% endif %}>
+        {{ html_content }}
+      </div>
+      {% unless hide_close_button %}
+        <button class="widget-header-announcement__close" aria-label="Close announcement" data-announcement-close>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      {% endunless %}
+    </div>
+  </div>
+{% endif %}
+
+<style>
+  /* Announcement Bar Styles */
+  .widget-header-announcement__bar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    padding: 12px 24px;
+    background: #111;
+    color: #fff;
+    text-align: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .widget-header-announcement__bar.hidden {
+    display: none;
+  }
+
+  .widget-header-announcement__content {
+    flex: 1;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  .widget-header-announcement__content p {
+    margin: 0;
+  }
+
+  .widget-header-announcement__content img {
+    max-width: 100%;
+    height: auto;
+    vertical-align: middle;
+  }
+
+  .widget-header-announcement__close {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: transparent;
+    border: none;
+    color: inherit;
+    cursor: pointer;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.7;
+    transition: opacity 0.2s ease;
+  }
+
+  .widget-header-announcement__close:hover {
+    opacity: 1;
+  }
+
+  .widget-header-announcement__close svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  @media (max-width: 768px) {
+    .widget-header-announcement__bar {
+      padding: 10px 40px 10px 16px;
+      font-size: 13px;
+    }
+
+    .widget-header-announcement__close {
+      right: 8px;
+    }
+  }
+</style>
+
+<script>
+  // Handle announcement bar close button
+  (function() {
+    const announcementCloseBtn = document.querySelector('[data-announcement-close]');
+    if (announcementCloseBtn) {
+      announcementCloseBtn.addEventListener('click', function() {
+        const announcement = this.closest('.widget-header-announcement__bar');
+        if (announcement) {
+          announcement.classList.add('hidden');
+          // Store in sessionStorage to remember it's closed for this session
+          const widgetId = announcement.closest('[data-widget-id]')?.getAttribute('data-widget-id');
+          if (widgetId) {
+            sessionStorage.setItem(`announcement-closed-${widgetId}`, 'true');
+          }
+        }
+      });
+
+      // Check if announcement was previously closed in this session
+      const widgetId = announcementCloseBtn.closest('[data-widget-id]')?.getAttribute('data-widget-id');
+      if (widgetId && sessionStorage.getItem(`announcement-closed-${widgetId}`) === 'true') {
+        const announcement = announcementCloseBtn.closest('.widget-header-announcement__bar');
+        if (announcement) {
+          announcement.classList.add('hidden');
+        }
+      }
+    }
+  })();
+</script>

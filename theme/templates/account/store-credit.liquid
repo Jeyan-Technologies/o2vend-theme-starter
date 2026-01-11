@@ -1,0 +1,464 @@
+{% layout 'layout/theme' %}
+
+<section class="account-page">
+  <div class="container">
+
+    <!-- Header -->
+    <div class="account-header">
+      <h1 class="account-title display-2">Store Credit</h1>
+      <p class="account-subtitle">View your store credit balance and eligible return orders</p>
+    </div>
+
+    <div class="account-layout">
+
+      <!-- Sidebar -->
+      <aside class="account-sidebar">
+        {% render 'snippets/account-sidebar' %}
+      </aside>
+
+      <!-- Content -->
+      <div class="account-content">
+        {% hook 'account_store_credit_before' %}
+
+        <div class="account-section-header">
+          <h2 class="account-section-title">Store Credit</h2>
+        </div>
+
+        <div class="store-credit-program">
+
+          <!-- Total Balance -->
+          <div class="store-credit-balance">
+            <div class="balance-display">
+              <div class="balance-icon">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+                  <line x1="1" y1="10" x2="23" y2="10"></line>
+                </svg>
+              </div>
+
+              <h3 class="balance-value">
+                {{ settings.currency_symbol | default: '₹' }}{{ storeCredit.totalBalance | default: 0 | money_without_currency }}
+              </h3>
+              <p class="balance-label">Available Store Credit</p>
+            </div>
+          </div>
+
+          <!-- Eligible Return Orders -->
+          <div class="eligible-orders">
+            <h3 class="section-subtitle">Eligible Return Orders</h3>
+            <p class="section-description">Orders that can be returned for store credit</p>
+
+            {% if storeCredit.eligibleReturnOrders and storeCredit.eligibleReturnOrders.size > 0 %}
+              <div class="orders-list">
+                {% for order in storeCredit.eligibleReturnOrders %}
+                  <div class="order-card">
+                    <div class="order-header">
+                      <div class="order-number">
+                        <span class="label">Order</span>
+                        <span class="value">#{{ order.orderNumber }}</span>
+                      </div>
+                      <div class="order-date">
+                        {{ order.orderDate | date: '%d-%m-%Y %H:%M' }}
+                      </div>
+                    </div>
+
+                    <div class="order-details">
+                      <div class="detail-row">
+                        <span class="detail-label">Order Total</span>
+                        <span class="detail-value">{{ settings.currency_symbol | default: '₹' }}{{ order.orderTotal | money_without_currency }}</span>
+                      </div>
+                      <div class="detail-row">
+                        <span class="detail-label">Paid Amount</span>
+                        <span class="detail-value">{{ settings.currency_symbol | default: '₹' }}{{ order.paidAmount | money_without_currency }}</span>
+                      </div>
+                      <div class="detail-row highlight">
+                        <span class="detail-label">Credit Balance</span>
+                        <span class="detail-value credit">{{ settings.currency_symbol | default: '₹' }}{{ order.creditBalance | money_without_currency }}</span>
+                      </div>
+                    </div>
+
+                    <div class="order-actions">
+                      <a href="/orders/{{ order.orderId }}" class="btn btn-outline">View Order</a>
+                      <a href="/customer/returns?orderId={{ order.orderId }}" class="btn btn-primary">Request Return</a>
+                    </div>
+                  </div>
+                {% endfor %}
+              </div>
+            {% else %}
+              <div class="empty-state">
+                <div class="empty-icon">
+                  <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                  </svg>
+                </div>
+                <p class="empty-title">No Eligible Orders</p>
+                <p class="empty-description">You don't have any orders eligible for return at the moment.</p>
+                <a href="/collections" class="btn btn-primary">Continue Shopping</a>
+              </div>
+            {% endif %}
+          </div>
+
+        </div>
+
+        {% hook 'account_store_credit_after' %}
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<style>
+:root {
+  --color-primary: #2563eb;
+  --color-primary-hover: #1d4ed8;
+  --color-primary-light: #dbeafe;
+  --color-success: #10b981;
+  --color-success-light: #d1fae5;
+  --color-success-dark: #065f46;
+  --color-text: #1f2937;
+  --color-text-light: #6b7280;
+  --color-background: #f9fafb;
+  --color-card-bg: #ffffff;
+  --color-border: #e5e7eb;
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --spacing-xs: 0.5rem;
+  --spacing-sm: 1rem;
+  --spacing-md: 1.5rem;
+  --spacing-lg: 2rem;
+  --spacing-xl: 3rem;
+}
+
+.account-page {
+  padding: var(--spacing-xl) var(--spacing-sm);
+  background: var(--color-background);
+  min-height: 100vh;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 var(--spacing-sm);
+}
+
+.account-header {
+  text-align: center;
+  margin-bottom: var(--spacing-xl);
+ 
+}
+
+.account-title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: var(--color-text);
+  margin: 0 0 0.5rem 0;
+  letter-spacing: -0.025em;
+}
+
+.account-subtitle {
+  font-size: 1.3rem;
+  color: var(--color-text-light);
+  margin: 0;
+}
+
+.account-layout {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: var(--spacing-lg);
+  align-items: start;
+}
+
+.account-sidebar {
+  position: sticky;
+  top: var(--spacing-lg);
+  background: var(--color-card-bg);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-md);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--color-border);
+}
+
+.account-content {
+  background: var(--color-card-bg);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--color-border);
+}
+
+.account-section-header {
+  margin-bottom: var(--spacing-lg);
+  padding-bottom: var(--spacing-md);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.account-section-title {
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: var(--color-text);
+  margin: 0;
+}
+
+.store-credit-program {
+  display: grid;
+  gap: var(--spacing-xl);
+}
+
+.store-credit-balance {
+  background: linear-gradient(135deg, var(--color-success) 0%, #059669 100%);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-xl);
+  text-align: center;
+  color: white;
+  box-shadow: var(--shadow-lg);
+  position: relative;
+  overflow: hidden;
+}
+
+.store-credit-balance::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -10%;
+  width: 300px;
+  height: 300px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+}
+
+.balance-display {
+  position: relative;
+  z-index: 1;
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.balance-icon {
+  margin: 0 auto var(--spacing-md);
+  width: 80px;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+}
+
+.balance-value {
+  font-size: 3.5rem;
+  font-weight: 700;
+  margin: 0 0 var(--spacing-xs) 0;
+  line-height: 1;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.balance-label {
+  font-size: 1.25rem;
+  margin: 0;
+  opacity: 0.95;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.eligible-orders {
+  background: var(--color-background);
+  padding: var(--spacing-lg);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+}
+
+.section-subtitle {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--color-text);
+  margin: 0 0 var(--spacing-xs) 0;
+}
+
+.section-description {
+  font-size: 1.2rem;
+  color: var(--color-text-light);
+  margin: 0 0 var(--spacing-lg) 0;
+}
+
+.orders-list {
+  display: grid;
+  gap: var(--spacing-md);
+}
+
+.order-card {
+  background: var(--color-card-bg);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  padding: var(--spacing-md);
+  transition: all 0.3s ease;
+}
+
+.order-card:hover {
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-md);
+}
+
+.order-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-md);
+  padding-bottom: var(--spacing-sm);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.order-number .label {
+  font-size: 1.3rem;
+  color: var(--color-text-light);
+}
+
+.order-number .value {
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: var(--color-primary);
+  margin-left: var(--spacing-xs);
+}
+
+.order-date {
+  font-size: 1.3rem;
+  color: var(--color-text-light);
+}
+
+.order-details {
+  display: grid;
+  gap: var(--spacing-xs);
+  margin-bottom: var(--spacing-md);
+}
+
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-xs) 0;
+}
+
+.detail-row.highlight {
+  background: var(--color-success-light);
+  padding: var(--spacing-sm);
+  border-radius: var(--radius-sm);
+  margin-top: var(--spacing-xs);
+}
+
+.detail-label {
+  font-size: 1.3rem;
+  color: var(--color-text-light);
+}
+
+.detail-value {
+  font-size: 1.3rem;
+  font-weight: 500;
+  color: var(--color-text);
+}
+
+.detail-value.credit {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--color-success-dark);
+}
+
+.order-actions {
+  display: flex;
+  gap: var(--spacing-sm);
+  justify-content: flex-end;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.625rem 1.25rem;
+  font-size: 1.3rem;
+  font-weight: 500;
+  text-decoration: none;
+  border-radius: var(--radius-md);
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-primary {
+  background: var(--color-primary);
+  color: white;
+  border: 2px solid var(--color-primary);
+}
+
+.btn-primary:hover {
+  background: var(--color-primary-hover);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.btn-outline {
+  background: transparent;
+  color: var(--color-text);
+  border: 2px solid var(--color-border);
+}
+
+.btn-outline:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.empty-state {
+  text-align: center;
+  padding: var(--spacing-xl);
+  color: var(--color-text-light);
+  background: var(--color-card-bg);
+  border-radius: var(--radius-md);
+  border: 2px dashed var(--color-border);
+}
+
+.empty-icon {
+  margin-bottom: var(--spacing-md);
+  opacity: 0.5;
+}
+
+.empty-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--color-text);
+  margin: 0 0 var(--spacing-xs) 0;
+}
+
+.empty-description {
+  margin: 0 0 var(--spacing-md) 0;
+}
+
+@media (max-width: 768px) {
+  .account-layout {
+    grid-template-columns: 1fr;
+  }
+  
+  
+  .account-content {
+    order: 1;
+  }
+  
+  .balance-value {
+    font-size: 2.5rem;
+  }
+  
+  .order-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-xs);
+  }
+  
+  .order-actions {
+    flex-direction: column;
+  }
+  
+  .btn {
+    width: 100%;
+  }
+}
+</style>

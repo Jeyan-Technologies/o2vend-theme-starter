@@ -1,0 +1,176 @@
+{% liquid
+  assign widget_settings = widget.settings
+  assign widget_content = widget.content
+  assign widget_data = widget.data
+
+  assign heading = widget_settings.title | default: widget_content.title | default: 'Limited time offer'
+  assign subheading = widget_settings.subtitle | default: widget_content.subtitle
+  assign end_time = widget_settings.ends_at | default: widget_content.ends_at | default: widget_data.ends_at
+  assign highlight_text = widget_settings.highlight | default: widget_content.highlight
+  assign background_image = widget_settings.background_image | default: widget_content.background_image
+%}
+
+<section class="widget widget-discount-time" data-widget-id="{{ widget.id }}" data-countdown="{{ end_time }}">
+  <div class="widget-discount-time__background" {% if background_image %}style="background-image: url('{{ background_image }}');"{% endif %}></div>
+  <div class="widget-discount-time__overlay"></div>
+  <div class="widget-discount-time__content">
+    <h2>{{ heading }}</h2>
+    {% if subheading %}
+      <p>{{ subheading }}</p>
+    {% endif %}
+    {% if highlight_text %}
+      <span class="widget-discount-time__highlight">{{ highlight_text }}</span>
+    {% endif %}
+    {% if end_time %}
+      <div class="widget-discount-time__countdown" data-countdown-display>
+        <div><strong data-countdown-days>00</strong><span>Days</span></div>
+        <div><strong data-countdown-hours>00</strong><span>Hours</span></div>
+        <div><strong data-countdown-minutes>00</strong><span>Minutes</span></div>
+        <div><strong data-countdown-seconds>00</strong><span>Seconds</span></div>
+      </div>
+    {% endif %}
+    {% if widget_settings.cta_label %}
+      <a href="{{ widget_settings.cta_link | default: '#' }}" class="widget-discount-time__cta">
+        {{ widget_settings.cta_label }}
+      </a>
+    {% endif %}
+  </div>
+
+  <style>
+    .widget-discount-time {
+      position: relative;
+      padding: 4rem 1rem;
+      color: {{ widget_settings.text_color | default: '#ffffff' }};
+      overflow: hidden;
+      border-radius: var(--border-radius-medium);
+      margin: 2rem auto;
+      max-width: {{ settings.container_width }}px;
+    }
+    .widget-discount-time__background {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, {{ widget_settings.background_from | default: '#1f2937' }}, {{ widget_settings.background_to | default: '#2563eb' }});
+      background-size: cover;
+      background-position: center;
+      filter: saturate(1.1);
+    }
+    .widget-discount-time__overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.4);
+    }
+    .widget-discount-time__content {
+      position: relative;
+      z-index: 2;
+      text-align: center;
+      max-width: 640px;
+      margin: 0 auto;
+    }
+    .widget-discount-time h2 {
+      font-size: clamp(2rem, 4vw, 2.8rem);
+      margin: 0 0 1rem;
+    }
+    .widget-discount-time p {
+      margin: 0 0 1.5rem;
+      font-size: 1.1rem;
+      opacity: 0.9;
+    }
+    .widget-discount-time__highlight {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.15);
+      font-weight: 600;
+      margin-bottom: 2rem;
+    }
+    .widget-discount-time__countdown {
+      display: inline-flex;
+      gap: 1rem;
+      margin: 2.5rem 0;
+      padding: 0.5rem 1rem;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.12);
+      backdrop-filter: blur(8px);
+    }
+    .widget-discount-time__countdown div {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-width: 70px;
+    }
+    .widget-discount-time__countdown strong {
+      font-size: 1.75rem;
+      font-weight: 700;
+    }
+    .widget-discount-time__countdown span {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+    .widget-discount-time__cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.85rem 1.75rem;
+      border-radius: 999px;
+      background: {{ widget_settings.cta_background | default: '#ffffff' }};
+      color: {{ widget_settings.cta_text | default: '#111827' }};
+      text-decoration: none;
+      font-weight: 600;
+    }
+    @media (max-width: 640px) {
+      .widget-discount-time__countdown {
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 0.75rem;
+      }
+      .widget-discount-time__countdown div {
+        min-width: 60px;
+      }
+    }
+  </style>
+
+  {% if end_time %}
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const widget = document.querySelector('[data-widget-id="{{ widget.id }}"]');
+        if (!widget) return;
+
+        const targetDate = new Date(widget.dataset.countdown);
+        if (!targetDate.getTime()) return;
+
+        const parts = {
+          days: widget.querySelector('[data-countdown-days]'),
+          hours: widget.querySelector('[data-countdown-hours]'),
+          minutes: widget.querySelector('[data-countdown-minutes]'),
+          seconds: widget.querySelector('[data-countdown-seconds]')
+        };
+
+        const tick = () => {
+          const now = new Date();
+          let diff = targetDate - now;
+          if (diff <= 0) {
+            diff = 0;
+            clearInterval(timer);
+            widget.classList.add('widget-discount-time--expired');
+          }
+          const seconds = Math.floor((diff / 1000) % 60);
+          const minutes = Math.floor((diff / (1000 * 60)) % 60);
+          const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
+          const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+
+          if (parts.days) parts.days.textContent = String(days).padStart(2, '0');
+          if (parts.hours) parts.hours.textContent = String(hours).padStart(2, '0');
+          if (parts.minutes) parts.minutes.textContent = String(minutes).padStart(2, '0');
+          if (parts.seconds) parts.seconds.textContent = String(seconds).padStart(2, '0');
+        };
+
+        tick();
+        const timer = setInterval(tick, 1000);
+      });
+    </script>
+  {% endif %}
+</section>
+

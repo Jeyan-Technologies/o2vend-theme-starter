@@ -1,0 +1,663 @@
+{% liquid
+  assign widget_settings = widget.settings
+  assign widget_data = widget.data
+  
+  comment
+    Static Widget: Content comes from widget_data.content (array of items)
+    Settings come from widget_settings
+  endcomment
+
+  assign content_data = widget_data.content | default: widget.content
+  comment
+    Handle both formats:
+    1. Direct array: content_data is an array (when widget-service stores array directly)
+    2. Object with Items: content_data.Items or content_data.items (when stored as object)
+  endcomment
+  if content_data.Items
+    assign items = content_data.Items
+  elsif content_data.items
+    assign items = content_data.items
+  else
+    assign items = content_data
+  endif
+  assign heading = widget_settings.title | default: widget.Title | default: widget.title
+  assign subtitle = widget_settings.subtitle
+  assign background_color = widget_settings.backgroundColor | default: '#f8f9fa'
+  assign text_color = widget_settings.textColor | default: '#111'
+  assign show_widget_title_raw = widget_settings.showWidgetTitle | default: 'Yes'
+  if show_widget_title_raw == null or show_widget_title_raw == blank or show_widget_title_raw == 'null'
+    assign show_widget_title = true
+  else
+    if show_widget_title_raw == 'Yes'
+      assign show_widget_title = true
+    elsif show_widget_title_raw == true
+      assign show_widget_title = true
+    else
+      assign show_widget_title = false
+    endif
+  endif
+  assign widget_title_alignment_raw = widget_settings.widgetTitleAlignment | default: 'center'
+  assign widget_title_alignment = widget_title_alignment_raw | downcase
+  if widget_title_alignment != 'left' and widget_title_alignment != 'right' and widget_title_alignment != 'center'
+    assign widget_title_alignment = 'center'
+  endif
+  assign hide_dots = widget_settings.hideDot | default: false
+  assign hide_arrows = widget_settings.hideArrow | default: false
+%}
+
+<section class="widget widget-spacebar-carousel" data-widget-id="{{ widget.id }}" data-spacebar-carousel{% if background_color and background_color != blank and background_color != 'null' %} style="background-color: {{ background_color }};"{% endif %}>
+  <div class="spacebar-carousel-container">
+    {% if show_widget_title %}
+      {% if heading or subtitle %}
+        <header class="spacebar-carousel-header">
+          <div class="spacebar-carousel-header__text" style="text-align: {{ widget_title_alignment }};">
+            {% if heading %}
+              <h2 class="spacebar-carousel-title"{% if text_color and text_color != 'null' %} style="color: {{ text_color }};"{% endif %}>{{ heading }}</h2>
+            {% endif %}
+            {% if subtitle %}
+              <p class="spacebar-carousel-subtitle"{% if text_color and text_color != 'null' %} style="color: {{ text_color }};"{% endif %}>{{ subtitle }}</p>
+            {% endif %}
+          </div>
+          {% if items and items.size > 0 and hide_arrows != true %}
+            <div class="spacebar-carousel-nav">
+              <button type="button" class="spacebar-carousel-arrow spacebar-carousel-arrow--prev" data-carousel-prev aria-label="Previous">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="15 18 9 12 15 6"></polyline>
+                </svg>
+              </button>
+              <button type="button" class="spacebar-carousel-arrow spacebar-carousel-arrow--next" data-carousel-next aria-label="Next">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+              </button>
+            </div>
+          {% endif %}
+        </header>
+      {% endif %}
+    {% endif %}
+
+    {% if items and items.size > 0 %}
+      <div class="spacebar-carousel-wrapper">
+        {% unless hide_arrows == true %}
+          <button type="button" class="spacebar-carousel-side-arrow spacebar-carousel-side-arrow--prev" data-carousel-prev aria-label="Previous">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="15 18 9 12 15 6"></polyline>
+            </svg>
+          </button>
+        {% endunless %}
+        
+        <div class="spacebar-carousel-track-wrapper" data-carousel-viewport>
+          <div class="spacebar-carousel-track" data-carousel-track>
+            {% for item in items %}
+              {% assign item_title = item.Title | default: item.title %}
+              {% assign item_description = item.Description | default: item.description %}
+              {% assign item_icon = item.IconHtml | default: item.iconHtml %}
+              {% assign item_image = item.ImageUrl | default: item.imageUrl | default: item.Image | default: item.image %}
+              {% assign item_bg = item.BackgroundColor | default: item.backgroundColor %}
+              {% assign item_text = item.TextColor | default: item.textColor %}
+              
+              <div class="spacebar-carousel-slide" data-slide-index="{{ forloop.index0 }}">
+                <div class="spacebar-carousel-item"{% if item_bg and item_bg != blank %} style="background-color: {{ item_bg }};"{% endif %}>
+                  {% if item_image and item_image != blank %}
+                    {% if item_image contains 'http://' or item_image contains 'https://' %}
+                      {% assign item_image_src = item_image %}
+                    {% else %}
+                      {% assign item_image_src = item_image | asset_url %}
+                    {% endif %}
+                    <div class="spacebar-carousel-item__icon spacebar-carousel-item__icon--image">
+                      <img src="{{ item_image_src }}" alt="{{ item_title }}" width="72" height="72" loading="lazy">
+                    </div>
+                  {% elsif item_icon and item_icon != blank %}
+                    <div class="spacebar-carousel-item__icon spacebar-carousel-item__icon--html">
+                      {{ item_icon }}
+                    </div>
+                  {% endif %}
+                  
+                  <div class="spacebar-carousel-item__content"{% if item_text and item_text != blank %} style="color: {{ item_text }};"{% endif %}>
+                    {% if item_title and item_title != blank %}
+                      <h4 class="spacebar-carousel-item__title">{{ item_title }}</h4>
+                    {% endif %}
+                    {% if item_description and item_description != blank %}
+                      <p class="spacebar-carousel-item__desc">{{ item_description }}</p>
+                    {% endif %}
+                  </div>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        </div>
+        
+        {% unless hide_arrows == true %}
+          <button type="button" class="spacebar-carousel-side-arrow spacebar-carousel-side-arrow--next" data-carousel-next aria-label="Next">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="9 18 15 12 9 6"></polyline>
+            </svg>
+          </button>
+        {% endunless %}
+      </div>
+      
+      {% unless hide_dots == true %}
+        <div class="spacebar-carousel-dots" data-carousel-dots></div>
+      {% endunless %}
+    {% else %}
+      <div class="widget-empty">
+        <p>No items to display.</p>
+      </div>
+    {% endif %}
+  </div>
+
+  <style>
+    /* Spacebar Carousel - True Carousel Behavior */
+    .widget-spacebar-carousel {
+      padding: 32px 0;
+      overflow: hidden;
+      border-radius: var(--border-radius-medium);
+    }
+    
+    .widget-spacebar-carousel .spacebar-carousel-container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+    
+    /* Header */
+    .widget-spacebar-carousel .spacebar-carousel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+      gap: 16px;
+    }
+    
+    .widget-spacebar-carousel .spacebar-carousel-header__text {
+      flex: 1;
+    }
+    
+    .widget-spacebar-carousel .spacebar-carousel-header {
+      position: static;
+      z-index: auto;
+    }
+    .widget-spacebar-carousel .spacebar-carousel-title {
+      font-size: 1.4rem;
+      font-weight: 500;
+      line-height: 1.3;
+      color: #111;
+      margin: 0 0 4px 0;
+      letter-spacing: -0.01em;
+    }
+    
+    .widget-spacebar-carousel .spacebar-carousel-subtitle {
+      font-size: 14px;
+      color: #6b7280;
+      margin: 0;
+    }
+    
+    /* Header Nav Arrows */
+    .widget-spacebar-carousel .spacebar-carousel-nav {
+      display: flex;
+      gap: 8px;
+    }
+    
+    .widget-spacebar-carousel .spacebar-carousel-arrow {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      border: 1px solid #e0e0e0;
+      background: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: #333;
+      transition: all 0.2s ease;
+      flex-shrink: 0;
+    }
+    
+    .widget-spacebar-carousel .spacebar-carousel-arrow:hover:not(:disabled) {
+      background: #111;
+      color: #fff;
+      border-color: #111;
+    }
+    
+    .widget-spacebar-carousel .spacebar-carousel-arrow:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+    }
+    
+    /* Carousel Wrapper */
+    .widget-spacebar-carousel .spacebar-carousel-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    
+    /* Side Navigation Arrows */
+    .widget-spacebar-carousel .spacebar-carousel-side-arrow {
+      display: none;
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      border: none;
+      background: #fff;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: #333;
+      transition: all 0.2s ease;
+      flex-shrink: 0;
+      z-index: 10;
+    }
+    
+    .widget-spacebar-carousel .spacebar-carousel-side-arrow:hover:not(:disabled) {
+      background: #111;
+      color: #fff;
+      transform: scale(1.05);
+    }
+    
+    .widget-spacebar-carousel .spacebar-carousel-side-arrow:disabled {
+      opacity: 0;
+      pointer-events: none;
+    }
+    
+    /* Track */
+    .widget-spacebar-carousel .spacebar-carousel-track-wrapper {
+      flex: 1;
+      overflow: hidden;
+      position: relative;
+    }
+    
+    .widget-spacebar-carousel .spacebar-carousel-track {
+      display: flex !important;
+      gap: 24px;
+      overflow-x: auto !important;
+      overflow-y: hidden !important;
+      scroll-snap-type: x mandatory;
+      scroll-behavior: smooth;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+      padding: 8px 0;
+    }
+    
+    .widget-spacebar-carousel .spacebar-carousel-track::-webkit-scrollbar {
+      display: none;
+    }
+    
+    /* Slides - Desktop: 4 items for better readability */
+    .widget-spacebar-carousel .spacebar-carousel-slide {
+      flex: 0 0 calc(25% - 18px);
+      min-width: 0;
+      max-width: calc(25% - 18px);
+      scroll-snap-align: start;
+      scroll-snap-stop: normal;
+    }
+    
+    /* Spacebar Item */
+    .widget-spacebar-carousel .spacebar-carousel-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+      padding: 16px 20px;
+      border-radius: var(--border-radius-medium);
+      background: #fff;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      height: 100%;
+    }
+    
+    .widget-spacebar-carousel .spacebar-carousel-item:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    }
+    
+    .widget-spacebar-carousel .spacebar-carousel-item__icon {
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 72px;
+      height: 72px;
+      border-radius: 12px;
+      background: #f8f9fa;
+    }
+    
+    .widget-spacebar-carousel .spacebar-carousel-item__icon--image {
+      background: transparent;
+      padding: 6px;
+    }
+    
+    .widget-spacebar-carousel .spacebar-carousel-item__icon--image img {
+      max-width: 100%;
+      max-height: 100%;
+      width: auto;
+      height: auto;
+      object-fit: contain;
+    }
+    
+    .widget-spacebar-carousel .spacebar-carousel-item__icon--html {
+      font-size: 40px;
+      color: {{ text_color }};
+    }
+    
+    .widget-spacebar-carousel .spacebar-carousel-item__icon--html svg {
+      width: 44px;
+      height: 44px;
+    }
+    
+    .widget-spacebar-carousel .spacebar-carousel-item__content {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      flex: 1;
+      min-width: 0;
+    }
+    
+    .widget-spacebar-carousel .spacebar-carousel-item__title {
+      font-size: 16px;
+      font-weight: 600;
+      color: {{ text_color }};
+      margin: 0;
+      line-height: 1.4;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+    }
+    
+    .widget-spacebar-carousel .spacebar-carousel-item__desc {
+      font-size: 14px;
+      color: #666;
+      margin: 0;
+      line-height: 1.6;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+    }
+    
+    /* Dots */
+    .widget-spacebar-carousel .spacebar-carousel-dots {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 24px;
+    }
+    
+    .widget-spacebar-carousel .spacebar-carousel-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #d1d5db;
+      border: none;
+      padding: 0;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    
+    .widget-spacebar-carousel .spacebar-carousel-dot:hover {
+      background: #9ca3af;
+    }
+    
+    .widget-spacebar-carousel .spacebar-carousel-dot.active {
+      background: #111;
+      width: 24px;
+      border-radius: 4px;
+    }
+    
+    /* Desktop: Show side arrows, hide header arrows */
+    @media (min-width: 1025px) {
+      .widget-spacebar-carousel .spacebar-carousel-side-arrow {
+        display: flex;
+      }
+      .widget-spacebar-carousel .spacebar-carousel-nav {
+        display: none;
+      }
+      .widget-spacebar-carousel .spacebar-carousel-header__text {
+        text-align: left;
+      }
+    }
+    
+    /* Tablet: 3 items */
+    @media (max-width: 1024px) {
+      .widget-spacebar-carousel .spacebar-carousel-slide {
+        flex: 0 0 calc(33.333% - 16px);
+        max-width: calc(33.333% - 16px);
+      }
+      .widget-spacebar-carousel .spacebar-carousel-track {
+        gap: 20px;
+      }
+    }
+    
+    /* Small Tablet: 2 items */
+    @media (max-width: 768px) {
+      .widget-spacebar-carousel {
+        padding: 24px 0;
+      }
+      .widget-spacebar-carousel .spacebar-carousel-container {
+        padding: 0 16px;
+      }
+      .widget-spacebar-carousel .spacebar-carousel-title {
+        font-size: 1.3rem;
+      }
+      .widget-spacebar-carousel .spacebar-carousel-header {
+        margin-bottom: 20px;
+        flex-direction: column;
+        text-align: center;
+      }
+      .widget-spacebar-carousel .spacebar-carousel-header__text {
+        text-align: center;
+      }
+      .widget-spacebar-carousel .spacebar-carousel-slide {
+        flex: 0 0 calc(50% - 10px);
+        max-width: calc(50% - 10px);
+      }
+      .widget-spacebar-carousel .spacebar-carousel-track {
+        gap: 16px;
+      }
+      .widget-spacebar-carousel .spacebar-carousel-item {
+        padding: 14px 16px;
+        gap: 14px;
+      }
+      .widget-spacebar-carousel .spacebar-carousel-item__icon {
+        width: 64px;
+        height: 64px;
+      }
+      .widget-spacebar-carousel .spacebar-carousel-item__icon--html {
+        font-size: 36px;
+      }
+      .widget-spacebar-carousel .spacebar-carousel-item__icon--html svg {
+        width: 40px;
+        height: 40px;
+      }
+      .widget-spacebar-carousel .spacebar-carousel-item__title {
+        font-size: 15px;
+      }
+      .widget-spacebar-carousel .spacebar-carousel-item__desc {
+        font-size: 13px;
+      }
+      .widget-spacebar-carousel .spacebar-carousel-arrow {
+        width: 40px;
+        height: 40px;
+      }
+    }
+    
+    /* Mobile: 2 items */
+    @media (max-width: 480px) {
+      .widget-spacebar-carousel .spacebar-carousel-container {
+        padding: 0 12px;
+      }
+      .widget-spacebar-carousel .spacebar-carousel-slide {
+        flex: 0 0 calc(50% - 8px);
+        max-width: calc(50% - 8px);
+      }
+      .widget-spacebar-carousel .spacebar-carousel-track {
+        gap: 12px;
+      }
+      .widget-spacebar-carousel .spacebar-carousel-item {
+        padding: 12px 14px;
+        gap: 12px;
+      }
+      .widget-spacebar-carousel .spacebar-carousel-item__icon {
+        width: 56px;
+        height: 56px;
+      }
+      .widget-spacebar-carousel .spacebar-carousel-item__icon--html {
+        font-size: 32px;
+      }
+      .widget-spacebar-carousel .spacebar-carousel-item__icon--html svg {
+        width: 36px;
+        height: 36px;
+      }
+      .widget-spacebar-carousel .spacebar-carousel-item__title {
+        font-size: 15px;
+      }
+      .widget-spacebar-carousel .spacebar-carousel-item__desc {
+        font-size: 13px;
+      }
+    }
+    
+    /* Small Mobile: 1.5 items (partial view) */
+    @media (max-width: 360px) {
+      .widget-spacebar-carousel .spacebar-carousel-slide {
+        flex: 0 0 calc(66.666% - 6px);
+        max-width: calc(66.666% - 6px);
+      }
+      .widget-spacebar-carousel .spacebar-carousel-track {
+        gap: 10px;
+      }
+    }
+  </style>
+
+  <script>
+  (function() {
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initSpacebarCarousel);
+    } else {
+      initSpacebarCarousel();
+    }
+    
+    function initSpacebarCarousel() {
+      const widget = document.querySelector('[data-widget-id="{{ widget.id }}"][data-spacebar-carousel]');
+      if (!widget) return;
+      
+      const track = widget.querySelector('[data-carousel-track]');
+      const viewport = widget.querySelector('[data-carousel-viewport]');
+      const prevBtns = widget.querySelectorAll('[data-carousel-prev]');
+      const nextBtns = widget.querySelectorAll('[data-carousel-next]');
+      const dotsContainer = widget.querySelector('[data-carousel-dots]');
+      const slides = widget.querySelectorAll('.spacebar-carousel-slide');
+      
+      if (!track || slides.length === 0) return;
+      
+      function getItemsPerView() {
+        const width = window.innerWidth;
+        if (width <= 360) return 1;
+        if (width <= 480) return 2;
+        if (width <= 768) return 2;
+        if (width <= 1024) return 3;
+        return 4;
+      }
+      
+      function getPageCount() {
+        const itemsPerView = getItemsPerView();
+        return Math.ceil(slides.length / itemsPerView);
+      }
+      
+      function getCurrentPage() {
+        if (!track.scrollWidth || track.scrollWidth <= viewport.clientWidth) return 0;
+        const scrollRatio = track.scrollLeft / (track.scrollWidth - viewport.clientWidth);
+        return Math.round(scrollRatio * (getPageCount() - 1));
+      }
+      
+      function createDots() {
+        if (!dotsContainer) return;
+        dotsContainer.innerHTML = '';
+        const pageCount = getPageCount();
+        if (pageCount <= 1) return;
+        
+        for (let i = 0; i < pageCount; i++) {
+          const dot = document.createElement('button');
+          dot.className = 'spacebar-carousel-dot' + (i === 0 ? ' active' : '');
+          dot.setAttribute('aria-label', 'Go to page ' + (i + 1));
+          dot.addEventListener('click', () => goToPage(i));
+          dotsContainer.appendChild(dot);
+        }
+      }
+      
+      function updateDots() {
+        if (!dotsContainer) return;
+        const dots = dotsContainer.querySelectorAll('.spacebar-carousel-dot');
+        const currentPage = getCurrentPage();
+        dots.forEach((dot, index) => {
+          dot.classList.toggle('active', index === currentPage);
+        });
+      }
+      
+      function updateArrows() {
+        const atStart = track.scrollLeft <= 5;
+        const atEnd = track.scrollLeft >= track.scrollWidth - viewport.clientWidth - 5;
+        
+        prevBtns.forEach(btn => btn.disabled = atStart);
+        nextBtns.forEach(btn => btn.disabled = atEnd);
+      }
+      
+      function goToPage(pageIndex) {
+        const itemsPerView = getItemsPerView();
+        const slide = slides[0];
+        if (!slide) return;
+        
+        const gap = parseFloat(getComputedStyle(track).gap) || 24;
+        const slideWidth = slide.offsetWidth + gap;
+        const scrollTo = pageIndex * itemsPerView * slideWidth;
+        
+        track.scrollTo({ left: scrollTo, behavior: 'smooth' });
+      }
+      
+      function scrollByItems(direction) {
+        const itemsPerView = getItemsPerView();
+        const slide = slides[0];
+        if (!slide) return;
+        
+        const gap = parseFloat(getComputedStyle(track).gap) || 24;
+        const scrollAmount = (slide.offsetWidth + gap) * Math.max(1, itemsPerView);
+        
+        track.scrollBy({ left: direction * scrollAmount, behavior: 'smooth' });
+      }
+      
+      prevBtns.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          scrollByItems(-1);
+        });
+      });
+      
+      nextBtns.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          scrollByItems(1);
+        });
+      });
+      
+      let scrollTimeout;
+      track.addEventListener('scroll', () => {
+        clearTimeout(scrollTimeout);
+        scrollTimeout = setTimeout(() => {
+          updateDots();
+          updateArrows();
+        }, 50);
+      }, { passive: true });
+      
+      let resizeTimeout;
+      window.addEventListener('resize', () => {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(() => {
+          createDots();
+          updateArrows();
+        }, 200);
+      });
+      
+      createDots();
+      updateArrows();
+    }
+  })();
+  </script>
+</section>
+

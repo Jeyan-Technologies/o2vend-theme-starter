@@ -1,0 +1,419 @@
+{% layout 'layout/theme' %}
+
+<section class="account-page">
+  <div class="container">
+    <div class="account-header">
+      <h1 class="account-title display-2">My Wishlist</h1>
+      <p class="account-subtitle">Items you've saved for later</p>
+    </div>
+
+    <div class="account-layout">
+      <!-- Account Sidebar -->
+      <aside class="account-sidebar">
+        {% render 'snippets/account-sidebar' %}
+      </aside>
+
+      <!-- Wishlist Content -->
+      <div class="account-content">
+        {% hook 'account_wishlist_before' %}
+        <div class="account-section-header">
+          <h2 class="account-section-title">My Wishlist</h2>
+          {% if wishlist and wishlist.items and wishlist.items.size > 0 %}
+            <span class="items-count">{{ wishlist.items.size }} item{% if wishlist.items.size != 1 %}s{% endif %}</span>
+          {% endif %}
+        </div>
+
+        <div class="wishlist-products">
+          {% if wishlist and wishlist.items and wishlist.items.size > 0 %}
+            <div class="products-grid">
+              {% for item in wishlist.items %}
+                <article class="product-card">
+                  <div class="product-card-image">
+                    {% if item.product.image %}
+                      <img src="{{ item.product.image }}" alt="{{ item.product.name | default: item.product.title }}" loading="lazy">
+                    {% else %}
+                      <div class="product-placeholder">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                          <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                          <polyline points="21 15 16 10 5 21"></polyline>
+                        </svg>
+                      </div>
+                    {% endif %}
+                    <button class="remove-wishlist-btn" data-item-id="{{ item.id }}" title="Remove from wishlist">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                      </svg>
+                    </button>
+                  </div>
+                  
+                  <div class="product-card-content">
+                    <a href="{{ item.product.url | default: '#' }}" class="product-card-link">
+                      <h3 class="product-card-title">{{ item.product.name | default: item.product.title }}</h3>
+                    </a>
+                    
+                    {% if item.product.price %}
+                      <div class="product-card-price">
+                        {% if item.product.compareAtPrice and item.product.compareAtPrice > item.product.price %}
+                          <span class="price-compare">{{ item.product.compareAtPrice | money_with_settings: shop.settings }}</span>
+                          <span class="price-current sale">{{ item.product.price | money_with_settings: shop.settings }}</span>
+                        {% else %}
+                          <span class="price-current">{{ item.product.price | money_with_settings: shop.settings }}</span>
+                        {% endif %}
+                      </div>
+                    {% endif %}
+                    
+                    {% if item.product.available %}
+                      <button class="btn btn-primary btn-block add-to-cart" data-product-id="{{ item.product.id }}">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <circle cx="9" cy="21" r="1"></circle>
+                          <circle cx="20" cy="21" r="1"></circle>
+                          <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+                        </svg>
+                        Add to Cart
+                      </button>
+                    {% else %}
+                      <button class="btn btn-outline btn-block" disabled>Out of Stock</button>
+                    {% endif %}
+                  </div>
+                </article>
+              {% endfor %}
+            </div>
+          {% else %}
+            <div class="empty-state">
+              <div class="empty-icon">
+                <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                </svg>
+              </div>
+              <h3>Your Wishlist is Empty</h3>
+              <p>Start adding products you love to keep track of them!</p>
+              <a href="/products" class="btn btn-primary">Browse Products</a>
+            </div>
+          {% endif %}
+        </div>
+        {% hook 'account_wishlist_after' %}
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+/* Account wishlist page uses theme.css variables - no local :root needed */
+
+.account-page {
+  padding: var(--spacing-section) var(--spacing-small);
+  background: var(--color-background);
+  min-height: 100vh;
+}
+
+.container {
+  max-width: var(--container-width);
+  margin: 0 auto;
+  padding: 0 var(--spacing-small);
+}
+
+.account-header {
+  text-align: center;
+  margin-bottom: var(--spacing-xl);
+}
+
+.account-title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: var(--color-text);
+  margin: 0 0 0.5rem 0;
+  letter-spacing: -0.025em;
+}
+
+.account-subtitle {
+  font-size: 1.125rem;
+  color: var(--color-text-light);
+  margin: 0;
+}
+
+.account-layout {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: var(--spacing-lg);
+  align-items: start;
+}
+
+.account-sidebar {
+  position: sticky;
+  top: var(--spacing-lg);
+  background: var(--color-background);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-md);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--color-border);
+}
+
+.account-content {
+  background: var(--color-background);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--color-border);
+}
+
+.account-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-lg);
+  padding-bottom: var(--spacing-md);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.account-section-title {
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: var(--color-text);
+  margin: 0;
+}
+
+.items-count {
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+  padding: 0.375rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.products-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: var(--spacing-md);
+}
+
+.product-card {
+  background: var(--color-background);
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+}
+
+.product-card:hover {
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-4px);
+}
+
+.product-card-image {
+  position: relative;
+  width: 100%;
+  padding-top: 100%;
+  overflow: hidden;
+  background: var(--color-surface);
+}
+
+.product-card-image img {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.product-card:hover .product-card-image img {
+  transform: scale(1.05);
+}
+
+.product-placeholder {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-lighter);
+}
+
+.remove-wishlist-btn {
+  position: absolute;
+  top: var(--spacing-sm);
+  right: var(--spacing-sm);
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: white;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: var(--shadow-md);
+  transition: all 0.3s ease;
+  color: var(--color-text-light);
+}
+
+.remove-wishlist-btn:hover {
+  background: var(--color-danger);
+  color: white;
+  transform: scale(1.1);
+}
+
+.product-card-content {
+  padding: var(--spacing-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  flex: 1;
+}
+
+.product-card-link {
+  text-decoration: none;
+}
+
+.product-card-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-text);
+  margin: 0;
+  line-height: 1.4;
+  transition: color 0.3s ease;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.product-card-link:hover .product-card-title {
+  color: var(--color-primary);
+}
+
+.product-card-price {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  margin-top: auto;
+}
+
+.price-compare {
+  font-size: 0.875rem;
+  color: var(--color-text-lighter);
+  text-decoration: line-through;
+}
+
+.price-current {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.price-current.sale {
+  color: var(--color-danger);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.5rem;
+  font-size: 1.2rem;
+  font-weight: 500;
+  text-decoration: none;
+  border-radius: var(--radius-md);
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+
+.btn-primary {
+  background: var(--color-primary);
+  color: white;
+  border: 2px solid var(--color-primary);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--color-primary-hover);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.btn-outline {
+  background: transparent;
+  color: var(--color-text-light);
+  border: 2px solid var(--color-border);
+}
+
+.btn-block {
+  width: 100%;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.empty-state {
+  text-align: center;
+  padding: var(--spacing-xl);
+  background: var(--color-background);
+  border-radius: var(--radius-lg);
+  border: 2px dashed var(--color-border);
+}
+
+.empty-icon {
+  margin: 0 auto var(--spacing-md);
+  width: 120px;
+  height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+  border-radius: 50%;
+}
+
+.empty-state h3 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--color-text);
+  margin: 0 0 var(--spacing-xs) 0;
+}
+
+.empty-state p {
+  font-size: 1rem;
+  color: var(--color-text-light);
+  margin: 0 0 var(--spacing-md) 0;
+}
+
+@media (max-width: 768px) {
+  .account-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .account-content {
+    order: 1;
+  }
+  
+  .products-grid {
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  }
+  
+  .account-section-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-xs);
+  }
+}
+
+@media (max-width: 480px) {
+  .products-grid {
+    grid-template-columns: 1fr;
+  }
+}
+</style>

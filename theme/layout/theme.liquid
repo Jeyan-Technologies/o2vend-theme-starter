@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="{{ shop.language | default: 'en' }}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% if page.title %}{{ page.title }} - {% endif %}{{ shop.name }}</title>
+  
+  <!-- Meta tags -->
+  <meta name="description" content="{{ page_description | default: shop.name }}">
+  <meta name="keywords" content="ecommerce, online store, {{ shop.name }}">
+  
+  <!-- Favicon -->
+  <link rel="icon" href="{{ shop.favicon }}">
+  
+  <!-- Resource hints for fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  
+  <!-- CSS -->
+  <link rel="stylesheet" href="/assets/theme.min.css">
+  <link rel="stylesheet" href="/assets/components.min.css">
+  <link rel="stylesheet" href="/assets/delivery-zone.min.css">
+  <!-- intl-tel-input CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intl-tel-input@23.0.0/build/css/intlTelInput.min.css">
+  
+  <!-- Font Loading - Non-render-blocking -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+  <noscript>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet">
+  </noscript>
+  
+  
+  <!-- Additional head content -->
+  {% if additional_head %}
+    {{ additional_head }}
+  {% endif %}
+  
+  <!-- Plugin hooks for theme head -->
+  {% hook 'theme_head' %}
+  
+  {%- comment -%}
+    Shopify-compatible placeholder for apps and scripts injected into the <head>.
+    In our engine this may be empty, which is fine.
+  {%- endcomment -%}
+  {{ content_for_header }}
+</head>
+<body 
+  {% comment %}Animation settings - Check with proper boolean handling{% endcomment %}
+  {% liquid
+    assign anim_val = settings.enable_animations
+    if anim_val == blank or anim_val == null
+      assign anim_val = true
+    endif
+    assign hover_val = settings.enable_hover_effects
+    if hover_val == blank or hover_val == null
+      assign hover_val = true
+    endif
+    assign parallax_val = settings.enable_parallax
+    if parallax_val == blank or parallax_val == null
+      assign parallax_val = false
+    endif
+  %}
+  class="template-{{ template | default: 'index' }} layout-{{ settings.layout_style | default: 'boxed' }}{% unless anim_val or anim_val == true or anim_val == 'true' or anim_val == 1 %} no-animations{% endunless %}{% unless hover_val or hover_val == true or hover_val == 'true' or hover_val == 1 %} no-hover-effects{% endunless %}{% if parallax_val or parallax_val == true or parallax_val == 'true' or parallax_val == 1 %} parallax-enabled{% endif %}"
+  data-shop-currency="{{ shop.currency | default: 'USD' }}"
+  data-shop-currency-symbol="{{ shop.settings.currencySymbol | default: shop.currency | default: '$' }}"
+  data-shop-locale="{{ shop.locale | default: shop.language | default: 'en-US' }}"
+  style="font-family: var(--font-primary); font-size: {{ settings.font_size_base | default: 16 }}px;"
+>
+  <script>
+    window.__SHOP_CURRENCY__ = '{{ shop.currency | default: 'USD' }}';
+    window.__SHOP_CURRENCY_SYMBOL__ = '{{ shop.settings.currencySymbol | default: shop.currency | default: '$' }}';
+    window.__SHOP_LOCALE__ = '{{ shop.locale | default: shop.language | default: 'en-US' }}';
+  </script>
+  <!-- Plugin hooks for body begin -->
+  {% hook 'theme_body_begin' %}
+  <!-- Skip Links for Accessibility -->
+  <a href="#main-content" class="skip-link">Skip to main content</a>
+  
+  <!--  Header -->
+  {% hook 'header_before' %}
+  <header class="site-header" id="site-header" role="banner">
+    {% section 'sections/header' %}
+  </header>
+  {% hook 'header_after' %}
+  
+  <!-- Main content -->
+  <main class="main-content" id="main-content" role="main">
+    <div class="container" style="max-width: {{ settings.container_width | default: 1400 }}px; padding: 0 {{ settings.container_padding | default: 24 }}px;">
+      {%- comment -%}
+        Use Shopify-compatible {{ content_for_layout }} for layout content,
+        but keep support for our existing {{ content }} variable as a fallback.
+      {%- endcomment -%}
+      {% if content_for_layout %}
+        {{ content_for_layout }}
+      {% else %}
+        {{ content }}
+      {% endif %}
+    </div>
+  </main>
+  
+  <!--  Footer -->
+  {% hook 'footer_before' %}
+  <footer class="site-footer" role="contentinfo">
+    {% section 'sections/footer' %}
+  </footer>
+  {% hook 'footer_after' %}
+  
+  <!-- JavaScript -->
+  <script src="/assets/cart-manager.min.js" defer></script>
+  <script src="/assets/theme.min.js" defer></script>
+  <script src="/assets/cart-drawer.min.js" defer></script>
+  <script src="/assets/delivery-zone.min.js" defer></script>
+  <!-- intl-tel-input JS -->
+  <script src="https://cdn.jsdelivr.net/npm/intl-tel-input@23.0.0/build/js/intlTelInput.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/intl-tel-input@23.0.0/build/js/utils.js"></script>
+  
+  <!-- Async Section Loader -->
+  <script src="/assets/async-sections.min.js" defer></script>
+  <script>
+    // Initialize async section loader if sections are defined
+    if (window.asyncSections && window.AsyncSectionLoader) {
+      document.addEventListener('DOMContentLoaded', function() {
+        AsyncSectionLoader.init(window.asyncSections);
+      });
+    }
+  </script>
+  
+  <!-- Additional scripts -->
+  {% if additional_scripts %}
+    {{ additional_scripts }}
+  {% endif %}
+
+  {% include 'snippets/cart-drawer' %}
+  
+  {% if deliveryZone.enabled %}
+    {% include 'snippets/delivery-zone-modal' %}
+  {% endif %}
+
+  <!-- Global login modal (email/password, email OTP, mobile OTP) -->
+  {% include 'snippets/login-modal' %}
+  
+  <!-- Add to Cart Modal -->
+  {% include 'snippets/add-to-cart-modal' %}
+  
+  <!-- Mobile Bottom Navigation -->
+  <nav class="mobile-bottom-nav" role="navigation" aria-label="Bottom navigation">
+    <a href="/" class="mobile-bottom-nav__item" data-nav-item="home" aria-label="Home">
+      <svg class="mobile-bottom-nav__icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+        <polyline points="9 22 9 12 15 12 15 22"></polyline>
+      </svg>
+      <span class="mobile-bottom-nav__label">Home</span>
+    </a>
+    <a href="/collections" class="mobile-bottom-nav__item" data-nav-item="categories" aria-label="Categories">
+      <svg class="mobile-bottom-nav__icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="3" width="7" height="7"></rect>
+        <rect x="14" y="3" width="7" height="7"></rect>
+        <rect x="14" y="14" width="7" height="7"></rect>
+        <rect x="3" y="14" width="7" height="7"></rect>
+      </svg>
+      <span class="mobile-bottom-nav__label">Categories</span>
+    </a>
+    {% if customer and customer.isAuthenticated %}
+      <a href="/account" class="mobile-bottom-nav__item" data-nav-item="account" aria-label="Account">
+        <svg class="mobile-bottom-nav__icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+          <circle cx="12" cy="7" r="4"></circle>
+        </svg>
+        <span class="mobile-bottom-nav__label">Account</span>
+      </a>
+    {% else %}
+      <button type="button" class="mobile-bottom-nav__item" data-nav-item="account" data-login-modal-trigger aria-label="Login">
+        <svg class="mobile-bottom-nav__icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+          <circle cx="12" cy="7" r="4"></circle>
+        </svg>
+        <span class="mobile-bottom-nav__label">Account</span>
+      </button>
+    {% endif %}
+    <button type="button" class="mobile-bottom-nav__item mobile-bottom-nav__item--cart" data-nav-item="cart" data-cart-toggle aria-label="Shopping cart">
+      <svg class="mobile-bottom-nav__icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="9" cy="21" r="1"></circle>
+        <circle cx="20" cy="21" r="1"></circle>
+        <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+      </svg>
+      <span class="mobile-bottom-nav__label">Cart</span>
+      <span class="mobile-bottom-nav__badge" data-cart-count>{{ cart.itemCount | default: 0 }}</span>
+    </button>
+  </nav>
+  
+  <!-- Plugin hooks for body end -->
+  {% hook 'theme_body_end' %}
+</body>
+</html>
+

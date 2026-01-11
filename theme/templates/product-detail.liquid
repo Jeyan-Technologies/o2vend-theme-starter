@@ -1,0 +1,4363 @@
+{% layout 'layout/theme' %}
+{% comment %}
+  O2VEND Default Theme - Product Detail Page
+  Inspired by Shopify Horizon Theme
+{% endcomment %}
+
+<!-- Product Main Section -->
+{% hook 'product_before' %}
+<section class="product-main horizon-style">
+  <div class="product-container">
+    <!-- Product Gallery -->
+    {% hook 'product_images_before' %}
+    <div class="product-gallery">
+      <div class="gallery-main">
+        {% if product.images and product.images.size > 0 %}
+          {% for image in product.images %}
+            <img 
+              src="{{ image.url | default: image }}" 
+              alt="{{ product.name | default: product.title }} - {{ forloop.index }}" 
+              class="gallery-main-image {% if forloop.first %}active{% endif %}" 
+              data-index="{{ forloop.index0 }}"
+              id="mainProductImage"
+              loading="{% if forloop.first %}eager{% else %}lazy{% endif %}"
+            >
+          {% endfor %}
+        {% elsif product.thumbnailImage %}
+          {% assign thumbImage = product.thumbnailImage %}
+          <img 
+            src="{{ thumbImage.url | default: thumbImage }}" 
+            alt="{{ product.name | default: product.title }}" 
+            class="gallery-main-image active"
+            id="mainProductImage"
+            loading="eager"
+          >
+        {% else %}
+          <div class="gallery-placeholder">
+            <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="16" y="16" width="32" height="32" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M16 24L24 32L32 24L40 32L48 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+        {% endif %}
+        
+        <!-- Full Screen Button -->
+        {% if product.images and product.images.size > 0 %}
+          <button class="gallery-zoom-btn" id="galleryZoomBtn" aria-label="Open image in full screen">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M6 3H3V6M14 3H17V6M6 17H3V14M14 17H17V14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+          </button>
+        {% endif %}
+      </div>
+      
+      <!-- Thumbnails -->
+      {% if product.images and product.images.size > 1 %}
+        <div class="gallery-thumbnails" id="galleryThumbnails">
+          {% for image in product.images limit: 8 %}
+            {% assign imageUrl = image.url | default: image %}
+            <button 
+              class="gallery-thumbnail {% if forloop.first %}active{% endif %}" 
+              data-image="{{ imageUrl }}"
+              data-index="{{ forloop.index0 }}"
+              aria-label="View image {{ forloop.index }}"
+            >
+              <img src="{{ imageUrl }}" alt="{{ product.name }} - {{ forloop.index }}" loading="lazy">
+            </button>
+          {% endfor %}
+        </div>
+      {% endif %}
+    </div>
+    {% hook 'product_images_after' %}
+
+    <!-- Product Info -->
+    <div class="product-info">
+      <!-- Vendor/Brand -->
+      {% comment %}Show vendor - Check settings with proper boolean handling{% endcomment %}
+      {% liquid
+        assign vendor_val = settings.show_vendor
+        if vendor_val == blank or vendor_val == null
+          assign vendor_val = true
+        endif
+        assign show_vendor = false
+        if vendor_val == true
+          assign show_vendor = true
+        endif
+        if vendor_val == 'true'
+          assign show_vendor = true
+        endif
+        if vendor_val == 1
+          assign show_vendor = true
+        endif
+      %}
+      {% if show_vendor %}
+        {% if product.vendor %}
+          <div class="product-vendor">
+            {{ product.vendor }}
+          </div>
+        {% elsif product.brand %}
+          <div class="product-vendor">
+            {{ product.brand.name }}
+          </div>
+        {% endif %}
+      {% endif %}
+      
+      <!-- Product Title -->
+      {% hook 'product_title_before' %}
+      <h1 class="product-title">{{ product.name | default: product.title }}</h1>
+      {% hook 'product_title_after' %}
+
+      {% if product.shortDescription and product.shortDescription != blank %}
+        <div class="product-short-description">
+          {{ product.shortDescription }}
+        </div>
+      {% endif %}
+      
+      <!-- Price -->
+      {% hook 'product_price_before' %}
+      <div class="product-price-wrapper">
+      
+        <span class="price-current" id="productPrice">
+          {{ product.prices.price | money_with_settings: shop.settings }}
+        </span>
+        {% if product.prices.mrp and product.prices.mrp > product.prices.prices.mrp %}
+          <span class="price-compare">
+            {{ product.prices.mrp | money_with_settings: shop.settings }}
+          </span>
+        {% endif %}
+      </div>
+      {% hook 'product_price_after' %}
+
+      <!-- Product Form -->
+      {% hook 'product_form_before' %}
+      <form class="product-form" id="productForm" data-product-id="{{ product.productId }}">
+        <!-- variants/Options -->
+        {% hook 'product_variants_before' %}
+        {% if product.variations and product.variations.size > 0 %}
+          <div id="productOptionsContainer">   
+              {% assign optionNames = '' %}
+              {% for o in product.variants.first.options %}
+                {% unless optionNames contains o.optionName %}
+                  {% assign optionNames = optionNames | append: o.optionName | append: ',' %}
+                {% endunless %}
+              {% endfor %}
+              {% assign optionNameList = optionNames | split: ',' %}
+
+              {% for groupName in optionNameList %}
+                {% if groupName != '' %}
+
+                  <div class="product-option">
+                    <label class="option-label">{{ groupName }}</label>
+                    <div class="option-values">
+
+                      {% assign seenValues = '' %}
+
+                      {% for variation in product.variants %}
+                        {% for opt in variation.options %}
+                          {% if opt.optionName == groupName %}
+
+                            {% unless seenValues contains opt.value %}
+                              {% assign seenValues = seenValues | append: opt.value | append: ',' %}
+
+                              <button 
+                                type="button"
+                                class="product-option-btn"
+                                data-option-key="{{ groupName | downcase | replace: ' ', '-' }}"
+                                data-option-value="{{ opt.value }}"
+                                data-display-type="{{ opt.displayType }}"
+                              >
+                                {{ opt.value }}
+                              </button>
+
+                            {% endunless %}
+                          {% endif %}
+                        {% endfor %}
+                      {% endfor %}
+                    </div>
+                  </div>
+
+                {% endif %}
+              {% endfor %}           
+          </div>
+        {% endif %}
+         <!-- Combinations -->
+        {% if product.combinations and product.combinations.size > 0 %}
+          <div id="comboContainer"></div>
+          <div id="combinationValidationMsg"></div>
+        {% endif %}
+         <!-- Subscriptions -->
+        <!-- Subscriptions -->
+        {% if product.subscriptions and product.subscriptions.size > 0 %}
+          <div class="product-option subscription-option">
+            <div id="subscriptionInfoMessage"></div>
+            <div id="subscriptionPlanContainer" class="subscription-list"></div>
+            <div id="frequencyContainer"></div>
+            <div class="sub-modern-box">
+
+                <div class="sub-row">
+                    <span class="sub-label">Shipping</span>
+                    <select id="shippingMethod" class="sub-input" aria-label="Select shipping method">
+                        <option value="">Select</option>
+                    </select>
+                    <div id="shippingMethodDetails"></div>
+                </div>
+
+                <div class="sub-row">
+                    <span class="sub-label">Start Date <span class="required-indicator">*</span></span>
+                    <div class="flex-column">
+                      <input 
+                        type="date" 
+                        id="startDate" 
+                        class="sub-input" 
+                        aria-label="Subscription start date (required)"
+                        aria-required="true"
+                        aria-describedby="startDateHelp"
+                        onchange="calculateDeliverables()"
+                      >
+                      <small id="startDateHelp" class="help-text">
+                        Select when your subscription should start
+                      </small>
+                    </div>
+                </div>
+
+                <div class="sub-row">
+                    <span class="sub-label">End Date <span class="required-indicator">*</span></span>
+                    <div class="flex-column">
+                      <input 
+                        type="date" 
+                        id="endDate" 
+                        class="sub-input" 
+                        aria-label="Subscription end date (required)"
+                        aria-required="true"
+                        aria-describedby="endDateHelp"
+                        onchange="calculateDeliverables()"
+                      >
+                      <small id="endDateHelp" class="help-text">
+                        Select when your subscription should end
+                      </small>
+                    </div>
+                </div>
+
+                <div class="sub-row">
+                    <span class="sub-label">Deliverables</span>
+                    <span class="deliver-pill liveOrderCount">0</span>
+                </div>
+
+                <span id="subscriptionValidationMsg"></span>
+
+            </div>
+
+          </div>
+        {% endif %}
+        {% hook 'product_variants_after' %}
+
+        <!-- Quantity Selector -->
+        {% if product.productType != 90 %}
+          {% hook 'product_quantity_before' %}
+          <div class="product-option quantity-option">
+            <label class="option-label" for="quantity">Quantity</label>
+            <div class="quantity-wrapper">
+              <button type="button" class="quantity-btn quantity-decrease" aria-label="Decrease quantity">−</button>
+              <input 
+                type="number" 
+                id="quantity" 
+                name="quantity" 
+                value="1" 
+                min="1" 
+                max="{{ product.stockQuantity | default: 99 }}" 
+                class="quantity-input"
+                aria-label="Quantity"
+                readonly
+              >
+              <button type="button" class="quantity-btn quantity-increase" aria-label="Increase quantity">+</button>
+            </div>
+          </div>
+          {% hook 'product_quantity_after' %}
+        {% endif %}
+        <!-- Action Button -->
+        {% hook 'product_add_to_cart_before' %}
+        <div class="product-actions">
+          <button 
+            type="submit" 
+            class="btn btn-primary btn-add-to-cart" 
+            id="addToCartBtn"
+            {% unless product.inStock or product.available %}disabled{% endunless %}
+          >
+           <span class="btn-text">
+            {% if product.inStock or product.available %}
+                {% if product.productType == 90 %}
+                    Subscribe
+                {% else %}
+                    Add to Cart
+                {% endif %}
+            {% else %}
+                Out of Stock
+            {% endif %}
+          </span>
+          </button>
+        </div>
+        {% hook 'product_add_to_cart_after' %}
+        
+        <!-- Added to Cart Message -->
+        <div class="cart-message" id="cartMessage">
+          <span class="cart-message-text"></span>
+        </div>
+      </form>
+      {% hook 'product_form_after' %}
+    </div>
+  </div>
+</section>
+{% hook 'product_after' %}
+
+<!-- Product Attributes Section -->
+{% assign hasDescription = false %}
+{% if product.description or product.htmlContent %}
+  {% assign hasDescription = true %}
+{% endif %}
+
+{% assign hasAttributes = false %}
+{% if product.attributes and product.attributes.size > 0 %}
+  {% assign hasAttributes = true %}
+{% endif %}
+{% if hasDescription or hasAttributes %}
+  <section class="product-attributes-section">
+    <div class="description-container">
+      
+      {% if hasAttributes %}
+        <!-- Group attributes by attributeGroupName -->
+        {% assign availableAttributegroups = "" %}
+        
+        <div class="attributes-tabs-wrapper">
+          <!-- Tab Navigation -->
+          <ul class="attributes-nav" role="tablist">
+            <!-- Description Tab -->
+            {% if hasDescription %}
+              <li class="attributes-nav-item">
+                <button 
+                  class="attributes-tab-link active"
+                  data-tab="attr-description"
+                  role="tab"
+                  aria-selected="true"
+                  aria-controls="attr-description">
+                  Description
+                </button>
+              </li>
+            {% endif %}
+            
+            {% for attr in product.attributes %}
+              {% unless availableAttributegroups contains attr.attributeGroupName %}
+                {% assign availableAttributegroups = availableAttributegroups | append: attr.attributeGroupName | append: "," %}
+                
+                <li class="attributes-nav-item">
+                  <button 
+                    class="attributes-tab-link {% unless hasDescription %}{% if forloop.first %}active{% endif %}{% endunless %}"
+                    data-tab="attr-{{ attr.attributeGroupName | handleize }}"
+                    role="tab"
+                    aria-selected="{% unless hasDescription %}{% if forloop.first %}true{% else %}false{% endif %}{% else %}false{% endunless %}"
+                    aria-controls="attr-{{ attr.attributeGroupName | handleize }}">
+                    {{ attr.attributeGroupName }}
+                  </button>
+                </li>
+              {% endunless %}
+            {% endfor %}
+          </ul>
+          
+          <!-- Tab Content -->
+          <div class="attributes-tab-content">
+            <!-- Description Tab Pane -->
+            {% if hasDescription %}
+              <div 
+                class="attributes-tab-pane active"
+                id="attr-description"
+                role="tabpanel">
+                <div class="description-content">
+                  {% if product.htmlContent %}
+                    {{ product.htmlContent }}
+                  {% elsif product.description %}
+                    {{ product.description | newline_to_br }}
+                  {% else %}
+                    <p>No description available.</p>
+                  {% endif %}
+                </div>
+              </div>
+            {% endif %}
+            
+            {% assign availableAttributegroups = "" %}
+            
+            {% for attr in product.attributes %}
+              {% unless availableAttributegroups contains attr.attributeGroupName %}
+                {% assign availableAttributegroups = availableAttributegroups | append: attr.attributeGroupName | append: "," %}
+                
+                <div 
+                  class="attributes-tab-pane {% unless hasDescription %}{% if forloop.first %}active{% endif %}{% endunless %}"
+                  id="attr-{{ attr.attributeGroupName | handleize }}"
+                  role="tabpanel">
+                  
+                  <div class="attributes-grid">
+                    {% for inner_attr in product.attributes %}
+                      {% if inner_attr.attributeGroupName == attr.attributeGroupName %}
+                        <div class="attributes-card" data-attribute-name="{{ inner_attr.name }}" data-base-value="{{ inner_attr.value }}">
+                          <div class="attribute-icon" aria-hidden="true">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                              <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1" />
+                              <path d="M12 8v8M8 12h8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                          </div>
+                          <div class="attribute-info">
+                            <div class="attribute-name">{{ inner_attr.name }}</div>
+                            <div class="attribute-value-text">{{ inner_attr.value }}</div>
+                          </div>
+                        </div>
+                      {% endif %}
+                    {% endfor %}
+                  </div>
+                </div>
+              {% endunless %}
+            {% endfor %}
+          </div>
+        </div>
+      {% elsif hasDescription %}
+        <!-- No attributes, just show description without tabs -->
+        <div class="description-content">
+          {% if product.htmlContent %}
+            {{ product.htmlContent }}
+          {% elsif product.description %}
+            {{ product.description | newline_to_br }}
+          {% else %}
+            <p>No description available.</p>
+          {% endif %}
+        </div>
+      {% endif %}
+    </div>
+  </section>
+{% endif %}
+
+
+<script>
+  window.productVariants = {{ product.variations | default: product.variants | json }};
+  window.productAttributes = {{ product.attributes | json }};
+</script>
+
+<!-- Related Products -->
+{% hook 'product_related_before' %}
+{% if relatedProducts and relatedProducts.size > 0 %}
+  <section class="related-products-section">
+    <div class="section-container">
+      <h2 class="section-title">You may also like</h2>
+      <div class="products-grid">
+        {% for related in relatedProducts limit: 4 %}
+          {% include 'snippets/product-card', product: related %}
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+{% endif %}
+{% hook 'product_related_after' %}
+
+<!-- Full Screen Image Gallery Modal -->
+<div class="gallery-modal" id="galleryModal">
+  <div class="gallery-modal-overlay"></div>
+  <div class="gallery-modal-content">
+    <button class="gallery-modal-close" id="galleryModalClose" aria-label="Close gallery">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+    </button>
+    <button class="gallery-modal-nav gallery-modal-prev" id="galleryModalPrev" aria-label="Previous image">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M15 18L9 12L15 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
+    <button class="gallery-modal-nav gallery-modal-next" id="galleryModalNext" aria-label="Next image">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M9 18L15 12L9 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
+    <img class="gallery-modal-image" id="galleryModalImage" src="" alt="">
+    <div class="gallery-modal-counter" id="galleryModalCounter"></div>
+  </div>
+</div>
+
+<!-- Product Data for JavaScript -->
+<script type="application/json" id="productData">
+{
+  "id": {{ product.productId }},
+  "productId": {{ product.productId | default: product.productId }},
+  "name": {{ product.name | default: product.title | json }},
+  "price": {{ product.prices.price }},
+  "mrp": {{ product.prices.mrp | default: 0 }},
+  "inStock": {{ product.inStock | default: product.available | default: true }},
+  "available": {{ product.available | default: product.inStock | default: true }},
+  "stockQuantity": {{ product.stockQuantity | default: 0 }},
+  "images": [
+    {% if product.images %}
+      {% for image in product.images %}
+        {% if forloop.index0 > 0 %},{% endif %}
+        {% if image.url %}"{{ image.url }}"{% else %}{{ image | json }}{% endif %}
+      {% endfor %}
+    {% endif %}
+  ],
+  "productType": {{ product.productType }},
+  "additionalData": {{ product.additionalData | default:null }},  
+  "combinations": {{ product.combinations | default: product.combinations | default: '[]' | json }},
+  "subscriptions": {{ product.subscriptions | default:'[]' | json }},
+  "variants": {{ product.variations | default: product.variations | default: '[]' | json }},
+  "shippingMethods": {{ product.shippingMethods | default: '[]' | json }}
+}
+</script>
+
+<!-- Inline Styles for Horizon-Inspired Product Page -->
+<style>
+  /* Horizon-Inspired Product Page Styles */
+  .sub-modern-box {
+        border: 1px solid {{ settings.color_border }};
+        background: {{ settings.color_background }};
+        padding: {{ settings.spacing_small }}px {{ settings.spacing_element }}px;
+        border-radius: {{ settings.border_radius_small }}px;
+        font-family: system-ui, sans-serif;
+        max-width: 360px;
+        font-size: {{ settings.font_size_base | minus: 1 }}px;
+    }
+
+    .sub-row {
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        margin-bottom: {{ settings.spacing_small }}px;
+        gap: {{ settings.spacing_small | plus: 4 }}px;
+    }
+
+    .sub-label {
+        font-weight: {{ settings.font_weight_medium }};
+        color: {{ settings.color_text }};
+        width: 110px;
+        font-size: {{ settings.font_size_base | minus: 1 }}px;
+    }
+
+    .sub-input {
+        height: 30px;
+        font-size: {{ settings.font_size_base | minus: 1 }}px;
+        border: 1px solid {{ settings.color_border }};
+        border-radius: {{ settings.border_radius_small }}px;
+        padding: 3px {{ settings.spacing_small }}px;
+        flex: 1;
+    }
+
+    .deliver-pill {
+        background: {{ settings.color_surface }};
+        padding: 3px {{ settings.spacing_small }}px;
+        border-radius: {{ settings.border_radius_medium | plus: 2 }}px;
+        font-weight: 600;
+        font-size: {{ settings.font_size_base | minus: 1 }}px;
+        display: inline-block;
+    }
+
+    #subscriptionValidationMsg,
+    #combinationValidationMsg {
+        margin-top: var(--spacing-element, 6px);
+        color: var(--color-error, #b70000);
+        font-size: var(--text-sm, 13px);
+        display: none;
+        padding: var(--spacing-element, 8px) var(--spacing-component, 12px);
+        background-color: var(--color-error-light, #ffe6e6);
+        border-radius: var(--border-radius-small, 4px);
+        border-left: 3px solid var(--color-error, #b70000);
+        line-height: var(--line-height-base, 1.4);
+    }
+    
+    #subscriptionValidationMsg:not(:empty),
+    #combinationValidationMsg:not(:empty) {
+        display: block;
+    }
+    
+    #subscriptionInfoMessage {
+        display: none;
+        margin-bottom: var(--spacing-component, 12px);
+        padding: var(--spacing-element, 8px) var(--spacing-component, 12px);
+        background-color: var(--color-info-light, #f0f9ff);
+        border-left: 3px solid var(--color-info, #3b82f6);
+        border-radius: var(--border-radius-small, 4px);
+        font-size: var(--text-sm, 13px);
+        color: var(--color-info-dark, #1e40af);
+    }
+    
+    #subscriptionInfoMessage:not(:empty) {
+        display: block;
+    }
+    
+    #shippingMethodDetails {
+        margin-top: var(--spacing-element, 8px);
+        font-size: var(--text-xs, 12px);
+        color: var(--color-text-muted, #666);
+        display: none;
+    }
+    
+    #shippingMethodDetails:not(:empty) {
+        display: block;
+    }
+    
+    .required-indicator {
+        color: var(--color-error, #b70000);
+    }
+    
+    .help-text {
+        font-size: var(--text-xs, 11px);
+        color: var(--color-text-muted, #666);
+        margin-top: var(--spacing-element, 2px);
+    }
+    
+    .flex-column {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .subscription-item-content {
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-element, 10px);
+        flex: 1;
+    }
+    
+    .subscription-item-right {
+        text-align: right;
+    }
+    
+    .subscription-item-actions {
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-element, 5px);
+        justify-content: flex-end;
+    }
+    
+    .subscription-item-meta {
+        margin-top: var(--spacing-element, 5px);
+    }
+    
+    .subscription-included {
+        font-size: var(--text-xs, 11px);
+        color: var(--color-text-muted, #666);
+        font-weight: var(--font-weight-normal, normal);
+    }
+    
+    .subscription-spec {
+        font-size: var(--text-xs, 12px);
+        color: var(--color-text-muted, #666);
+    }
+    
+    .subscription-item-title {
+        margin: 0;
+    }
+    
+    .info-message-content {
+        line-height: var(--line-height-base, 1.6);
+    }
+    
+.freq-ui {
+  padding: {{ settings.spacing_small }}px 15px;
+  border: 1px solid {{ settings.color_border }};
+  border-radius: 5px;
+  background: {{ settings.color_surface }};
+  cursor: pointer;
+  transition: 0.2s;
+  font-size: {{ settings.font_size_base }}px;
+}
+
+.freq-ui.selected {
+  background: {{ settings.color_border }};
+  color: {{ settings.color_text }};
+}
+
+.freq-ui:hover {
+  background: {{ settings.color_surface }};
+}
+
+.weekly-days {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+
+  .subscription-item {
+  border: 1px solid {{ settings.color_border }};
+  padding: 10px;
+  margin-bottom: 10px;
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: background 0.3s;
+}
+
+/* Highlight selected item */
+.subscription-item.selected {
+  background-color: {{ settings.color_border }};
+  border-color: {{ settings.color_primary }};
+}
+
+/* Ensure checkbox is visible */
+.subscription-item input.sub-select {
+  width: 18px !important;
+  height: 18px !important;
+  cursor: pointer;
+  appearance: checkbox !important;
+  -webkit-appearance: checkbox !important;
+}
+
+.subscription-item input.sub-select-required {
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+  .combo-group {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+  }
+
+  .combo-card {
+    border: 1px solid {{ settings.color_border }};
+    border-radius: {{ settings.border_radius_medium }}px;
+    padding: 5px;
+    text-align: center;
+    width: 150px;
+    cursor: pointer;
+    position: relative;
+  }
+
+  .combo-card.selected {
+    border-color: {{ settings.color_error }};
+  }
+
+  .combo-card.selected .combo-checkbox {
+    color: {{ settings.color_error }};
+    background: {{ settings.color_error }};
+  }
+
+  .combo-image {
+    position: relative;
+  }
+
+  .combo-image img {
+    width: 100%;
+    border-radius: {{ settings.border_radius_medium }}px;
+  }
+
+  .combo-checkbox {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background: white;
+    border-radius: 3px;
+    padding: 2px;
+    height:16px;
+    width:16px;
+  }
+
+  .combo-info {
+    margin-top: 5px;
+  }
+
+
+  .product-option-btn {
+    border: 1px solid {{ settings.color_border }};
+    background: {{ settings.color_background }};
+    padding: {{ settings.spacing_small }}px {{ settings.spacing_element | minus: 2 }}px;
+    margin: {{ settings.spacing_xsmall }}px;
+    border-radius: {{ settings.border_radius_small }}px;
+    cursor: pointer;
+    position: relative;
+    z-index: 10;
+    pointer-events: auto;
+    transition: .2s;
+  }
+
+  .product-option-btn.selected {
+    background: {{ settings.color_text }};
+    color: {{ settings.color_background }};
+    border-color: {{ settings.color_text }};
+  }
+
+  .product-option-btn[data-display-type="color"] {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    font-size: 0;
+    padding: 0;
+    border: 2px solid #aaa;
+    background-color: currentColor;
+  }
+
+  .product-option-btn[data-display-type="color"].selected {
+    border: 2px solid {{ settings.color_text }} !important;
+  }
+  .product-main.horizon-style {
+    padding: 0;
+    margin: 0;
+  }
+
+  .product-container {
+    max-width: {{ settings.container_width }}px;
+    margin: 0 auto;
+    padding: 0 {{ settings.container_padding }}px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: {{ settings.spacing_section }}px;
+    align-items: start;
+    padding-top: {{ settings.spacing_component | plus: 16 }}px;
+    padding-bottom: {{ settings.spacing_section }}px;
+  }
+
+  /* Product Gallery */
+  .product-gallery {
+    position: sticky;
+    top: 20px;
+  }
+
+  .gallery-main {
+    position: relative;
+    margin-bottom: {{ settings.spacing_element }}px;
+    background: {{ settings.color_background }};
+    border-radius: var(--border-radius-medium);
+    overflow: hidden;
+  }
+
+  .gallery-main-image {
+    width: 100%;
+    height: auto;
+    display: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+
+  .gallery-main-image.active {
+    display: block;
+    opacity: 1;
+  }
+
+  .gallery-placeholder {
+    width: 100%;
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: {{ settings.color_surface }};
+    color: {{ settings.color_text_muted }};
+  }
+
+  .gallery-zoom-btn {
+    position: absolute;
+    bottom: {{ settings.spacing_element }}px;
+    right: {{ settings.spacing_element }}px;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    z-index: 10;
+    color: {{ settings.color_text }};
+    backdrop-filter: blur(10px);
+  }
+
+  .gallery-zoom-btn:hover {
+    background: rgba(255, 255, 255, 1);
+    transform: scale(1.05);
+  }
+
+  .gallery-thumbnails {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: {{ settings.spacing_small }}px;
+  }
+
+  .gallery-thumbnail {
+    aspect-ratio: 1;
+    border: 1px solid transparent;
+    border-radius: 0;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    padding: 0;
+    background: {{ settings.color_background }};
+    position: relative;
+  }
+
+  .gallery-thumbnail::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border: 2px solid transparent;
+    transition: border-color 0.2s ease;
+  }
+
+  .gallery-thumbnail:hover::after,
+  .gallery-thumbnail.active::after {
+    border-color: {{ settings.color_text }};
+  }
+
+  .gallery-thumbnail img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  /* Product Info */
+  .product-info {
+    display: flex;
+    flex-direction: column;
+    gap: {{ settings.spacing_component }}px;
+    padding-top: 0;
+  }
+
+  .product-vendor {
+    color: {{ settings.color_text_muted }};
+    font-size: {{ settings.font_size_base | minus: 1 }}px;
+    text-transform: uppercase;
+    letter-spacing: {{ settings.letter_spacing_uppercase }}em;
+    font-weight: {{ settings.font_weight_medium }};
+    margin-bottom: -{{ settings.spacing_element }}px;
+  }
+
+  .product-title {
+    font-size: {{ settings.font_size_heading }}px;
+    font-weight: {{ settings.font_weight_normal }};
+    line-height: {{ settings.line_height_heading }};
+    color: {{ settings.color_text }};
+    margin: 0;
+    letter-spacing: {{ settings.letter_spacing_heading }}em;
+  }
+
+  .product-price-wrapper {
+    display: flex;
+    align-items: baseline;
+    gap: {{ settings.spacing_small | plus: 4 }}px;
+  }
+
+  .price-current {
+    font-size: {{ settings.font_size_heading | times: 0.75 }}px;
+    font-weight: {{ settings.font_weight_normal }};
+    color: {{ settings.color_text }};
+    letter-spacing: -0.01em;
+  }
+
+  .price-compare {
+    font-size: {{ settings.font_size_heading | times: 0.5625 }}px;
+    color: {{ settings.color_text_light }};
+    text-decoration: line-through;
+    font-weight: {{ settings.font_weight_normal }};
+  }
+
+  /* Product Form */
+  .product-form {
+    display: flex;
+    flex-direction: column;
+    gap: {{ settings.spacing_large }}px;
+    padding-top: {{ settings.spacing_large }}px;
+    border-top: 1px solid {{ settings.color_border }};
+  }
+
+  #productOptionsContainer:empty {
+    display: none;
+  }
+
+  .product-option {
+    display: flex;
+    flex-direction: column;
+    gap: {{ settings.spacing_small | plus: 4 }}px;
+  }
+
+  .option-label {
+    font-weight: {{ settings.font_weight_medium }};
+    color: {{ settings.color_text }};
+    font-size: {{ settings.font_size_base | minus: 1 }}px;
+    text-transform: uppercase;
+    letter-spacing: {{ settings.letter_spacing_uppercase }}em;
+  }
+
+  .option-values {
+    display: flex;
+    flex-wrap: wrap;
+    gap: {{ settings.spacing_small }}px;
+  }
+
+  /* Color Swatches */
+  .option-value-color {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+    padding: 0;
+    overflow: hidden;
+    background-size: cover;
+    background-position: center;
+  }
+
+  .option-value-color:hover:not(.disabled) {
+    transform: scale(1.1);
+    border-color: rgba(0, 0, 0, 0.2);
+  }
+
+  .option-value-color.selected {
+    border-color: {{ settings.color_text }};
+    border-width: 2px;
+  }
+
+  .option-value-color.selected::after {
+    content: '';
+    position: absolute;
+    inset: -{{ settings.spacing_xsmall }}px;
+    border: 2px solid {{ settings.color_text }};
+    border-radius: 50%;
+  }
+
+  .option-value-color.disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    position: relative;
+  }
+
+  .option-value-color.disabled::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: {{ settings.color_error }};
+    transform: rotate(45deg);
+  }
+
+  /* Size/Text Options */
+  .option-value-text {
+    padding: 10px 20px;
+    border: 1px solid {{ settings.color_border }};
+    border-radius: 0;
+    background: {{ settings.color_background }};
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-weight: {{ settings.font_weight_normal }};
+    color: {{ settings.color_text }};
+    font-size: {{ settings.font_size_base }}px;
+    min-width: 60px;
+    text-align: center;
+    border-radius: var(--border-radius-small);
+  }
+
+  .option-value-text:hover:not(.disabled) {
+    border-color: {{ settings.color_text }};
+    background: {{ settings.color_surface }};
+  }
+
+  .option-value-text.selected {
+    border-color: {{ settings.color_text }};
+    background: {{ settings.color_text }};
+    color: {{ settings.color_background }};
+  }
+
+  .option-value-text.disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    text-decoration: line-through;
+  }
+
+  /* Quantity Selector */
+  .quantity-option {
+    width: fit-content;
+  }
+
+  .quantity-wrapper {
+    display: flex;
+    align-items: center;
+    border: 1px solid {{ settings.color_border }};
+    border-radius: var(--border-radius-medium);
+    width: fit-content;
+    overflow: hidden;
+    background: {{ settings.color_background }};
+  }
+
+  .quantity-btn {
+    width: 44px;
+    height: 44px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s ease;
+    color: {{ settings.color_text }};
+    font-size: 20px;
+    font-weight: 300;
+    line-height: 1;
+  }
+
+  .quantity-btn:hover:not(:disabled) {
+    background: {{ settings.color_surface }};
+  }
+
+  .quantity-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  .quantity-input {
+    width: 60px;
+    height: 44px;
+    border: none;
+    border-left: 1px solid {{ settings.color_border }};
+    border-right: 1px solid {{ settings.color_border }};
+    text-align: center;
+    font-weight: {{ settings.font_weight_normal }};
+    font-size: {{ settings.font_size_base }}px;
+    background: {{ settings.color_background }};
+    color: {{ settings.color_text }};
+    -moz-appearance: textfield;
+  }
+
+  .quantity-input::-webkit-inner-spin-button,
+  .quantity-input::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  /* Action Button */
+  .product-actions {
+    display: flex;
+    gap: {{ settings.spacing_small | plus: 4 }}px;
+    flex-direction: column;
+    width: 100%;
+    position:relative;
+    opacity:unset;
+  }
+
+  .btn {
+    padding: {{ settings.spacing_element }}px {{ settings.spacing_large }}px;
+    border-radius: var(--border-radius-medium);
+    font-weight: {{ settings.font_weight_medium }};
+    font-size: {{ settings.font_size_base }}px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: {{ settings.spacing_small }}px;
+    border: 1px solid transparent;
+    text-transform: uppercase;
+    letter-spacing: {{ settings.letter_spacing_uppercase }}em;
+    white-space: nowrap;
+    width: 100%;
+  }
+
+  .btn-primary {
+    background: {{ settings.color_text }};
+    color: {{ settings.color_background }};
+    border-color: {{ settings.color_text }};
+  }
+
+  .btn-primary:hover:not(:disabled) {
+    background: {{ settings.color_primary_dark }};
+    border-color: {{ settings.color_primary_dark }};
+  }
+
+  .btn-primary:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  .btn-primary.loading {
+    opacity: 0.7;
+    cursor: wait;
+  }
+
+  .cart-message {
+    padding: var(--spacing-component, 12px) var(--spacing-component, 16px);
+    color: var(--color-success, #059669);
+    font-size: var(--text-base, 14px);
+    font-weight: var(--font-weight-normal, 500);
+    text-transform: none;
+    letter-spacing: 0;
+    animation: fadeIn var(--transition, 0.3s) var(--ease-out, ease);
+    border-radius: var(--border-radius-small, 4px);
+    margin-top: var(--spacing-component, 12px);
+    line-height: var(--line-height-base, 1.5);
+  }
+  
+  .cart-message.error {
+    color: var(--color-error, #b70000);
+    background-color: var(--color-error-light, #ffe6e6);
+    border: 1px solid var(--color-error, #b70000);
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(-4px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Product Description Short */
+  .product-description-short {
+    color: {{ settings.color_text_muted }};
+    font-size: {{ settings.font_size_base }}px;
+    line-height: {{ settings.line_height_base }};
+    padding-top: {{ settings.spacing_large }}px;
+    border-top: 1px solid {{ settings.color_border }};
+  }
+
+  /* Product Description Section */
+  .product-description-section {
+    padding: {{ settings.spacing_section }}px 0;
+    border-top: 1px solid {{ settings.color_border }};
+  }
+
+  .description-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 0 {{ settings.container_padding }}px;
+  }
+
+  .product-description-content {
+    line-height: 1.8;
+    color: {{ settings.color_text_muted }};
+    font-size: 15px;
+  }
+
+  .product-description-content h1,
+  .product-description-content h2,
+  .product-description-content h3 {
+    color: {{ settings.color_text }};
+    font-weight: {{ settings.font_weight_normal }};
+    margin-top: {{ settings.spacing_large }}px;
+    margin-bottom: {{ settings.spacing_element }}px;
+    letter-spacing: -0.01em;
+  }
+
+  .product-description-content p {
+    margin-bottom: {{ settings.spacing_element }}px;
+  }
+
+  /* Related Products */
+  .related-products-section {
+    padding: {{ settings.spacing_section }}px 0;
+    border-top: 1px solid {{ settings.color_border }};
+  }
+
+  .section-container {
+    max-width: {{ settings.container_width }}px;
+    margin: 0 auto;
+    padding: 0 {{ settings.container_padding }}px;
+  }
+
+  .section-title {
+    font-size: {{ settings.font_size_heading | times: 0.75 }}px;
+    font-weight: {{ settings.font_weight_normal }};
+    color: {{ settings.color_text }};
+    margin: 0 0 48px 0;
+    text-align: center;
+    letter-spacing: -0.01em;
+  }
+
+  .products-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: {{ settings.spacing_large }}px;
+  }
+
+  /* Full Screen Gallery Modal */
+  .gallery-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 9999;
+  }
+
+  .gallery-modal.active {
+    display: block;
+  }
+
+  .gallery-modal-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.95);
+  }
+
+  .gallery-modal-content {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: {{ settings.spacing_section }}px;
+  }
+
+  .gallery-modal-image {
+    max-width: 100%;
+    max-height: 90vh;
+    object-fit: contain;
+  }
+
+  .gallery-modal-close,
+  .gallery-modal-nav {
+    position: absolute;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    z-index: 10000;
+    color: #fff;
+    backdrop-filter: blur(10px);
+  }
+
+  .gallery-modal-close:hover,
+  .gallery-modal-nav:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: scale(1.1);
+  }
+
+  .gallery-modal-close {
+    top: {{ settings.spacing_large }}px;
+    right: {{ settings.spacing_large }}px;
+  }
+
+  .gallery-modal-nav {
+    top: 50%;
+    transform: translateY(-50%);
+  }
+
+  .gallery-modal-prev {
+    left: {{ settings.spacing_large }}px;
+  }
+
+  .gallery-modal-next {
+    right: {{ settings.spacing_large }}px;
+  }
+
+  .gallery-modal-counter {
+    position: absolute;
+    bottom: {{ settings.spacing_large }}px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: {{ settings.color_background }};
+    font-size: {{ settings.font_size_base }}px;
+    background: rgba(0, 0, 0, 0.5);
+    padding: {{ settings.spacing_small }}px {{ settings.spacing_element }}px;
+    border-radius: 20px;
+    backdrop-filter: blur(10px);
+  }
+
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+  }
+
+  /* Product Attributes Section */
+  .product-attributes-section {
+    padding: 72px 0 40px;
+    border-top: 1px solid {{ settings.color_border }};
+  }
+
+  .attributes-tabs-wrapper {
+    margin-top: 28px;
+  }
+
+  .attributes-nav {
+    display: flex;
+    gap: 10px;
+    list-style: none;
+    margin: -138px 31px 18px 0;
+    padding: 0;
+   
+  }
+
+  .attributes-tab-link {
+    padding: 10px 7px;
+    background: transparent;
+    color: {{ settings.color_text_muted }};
+    font-weight: 600;
+    font-size: 12px;
+    cursor: pointer;
+    border: none;
+    border-bottom: 3px solid transparent;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    transition: color .18s ease, border-color .18s ease;
+  }
+
+  .attributes-tab-link:hover { color: {{ settings.color_text }}; }
+  .attributes-tab-link.active { color: {{ settings.color_text }}; border-bottom-color: {{ settings.color_text }}; }
+
+  .attributes-tab-content { padding-top: 20px; }
+
+  .attributes-tab-pane { display: none; }
+  .attributes-tab-pane.active { display: block; }
+
+  .attributes-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 18px;
+  }
+
+  .attributes-card {
+    display: flex;
+    gap: {{ settings.spacing_small | plus: 4 }}px;
+    padding: {{ settings.spacing_element }}px;
+    border: 1px solid {{ settings.color_border }};
+    border-radius: {{ settings.border_radius_medium }}px;
+    background: {{ settings.color_surface }};
+    align-items: flex-start;
+    transition: box-shadow .18s ease, transform .12s ease, background .18s ease;
+  }
+
+  .attributes-card:hover { box-shadow: 0 6px 18px rgba(16,24,40,0.06); transform: translateY(-2px); background: {{ settings.color_background }}; }
+
+  .attribute-icon { width: 40px; height: 40px; border-radius: {{ settings.border_radius_medium }}px; display:flex; align-items:center; justify-content:center; background:{{ settings.color_surface }}; color:{{ settings.color_text_muted }}; flex-shrink:0; }
+
+  .attribute-info { min-width:0; }
+  .attribute-name { font-size:11px; text-transform:uppercase; color:{{ settings.color_text }}; font-weight:{{ settings.font_weight_bold }}; margin-bottom:6px; }
+  .attribute-value-text { font-size:{{ settings.font_size_base }}px; color:{{ settings.color_text_muted }}; line-height:1.4; word-break:break-word; }
+
+  /* Product Specifications Section */
+  .product-specifications-section {
+    padding: {{ settings.spacing_section }}px 0;
+    border-top: 1px solid {{ settings.color_border }};
+  }
+
+  .specifications-container {
+    margin-top: {{ settings.spacing_large }}px;
+  }
+
+  /* Responsive Design */
+  @media (max-width: 1024px) {
+    .product-container {
+      grid-template-columns: 1fr;
+      gap: {{ settings.spacing_component | times: 2 }}px;
+      padding-top: {{ settings.spacing_component }}px;
+      padding-bottom: {{ settings.spacing_component | times: 2 }}px;
+    }
+    
+    .product-gallery {
+      position: static;
+    }
+    
+    .gallery-thumbnails {
+      grid-template-columns: repeat(6, 1fr);
+    }
+  }
+
+  @media (max-width: 768px) {
+    .product-container {
+      padding: 0 {{ settings.spacing_element }}px;
+      padding-top: {{ settings.spacing_element }}px;
+      padding-bottom: {{ settings.spacing_large }}px;
+      gap: {{ settings.spacing_large }}px;
+    }
+    
+    .product-title {
+      font-size: {{ settings.font_size_heading | times: 0.875 }}px;
+    }
+    
+    .price-current {
+      font-size: {{ settings.font_size_heading | times: 0.625 }}px;
+    }
+    
+    .gallery-thumbnails {
+      grid-template-columns: repeat(4, 1fr);
+    }
+    
+    .gallery-modal-content {
+      padding: {{ settings.spacing_element }}px;
+    }
+    
+    .gallery-modal-close,
+    .gallery-modal-nav {
+      width: 40px;
+      height: 40px;
+    }
+    
+    .gallery-modal-close {
+      top: {{ settings.spacing_element }}px;
+      right: {{ settings.spacing_element }}px;
+    }
+    
+    .gallery-modal-prev {
+      left: {{ settings.spacing_element }}px;
+    }
+    
+    .gallery-modal-next {
+      right: {{ settings.spacing_element }}px;
+    }
+    
+    .products-grid {
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: {{ settings.spacing_component }}px;
+    }
+    
+    .product-description-section,
+    .related-products-section {
+      padding: {{ settings.spacing_component | times: 2 }}px 0;
+    }
+    
+    .description-container,
+    .section-container {
+      padding: 0 {{ settings.spacing_element }}px;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .product-title {
+      font-size: {{ settings.font_size_heading | times: 0.75 }}px;
+    }
+    
+    .gallery-thumbnails {
+      grid-template-columns: repeat(4, 1fr);
+      gap: {{ settings.border_radius_small }}px;
+    }
+    
+    .products-grid {
+      grid-template-columns: 1fr 1fr;
+      gap: {{ settings.spacing_element }}px;
+    }
+  }
+</style>
+
+<!-- Product Page JavaScript -->
+<script>
+  (function() {
+    'use strict';
+    
+    // Get product data
+    const productDataEl = document.getElementById('productData');
+    const productData = productDataEl ? JSON.parse(productDataEl.textContent) : {};
+    productData.combinations.forEach(c => {
+      try {
+        const gd = c.group?.groupDetail;
+
+        c.groupName = gd?.groupName || "Default";
+        c.minimumSelectable = gd?.minimumSelectable || 1;
+        c.maximumSelectable = gd?.maximumSelectable || 1;
+        c.isOptional = gd?.isOptional || false;
+      } catch (err) {
+        c.groupName = "Default";
+        c.minimumSelectable = 1;
+        c.maximumSelectable = 1;
+        c.isOptional = false;
+      }
+    });
+    // Product state
+    let selectedOptions = {};
+    let currentVariant = null;
+    let currentImageIndex = 0;
+    let moneyFormat = "{{ shop.settings.currencySymbol }}";
+    // DOM elements
+    let mainImages, thumbnails, productForm, addToCartBtn, quantityInput, priceElement;
+    let optionsContainer, galleryModal, galleryModalImage, galleryModalClose;
+    let galleryModalPrev, galleryModalNext, galleryModalCounter, galleryZoomBtn, cartMessage;
+    
+    // Helper function to format money
+    function formatMoney(cents) {
+        return moneyFormat + (cents).toFixed(2);
+    }
+    let bundleSelections = {};
+    let selectedSubscription = null;
+    
+    // Helper function to show subscription validation errors
+    function showSubscriptionError(message) {
+      const errorContainer = document.getElementById("subscriptionValidationMsg");
+      if (errorContainer) {
+        errorContainer.textContent = message;
+        errorContainer.style.display = message ? "block" : "none";
+      }
+    }
+    
+    // Helper function to clear subscription errors
+    function clearSubscriptionError() {
+      showSubscriptionError("");
+    }
+    
+    // Helper function to show combination validation errors
+    function showCombinationError(message) {
+      const errorContainer = document.getElementById("combinationValidationMsg");
+      if (errorContainer) {
+        errorContainer.textContent = message;
+        errorContainer.style.display = message ? "block" : "none";
+        // Auto-hide after 5 seconds
+        if (message) {
+          setTimeout(() => {
+            showCombinationError("");
+          }, 5000);
+        }
+      }
+    }
+    
+    // Helper function to calculate shipping start date based on shippingDays only
+    function calculateShippingStartDate(shippingDays) {
+      const now = new Date();
+      const shippingStartDate = new Date();
+      
+      // Simply add shippingDays to today's date
+      // If shippingDays = 1, start date = tomorrow
+      // If shippingDays = 2, start date = today + 2 days, etc.
+      shippingStartDate.setDate(now.getDate() + shippingDays);
+      shippingStartDate.setHours(0, 0, 0, 0);
+      
+      return shippingStartDate;
+    }
+    
+    // Helper function to calculate correct end date based on start date, expected orders count, and frequency
+    function calculateCorrectEndDate(startDateStr, expectedOrdersCount, addData) {
+      if (!startDateStr || !expectedOrdersCount) return null;
+      
+      const startDate = new Date(startDateStr);
+      startDate.setHours(0, 0, 0, 0);
+      
+      const predefinedFrequencyData = addData.frequencyData || {};
+      const predefinedFrequency = addData.frequency || {};
+      
+      // Get frequency from predefined data
+      const freqOption = predefinedFrequency.selectedOption || predefinedFrequencyData.selectedOption || 'daily';
+      let freqOptionNormalized = freqOption.toLowerCase();
+      let selectedFreq = 'Daily';
+      
+      if (predefinedFrequencyData.isDailyFrequency) {
+        selectedFreq = 'Daily';
+      } else if (predefinedFrequencyData.isWeeklyFrequency) {
+        selectedFreq = 'Weekly';
+      } else if (predefinedFrequencyData.isMonthlyFrequency) {
+        selectedFreq = 'Monthly';
+      } else if (predefinedFrequencyData.isAlterNativeFrequency) {
+        selectedFreq = 'Alternate Days';
+      }
+      
+      // Get frequency details
+      let freqDetails = {};
+      if (selectedFreq === 'Weekly') {
+        freqDetails.days = predefinedFrequencyData.weeklyFreVals || ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+      } else if (selectedFreq === 'Alternate Days') {
+        freqDetails.days = predefinedFrequencyData.weeklyFreVal || 2;
+      } else if (selectedFreq === 'Monthly') {
+        freqDetails.day = predefinedFrequencyData.day || 1;
+      }
+      
+      // Calculate end date based on frequency and expected orders count
+      let endDate = new Date(startDate);
+      
+      if (selectedFreq === 'Daily') {
+        // Daily: end date = start date + (expectedOrdersCount - 1) days
+        endDate.setDate(startDate.getDate() + (expectedOrdersCount - 1));
+      } else if (selectedFreq === 'Alternate Days') {
+        // Alternate Days: calculate backwards from expected count
+        const step = freqDetails.days || 2;
+        let currentDate = new Date(startDate);
+        let count = 0;
+        while (count < expectedOrdersCount) {
+          count++;
+          if (count < expectedOrdersCount) {
+            currentDate.setDate(currentDate.getDate() + step);
+          }
+        }
+        endDate = currentDate;
+      } else if (selectedFreq === 'Weekly') {
+        // Weekly: find the date that gives us exactly expectedOrdersCount occurrences
+        const selectedDays = freqDetails.days || ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+        let currentDate = new Date(startDate);
+        let count = 0;
+        
+        // Find the end date that gives us exactly expectedOrdersCount
+        while (count < expectedOrdersCount) {
+          let day = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][currentDate.getDay()];
+          if (selectedDays.includes(day)) {
+            count++;
+            if (count === expectedOrdersCount) {
+              endDate = new Date(currentDate);
+              break;
+            }
+          }
+          currentDate.setDate(currentDate.getDate() + 1);
+          
+          // Safety check to prevent infinite loop
+          if (currentDate.getTime() - startDate.getTime() > 365 * 24 * 60 * 60 * 1000) {
+            return null;
+          }
+        }
+      } else if (selectedFreq === 'Monthly') {
+        // Monthly: calculate based on day of month
+        const dom = freqDetails.day || 1;
+        let currentDate = new Date(startDate);
+        
+        // Set to first occurrence of the day in start month
+        currentDate.setDate(dom);
+        if (currentDate < startDate) {
+          currentDate.setMonth(currentDate.getMonth() + 1);
+          currentDate.setDate(dom);
+        }
+        
+        let count = 0;
+        while (count < expectedOrdersCount) {
+          const lastDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate();
+          const validDay = Math.min(dom, lastDayOfMonth);
+          const validDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), validDay);
+          
+          if (validDate >= startDate) {
+            count++;
+            if (count === expectedOrdersCount) {
+              endDate = validDate;
+              break;
+            }
+          }
+          
+          currentDate.setMonth(currentDate.getMonth() + 1);
+          currentDate.setDate(validDay);
+          
+          // Safety check
+          if (currentDate.getTime() - startDate.getTime() > 365 * 24 * 60 * 60 * 1000) {
+            return null;
+          }
+        }
+      }
+      
+      return endDate;
+    }
+    
+    // Helper function to parse time string (e.g., "14:30", "2:30 PM", or ISO date string)
+    function parseTimeString(timeStr) {
+      if (!timeStr) return null;
+      
+      // Handle ISO date strings (e.g., "1970-01-01T07:32:00+00:00" or "1970-01-01T07:32:00.000Z")
+      if (timeStr.includes('T') || timeStr.includes('Z') || timeStr.includes('+')) {
+        try {
+          const date = new Date(timeStr);
+          if (!isNaN(date.getTime())) {
+            return {
+              hours: date.getUTCHours(),
+              minutes: date.getUTCMinutes()
+            };
+          }
+        } catch (e) {
+          // Fall through to other parsing methods
+        }
+      }
+      
+      // Try HH:MM format first
+      const match24 = timeStr.match(/^(\d{1,2}):(\d{2})$/);
+      if (match24) {
+        return {
+          hours: parseInt(match24[1], 10),
+          minutes: parseInt(match24[2], 10)
+        };
+      }
+      
+      // Try 12-hour format with AM/PM
+      const match12 = timeStr.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+      if (match12) {
+        let hours = parseInt(match12[1], 10);
+        const minutes = parseInt(match12[2], 10);
+        const ampm = match12[3].toUpperCase();
+        
+        if (ampm === 'PM' && hours !== 12) hours += 12;
+        if (ampm === 'AM' && hours === 12) hours = 0;
+        
+        return { hours, minutes };
+      }
+      
+      return null;
+    }
+    
+    // Helper function to format time for display
+    function formatTimeDisplay(timeStr) {
+      const time = parseTimeString(timeStr);
+      if (!time) return timeStr;
+      
+      const hours = time.hours;
+      const minutes = time.minutes;
+      const ampm = hours >= 12 ? 'PM' : 'AM';
+      const displayHours = hours % 12 || 12;
+      const displayMinutes = minutes.toString().padStart(2, '0');
+      
+      return `${displayHours}:${displayMinutes} ${ampm}`;
+    }
+    
+    // Initialize shipping methods dropdown
+    function initializeShippingMethods() {
+      const shippingSelect = document.getElementById('shippingMethod');
+      const shippingDetailsDiv = document.getElementById('shippingMethodDetails');
+      
+      if (!shippingSelect) return;
+      
+      // Clear existing options except "Select"
+      while (shippingSelect.options.length > 1) {
+        shippingSelect.remove(1);
+      }
+      
+      // Get shipping methods from productData
+      const shippingMethods = productData.shippingMethods || [];
+      
+      if (shippingMethods.length === 0) {
+        // No shipping methods available
+        shippingSelect.innerHTML = '<option value="">No shipping methods available</option>';
+        return;
+      }
+      
+      // Populate dropdown with shipping methods
+      shippingMethods.forEach((method, index) => {
+        try {
+          // Parse the data JSON string if it's a string
+          let methodData = {};
+          if (method.data) {
+            if (typeof method.data === 'string') {
+              methodData = JSON.parse(method.data);
+            } else {
+              methodData = method.data;
+            }
+          }
+          
+          const description = methodData.description || `Shipping Method ${index + 1}`;
+          const shippingDays = methodData.shippingDays || 1;
+          const deliveryDays = methodData.deliveryDays || 0;
+          const shippingTiming = methodData.shippingTiming || '';
+          const deliveryTiming = methodData.deliveryTiming || '';
+          const orderCutOffTiming = methodData.orderCutOffTiming || '';
+          
+          // Create option element
+          const option = document.createElement('option');
+          option.value = method.shippingClassId || index;
+          option.textContent = description;
+          option.dataset.shippingDays = shippingDays;
+          option.dataset.deliveryDays = deliveryDays;
+          option.dataset.shippingTiming = shippingTiming;
+          option.dataset.deliveryTiming = deliveryTiming;
+          option.dataset.orderCutOffTiming = orderCutOffTiming;
+          option.dataset.methodIndex = index;
+          
+          shippingSelect.appendChild(option);
+        } catch (error) {
+          console.warn('Error parsing shipping method data:', error, method);
+        }
+      });
+      
+      // Add change handler to update start date and end date
+      shippingSelect.addEventListener('change', function() {
+        const selectedOption = this.options[this.selectedIndex];
+        
+        if (!selectedOption || !selectedOption.value) {
+          if (shippingDetailsDiv) {
+            shippingDetailsDiv.style.display = 'none';
+          }
+          return;
+        }
+        
+        const shippingDays = parseInt(selectedOption.dataset.shippingDays) || 1;
+        
+        // Calculate shipping start date (only based on shippingDays)
+        const shippingStartDate = calculateShippingStartDate(shippingDays);
+        
+        // Update start date input field
+        const startDateInput = document.getElementById('startDate');
+        const endDateInput = document.getElementById('endDate');
+        
+        if (startDateInput) {
+          const formatDate = (date) => {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+          };
+          
+          // Temporarily enable if disabled to set value (for predefined subscriptions)
+          const wasStartDisabled = startDateInput.disabled;
+          const wasEndDisabled = endDateInput ? endDateInput.disabled : false;
+          
+          if (wasStartDisabled) {
+            startDateInput.disabled = false;
+          }
+          startDateInput.value = formatDate(shippingStartDate);
+          if (wasStartDisabled) {
+            startDateInput.disabled = true;
+          }
+          
+          // Check if this is a predefined subscription - if so, calculate end date
+          let addData = {};
+          if (productData.additionalData) {
+            try {
+              addData = typeof(productData.additionalData) == "string" ? JSON.parse(productData.additionalData) : productData.additionalData;
+            } catch (e) {
+              console.warn("Error parsing additionalData:", e);
+            }
+          }
+          
+          const isScheduleByCustomer = addData.settings?.isScheduleByCustomer ?? true;
+          const hasPredefinedFrequency = !isScheduleByCustomer && (addData.frequency || addData.frequencyData);
+          const predefinedFrequency = addData.frequency || {};
+          const expectedOrdersCount = hasPredefinedFrequency ? (predefinedFrequency.ordersCount) : null;
+          
+          // For predefined subscriptions, calculate end date based on start date and ordersCount
+          if (expectedOrdersCount !== null && expectedOrdersCount !== undefined && endDateInput) {
+            const correctEndDate = calculateCorrectEndDate(
+              startDateInput.value,
+              expectedOrdersCount,
+              addData
+            );
+            
+            if (correctEndDate) {
+              if (wasEndDisabled) {
+                endDateInput.disabled = false;
+              }
+              endDateInput.value = formatDate(correctEndDate);
+              if (wasEndDisabled) {
+                endDateInput.disabled = true;
+              }
+            }
+          }
+          
+          // Trigger change event to recalculate deliverables if it's a subscription
+          if (typeof calculateDeliverables === 'function') {
+            setTimeout(() => {
+              calculateDeliverables();
+            }, 100);
+          }
+        }
+        
+        // Hide shipping details div (no need to show delivery info)
+        if (shippingDetailsDiv) {
+          shippingDetailsDiv.style.display = 'none';
+        }
+      });
+      
+      // Auto-select shipping method based on shippingClassId for predefined subscriptions
+      let addData = {};
+      if (productData.additionalData) {
+        try {
+          addData = typeof(productData.additionalData) == "string" ? JSON.parse(productData.additionalData) : productData.additionalData;
+        } catch (e) {
+          console.warn("Error parsing additionalData:", e);
+        }
+      }
+      
+      const isScheduleByCustomer = addData.settings?.isScheduleByCustomer ?? true;
+      const shippingClassId = addData.settings?.shippingClassId;
+      
+      // If predefined subscription and shippingClassId exists, auto-select matching shipping method
+      if (!isScheduleByCustomer && shippingClassId !== null && shippingClassId !== undefined) {
+        // Find matching shipping method
+        for (let i = 0; i < shippingSelect.options.length; i++) {
+          const option = shippingSelect.options[i];
+          if (option.value == shippingClassId || parseInt(option.value) === parseInt(shippingClassId)) {
+            shippingSelect.selectedIndex = i;
+            // Trigger change event to auto-set dates
+            shippingSelect.dispatchEvent(new Event('change'));
+            break;
+          }
+        }
+      }
+    }
+    
+    // Helper function to show user-friendly success/error messages
+    // Delegate to the global Theme notification system so that
+    // product detail uses the same bottom-center toast as other entry points.
+    function showUserMessage(message, type = 'success') {
+      if (window.Theme && typeof window.Theme.showNotification === 'function') {
+        window.Theme.showNotification(message, type, 3000);
+        return;
+      }
+
+      // Fallback to inline cartMessage banner if Theme is not available
+      const cartMessage = document.getElementById('cartMessage');
+      const cartMessageText = cartMessage ? cartMessage.querySelector('.cart-message-text') : null;
+      
+      if (cartMessage && cartMessageText) {
+        cartMessageText.textContent = message;
+        
+        // Update styling based on message type
+        if (type === 'success') {
+          cartMessage.style.color = '#059669';
+          cartMessage.style.backgroundColor = 'transparent';
+          cartMessage.style.border = 'none';
+        } else if (type === 'error') {
+          cartMessage.style.color = '#b70000';
+          cartMessage.style.backgroundColor = '#ffe6e6';
+          cartMessage.style.border = '1px solid #b70000';
+          cartMessage.style.borderRadius = '4px';
+          cartMessage.style.padding = '12px';
+        }
+        
+        cartMessage.style.display = 'block';
+        
+        // Auto-hide after appropriate time
+        const hideDelay = type === 'success' ? 3000 : 5000;
+        setTimeout(() => {
+          cartMessage.style.display = 'none';
+        }, hideDelay);
+      }
+    }
+    
+    // Validate subscription before submission
+    function validateSubscription() {
+      // Check if this is a subscription product
+      if (productData.productType != 90) {
+        return { valid: true };
+      }
+      
+      // Check if at least one subscription item is selected (only if customer can choose)
+      let addData = {};
+      if (productData.additionalData) {
+        try {
+          addData = typeof(productData.additionalData) == "string" 
+            ? JSON.parse(productData.additionalData) 
+            : productData.additionalData;
+        } catch (e) {
+          console.warn("Invalid additionalData JSON", e);
+        }
+      }
+      
+      const isScheduleByCustomer = addData.settings?.isScheduleByCustomer ?? true;
+      const isProductChoiceEnabled = addData.settings?.isProductChoiceEnabled ?? true;
+      const allProductsRequired = !isScheduleByCustomer || !isProductChoiceEnabled;
+      
+      // If customer can choose products, validate selection
+      if (!allProductsRequired) {
+        const selectedSubs = document.querySelectorAll(".subscription-item.selected");
+        if (!selectedSubs || selectedSubs.length === 0) {
+          return { 
+            valid: false, 
+            message: "Please select at least one subscription item" 
+          };
+        }
+        
+        // Check minimum subscription items requirement
+        const minSelectable = addData.minimumSelectable || addData.settings?.minimumSelectable || addData.settings?.minSubscriptionProducts || 1;
+        if (selectedSubs.length < minSelectable) {
+          return { 
+            valid: false, 
+            message: `Please select at least ${minSelectable} subscription item(s)` 
+          };
+        }
+      }
+      
+      // Check if frequency is selected (skip if predefined)
+      const hasPredefinedFrequency = !isScheduleByCustomer && (addData.frequency || addData.frequencyData);
+      
+      if (!hasPredefinedFrequency) {
+        if (!selectedFrequency) {
+          return { 
+            valid: false, 
+            message: "Please select a subscription frequency" 
+          };
+        }
+        
+        // Check if weekly frequency has at least one day selected
+        if (selectedFrequency === "Weekly") {
+          if (!frequencyDetails.days || frequencyDetails.days.length === 0) {
+            return { 
+              valid: false, 
+              message: "Please select at least one day for weekly delivery" 
+            };
+          }
+        }
+      }
+      
+      // Validate dates
+      const dateValidation = validateDates();
+      if (!dateValidation.valid) {
+        return dateValidation;
+      }
+      
+      // If there's a predefined frequency with ordersCount, validate that calculated count matches
+      const predefinedFrequencyData = addData.frequencyData || {};
+      const expectedOrdersCount = hasPredefinedFrequency ? (addData.frequency?.ordersCount) : null;
+      if (expectedOrdersCount !== null && expectedOrdersCount !== undefined) {
+        const liveOrderCount = document.querySelector(".liveOrderCount");
+        const calculatedCount = liveOrderCount ? parseInt(liveOrderCount.textContent) : 0;
+        if (calculatedCount !== expectedOrdersCount) {
+          return {
+            valid: false,
+            message: `The selected dates result in ${calculatedCount} deliveries, but this subscription requires exactly ${expectedOrdersCount} deliveries. Please adjust your dates.`
+          };
+        }
+      }
+      
+      return { valid: true };
+    }
+    
+    // Helper function to validate dates
+    function validateDates() {
+      const startDateInput = document.getElementById("startDate");
+      const endDateInput = document.getElementById("endDate");
+      
+      if (!startDateInput || !endDateInput) return { valid: true };
+      
+      const startDate = startDateInput.value;
+      const endDate = endDateInput.value;
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      // Check if start date is provided
+      if (!startDate) {
+        return { valid: false, message: "Please select a start date" };
+      }
+      
+      // Check if end date is provided
+      if (!endDate) {
+        return { valid: false, message: "Please select an end date" };
+      }
+      
+      const start = new Date(startDate);
+      start.setHours(0, 0, 0, 0);
+      const end = new Date(endDate);
+      end.setHours(0, 0, 0, 0);
+      
+      // Check if start date is in the past
+      if (start < today) {
+        return { valid: false, message: "Start date cannot be in the past" };
+      }
+      
+      // Check if end date is before start date
+      if (end < start) {
+        return { valid: false, message: "End date must be after start date" };
+      }
+      
+      return { valid: true };
+    }
+    
+    // Set minimum date to today for date inputs
+    function initializeDateInputs() {
+      const startDateInput = document.getElementById("startDate");
+      const endDateInput = document.getElementById("endDate");
+      
+      // Check if we have predefined frequency data with dates
+      let addData = {};
+      if (productData.additionalData) {
+        try {
+          addData = typeof(productData.additionalData) == "string" ? JSON.parse(productData.additionalData) : productData.additionalData;
+        } catch (e) {
+          console.warn("Invalid additionalData JSON", e);
+        }
+      }
+      
+      const isScheduleByCustomerValue = addData.settings?.isScheduleByCustomer ?? true;
+      const hasPredefinedFrequency = !isScheduleByCustomerValue && (addData.frequency || addData.frequencyData);
+      const predefinedFrequency = addData.frequency || {};
+      const predefinedFrequencyData = addData.frequencyData || {};
+      const ordersCount = predefinedFrequencyData.ordersCount || predefinedFrequency.ordersCount;
+      
+      // If predefined subscription, disable date inputs
+      if (!isScheduleByCustomerValue) {
+        if (startDateInput) {
+          startDateInput.disabled = true;
+          startDateInput.style.backgroundColor = '#f5f5f5';
+          startDateInput.style.cursor = 'not-allowed';
+          startDateInput.setAttribute('readonly', 'readonly');
+        }
+        if (endDateInput) {
+          endDateInput.disabled = true;
+          endDateInput.style.backgroundColor = '#f5f5f5';
+          endDateInput.style.cursor = 'not-allowed';
+          endDateInput.setAttribute('readonly', 'readonly');
+        }
+      }
+      
+      // For predefined subscriptions, dates will be auto-set when shipping method is selected
+      // No need to set dates here - they will be set by the shipping method change handler
+      
+      if (startDateInput && !startDateInput.disabled) {
+        // Use local date formatting to avoid timezone issues
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const todayStr = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
+        startDateInput.setAttribute('min', todayStr);
+        startDateInput.addEventListener('change', function() {
+          const validation = validateDates();
+          if (!validation.valid) {
+            showSubscriptionError(validation.message);
+            return;
+          }
+          
+          // Update end date min to be start date
+          if (endDateInput && this.value) {
+            endDateInput.setAttribute('min', this.value);
+          }
+          
+          // Check if this is a predefined subscription - if so, recalculate end date
+          let addData = {};
+          if (productData.additionalData) {
+            try {
+              addData = typeof(productData.additionalData) == "string" ? JSON.parse(productData.additionalData) : productData.additionalData;
+            } catch (e) {
+              console.warn("Error parsing additionalData:", e);
+            }
+          }
+          
+          const isScheduleByCustomer = addData.settings?.isScheduleByCustomer ?? true;
+          const hasPredefinedFrequency = !isScheduleByCustomer && (addData.frequency || addData.frequencyData);
+          const predefinedFrequency = addData.frequency || {};
+          const expectedOrdersCount = hasPredefinedFrequency ? (predefinedFrequency.ordersCount) : null;
+          
+          // For predefined subscriptions, recalculate end date to match deliverables
+          if (expectedOrdersCount !== null && expectedOrdersCount !== undefined && endDateInput) {
+            const correctEndDate = calculateCorrectEndDate(
+              this.value,
+              expectedOrdersCount,
+              addData
+            );
+            
+            if (correctEndDate) {
+              const formatDate = (date) => {
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+                return `${year}-${month}-${day}`;
+              };
+              
+              endDateInput.value = formatDate(correctEndDate);
+            }
+          }
+          
+          clearSubscriptionError();
+          calculateDeliverables();
+        });
+      }
+      
+      if (endDateInput && !endDateInput.disabled) {
+        endDateInput.addEventListener('change', function() {
+          const validation = validateDates();
+          if (!validation.valid) {
+            showSubscriptionError(validation.message);
+            return;
+          }
+          
+          // Check if this is a predefined subscription that requires exact deliverables
+          let addData = {};
+          if (productData.additionalData) {
+            try {
+              addData = typeof(productData.additionalData) == "string" ? JSON.parse(productData.additionalData) : productData.additionalData;
+            } catch (e) {
+              console.warn("Error parsing additionalData:", e);
+            }
+          }
+          
+          const isScheduleByCustomer = addData.settings?.isScheduleByCustomer ?? true;
+          const hasPredefinedFrequency = !isScheduleByCustomer && (addData.frequency || addData.frequencyData);
+          const predefinedFrequency = addData.frequency || {};
+          const expectedOrdersCount = hasPredefinedFrequency ? (predefinedFrequency.ordersCount) : null;
+          
+          // For predefined subscriptions, enforce exact deliverables count
+          if (expectedOrdersCount !== null && expectedOrdersCount !== undefined) {
+            // Calculate deliverables with current dates
+            calculateDeliverables();
+            
+            // Wait a moment for calculation to complete, then check
+            setTimeout(() => {
+              const liveOrderCount = document.querySelector(".liveOrderCount");
+              const calculatedCount = liveOrderCount ? parseInt(liveOrderCount.textContent) : 0;
+              
+              if (calculatedCount !== expectedOrdersCount) {
+                // End date doesn't match required deliverables - reset it
+                const correctEndDate = calculateCorrectEndDate(
+                  startDateInput.value,
+                  expectedOrdersCount,
+                  addData
+                );
+                
+                if (correctEndDate) {
+                  const formatDate = (date) => {
+                    const year = date.getFullYear();
+                    const month = String(date.getMonth() + 1).padStart(2, '0');
+                    const day = String(date.getDate()).padStart(2, '0');
+                    return `${year}-${month}-${day}`;
+                  };
+                  
+                  endDateInput.value = formatDate(correctEndDate);
+                  
+                  // Recalculate with correct end date
+                  calculateDeliverables();
+                  
+                  // Show validation message
+                  showSubscriptionError(`End Date must match ${expectedOrdersCount} deliveries. The date has been adjusted.`);
+                } else {
+                  showSubscriptionError(`End Date must match ${expectedOrdersCount} deliveries. Please adjust your dates.`);
+                }
+              } else {
+                clearSubscriptionError();
+              }
+            }, 50);
+          } else {
+            // Not a predefined subscription, allow normal calculation
+            clearSubscriptionError();
+            calculateDeliverables();
+          }
+        });
+      }
+    }
+    
+    function renderSubscriptionUI() {
+  const container = document.getElementById("subscriptionPlanContainer");
+  if (!container || !productData.subscriptions) {
+    container.innerHTML = "<p>No subscription items available.</p>";
+    return;
+  }
+
+  const subscriptions = productData.subscriptions;
+
+  let addData = {};
+  if (productData.additionalData) {
+    try {
+      addData = typeof(productData.additionalData) == "string" ? JSON.parse(productData.additionalData) : productData.additionalData;
+    } catch (e) {
+      console.warn("Invalid additionalData JSON", e);
+    }
+  }
+
+  // Check for minimumSelectable in additionalSettings (try root level first, then settings)
+  const minSelectable = addData.minimumSelectable || addData.settings?.minimumSelectable || addData.settings?.minSubscriptionProducts || 1;
+  const maxSelectable = addData.maximumSelectable || addData.settings?.maximumSelectable || addData.settings?.maxSubscriptionProducts || 1;
+  const quantityChangeAllowed = addData.settings?.isQuantityChangeAllowed ?? true;
+  const isScheduleByCustomer = addData.settings?.isScheduleByCustomer ?? true;
+  const isProductChoiceEnabled = addData.settings?.isProductChoiceEnabled ?? true;
+
+  container.innerHTML = "";
+  let selectedCount = 0;
+  
+  // If isScheduleByCustomer is false, customer cannot choose - all products are included
+  const allProductsRequired = !isScheduleByCustomer || !isProductChoiceEnabled;
+  
+  // Show info message if all products are required (will be updated with frequency details later)
+  const infoMessageEl = document.getElementById("subscriptionInfoMessage");
+  if (infoMessageEl && allProductsRequired) {
+    // Build product list with quantities
+    let productList = subscriptions.map(sub => {
+      const qty = sub.quantity || minSelectable;
+      return `${sub.name || 'Product'} (Qty: ${qty})`;
+    }).join(', ');
+    
+    // Initial message (will be updated with frequency details)
+    infoMessageEl.innerHTML = `
+      <div class="info-message-content">
+        <strong>You will get the below products in this subscription with their respective quantities:</strong><br>
+        ${productList}
+      </div>
+    `;
+    infoMessageEl.style.display = "block";
+  } else if (infoMessageEl) {
+    infoMessageEl.style.display = "none";
+  }
+
+  subscriptions.forEach((sub) => {
+    let quantity = sub.quantity || minSelectable;
+
+    const subDiv = document.createElement("div");
+    subDiv.className = "subscription-item";
+    subDiv.dataset.subId = sub.productId;
+
+    // If all products are required, checkbox should be checked and disabled
+    const isRequired = allProductsRequired;
+    
+    const checkboxClass = isRequired ? 'sub-select sub-select-required' : 'sub-select';
+    subDiv.innerHTML = `
+      <div class="subscription-item-content">
+        <input 
+          type="checkbox" 
+          class="${checkboxClass}"
+          aria-label="${isRequired ? 'Included' : 'Select'} ${sub.name || 'subscription item'}"
+          id="sub-checkbox-${sub.productId}"
+          ${isRequired ? 'checked disabled' : ''}
+        >
+        <div>
+         <input type="hidden" class="sub-id" value="${sub.productId}">
+          <h4 class="subscription-item-title">${sub.name}${isRequired ? ' <span class="subscription-included">(Included)</span>' : ''}</h4>
+          <div class="subscription-spec">${sub.specification || ''}</div>
+          <div class="subscription-item-meta">
+            Price: <span class="sub-price">${formatMoney(sub.prices.price)}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="subscription-item-right">
+        <div class="subscription-item-actions">
+          <button 
+            type="button" 
+            class="qty-btn minus"
+            aria-label="Decrease quantity for ${sub.name || 'item'}"
+          >−</button>
+          <span class="qty-value" aria-live="polite">${quantity}</span>
+          <button 
+            type="button" 
+            class="qty-btn plus"
+            aria-label="Increase quantity for ${sub.name || 'item'}"
+          >+</button>
+        </div>
+        <div class="subscription-item-meta">
+          Total: <span class="sub-total">${formatMoney(sub.prices.price * quantity)}</span>
+        </div>
+      </div>
+    `;
+
+    const qtyValueEl = subDiv.querySelector(".qty-value");
+    const totalEl = subDiv.querySelector(".sub-total");
+    const plusBtn = subDiv.querySelector(".plus");
+    const minusBtn = subDiv.querySelector(".minus");
+    const checkbox = subDiv.querySelector(".sub-select");
+
+    const updateTotal = () => {
+      totalEl.textContent = formatMoney(sub.prices.price * quantity);
+      updateSubscriptionPriceUI();
+    };
+
+    
+
+    //=====================================
+    // QUANTITY BEHAVIOR
+    //=====================================
+    if (quantityChangeAllowed === false) {
+      // ❗ disable buttons completely
+      plusBtn.disabled = true;
+      minusBtn.disabled = true;
+    }
+    else {
+      plusBtn.addEventListener("click", () => {
+        // Sanitize: ensure quantity is a positive integer
+        quantity = Math.max(1, Math.floor(quantity) + 1);
+        qtyValueEl.textContent = quantity;
+        updateTotal();
+      });
+
+      minusBtn.addEventListener("click", () => {
+        // Sanitize: ensure quantity doesn't go below minimum
+        const newQuantity = Math.max(minSelectable, Math.floor(quantity) - 1);
+        if (newQuantity < quantity) {
+          quantity = newQuantity;
+          qtyValueEl.textContent = quantity;
+          updateTotal();
+        }
+      });
+    }
+    //=====================================
+    // CHECKBOX SELECTION (line items)
+    //=====================================
+    
+    // If all products are required, mark as selected and don't allow changes
+    if (isRequired) {
+      checkbox.checked = true;
+      subDiv.classList.add("selected");
+      selectedCount++;
+    } else {
+      checkbox.addEventListener("change", () => {
+        if (checkbox.checked) {
+          if (selectedCount >= maxSelectable) {
+            checkbox.checked = false;
+            showSubscriptionError(`You can select only ${maxSelectable} subscription item${maxSelectable > 1 ? 's' : ''}.`);
+            return;
+          }
+          selectedCount++;
+          subDiv.classList.add("selected");
+          clearSubscriptionError();
+        } else {
+          selectedCount--;
+          subDiv.classList.remove("selected");
+        }
+        updateSubscriptionPriceUI();
+      });
+    }
+
+    container.appendChild(subDiv);
+  });
+
+  // Auto-select items based on isScheduleByCustomer
+  if (allProductsRequired) {
+    // If isScheduleByCustomer is false, select ALL items
+    const subscriptionItems = container.querySelectorAll(".subscription-item");
+    subscriptionItems.forEach(item => {
+      const checkbox = item.querySelector(".sub-select");
+      if (checkbox && !checkbox.checked) {
+        checkbox.checked = true;
+        item.classList.add("selected");
+        selectedCount++;
+      }
+    });
+    if (subscriptionItems.length > 0) {
+      updateSubscriptionPriceUI();
+    }
+  } else if (minSelectable > 0 && subscriptions.length > 0) {
+    // Otherwise, auto-select minimum required items
+    const subscriptionItems = container.querySelectorAll(".subscription-item");
+    let selected = 0;
+    for (let i = 0; i < subscriptionItems.length && selected < minSelectable; i++) {
+      const checkbox = subscriptionItems[i].querySelector(".sub-select");
+      if (checkbox && !checkbox.checked) {
+        checkbox.checked = true;
+        subscriptionItems[i].classList.add("selected");
+        selected++;
+        selectedCount++;
+      }
+    }
+    if (selected > 0) {
+      updateSubscriptionPriceUI();
+    }
+  }
+
+  // Check if frequency is predefined (isScheduleByCustomer is false and frequency exists)
+  const hasPredefinedFrequency = !isScheduleByCustomer && (addData.frequency || addData.frequencyData);
+  
+  if (hasPredefinedFrequency) {
+    // Use predefined frequency data
+    const predefinedFrequency = addData.frequency || {};
+    const predefinedFrequencyData = addData.frequencyData || {};
+    
+    // Set frequency from predefined data
+    const freqOption = predefinedFrequency.selectedOption || predefinedFrequencyData.selectedOption || 'daily';
+    let freqOptionNormalized = freqOption.toLowerCase();
+    
+    // Map frequency options
+    if (freqOptionNormalized === 'daily' || predefinedFrequencyData.isDailyFrequency) {
+      selectedFrequency = 'Daily';
+    } else if (freqOptionNormalized === 'weekly' || predefinedFrequencyData.isWeeklyFrequency) {
+      selectedFrequency = 'Weekly';
+    } else if (freqOptionNormalized === 'monthly' || predefinedFrequencyData.isMonthlyFrequency) {
+      selectedFrequency = 'Monthly';
+    } else if (freqOptionNormalized === 'alternate' || freqOptionNormalized === 'alternate days' || predefinedFrequencyData.isAlterNativeFrequency) {
+      selectedFrequency = 'Alternate Days';
+    } else {
+      selectedFrequency = freqOption.charAt(0).toUpperCase() + freqOption.slice(1);
+    }
+    
+    // Use ordersCount from frequencyData if available
+    const ordersCount = predefinedFrequencyData.ordersCount || predefinedFrequency.ordersCount;
+    
+    // Set frequencyDetails for calculation
+    // Handle Weekly frequency - ensure days array is properly set
+    let weeklyDays = null;
+    if (selectedFrequency === 'Weekly') {
+      // weeklyFreVals should be an array of day names, or we default to all days
+      if (predefinedFrequencyData.weeklyFreVals && Array.isArray(predefinedFrequencyData.weeklyFreVals) && predefinedFrequencyData.weeklyFreVals.length > 0) {
+        weeklyDays = predefinedFrequencyData.weeklyFreVals;
+      } else {
+        // Default to all days if not specified (once per week)
+        weeklyDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+      }
+    }
+    
+    frequencyDetails = {
+      type: selectedFrequency,
+      days: weeklyDays || (selectedFrequency === 'Alternate Days' ? (predefinedFrequencyData.weeklyFreVal || 2) : null),
+      day: predefinedFrequencyData.day || (selectedFrequency === 'Monthly' ? (predefinedFrequencyData.day || 1) : null)
+    };
+    
+    // Display frequency UI with predefined selection
+    // Render frequency UI with default selection from predefined data
+    renderFrequencyUI(selectedFrequency, frequencyDetails);
+    
+    // Update info message with frequency details
+    updateSubscriptionInfoMessage(selectedFrequency, ordersCount, frequencyDetails);
+    
+    // Calculate deliverables based on dates (will validate against ordersCount)
+    setTimeout(() => {
+      calculateDeliverables();
+    }, 100);
+  } else {
+    // Render frequency UI for customer selection
+    renderFrequencyUI();
+  }
+  
+  initializeDateInputs();
+}
+
+// Helper function to update subscription info message with frequency details
+function updateSubscriptionInfoMessage(frequency, ordersCount, frequencyDetails) {
+  const infoMessageEl = document.getElementById("subscriptionInfoMessage");
+  if (!infoMessageEl || infoMessageEl.style.display === "none") return;
+  
+  let addData = {};
+  if (productData.additionalData) {
+    try {
+      addData = typeof(productData.additionalData) == "string" ? JSON.parse(productData.additionalData) : productData.additionalData;
+    } catch (e) {
+      console.warn("Invalid additionalData JSON", e);
+    }
+  }
+  
+  const isScheduleByCustomer = addData.settings?.isScheduleByCustomer ?? true;
+  const isProductChoiceEnabled = addData.settings?.isProductChoiceEnabled ?? true;
+  const allProductsRequired = !isScheduleByCustomer || !isProductChoiceEnabled;
+  
+  if (allProductsRequired && productData.subscriptions) {
+    // Build product list with quantities
+    const minSelectable = addData.minimumSelectable || addData.settings?.minimumSelectable || addData.settings?.minSubscriptionProducts || 1;
+    let productList = productData.subscriptions.map(sub => {
+      const qty = sub.quantity || minSelectable;
+      return `${sub.name || 'Product'} (Qty: ${qty})`;
+    }).join(', ');
+    
+    // Build frequency text with details
+    let frequencyText = '';
+    if (frequency) {
+      let frequencyDetail = '';
+      if (frequencyDetails) {
+        if (frequency === 'Alternate Days' && frequencyDetails.days) {
+          frequencyDetail = ` (every ${frequencyDetails.days} days)`;
+        } else if (frequency === 'Weekly' && frequencyDetails.days && Array.isArray(frequencyDetails.days) && frequencyDetails.days.length > 0) {
+          frequencyDetail = ` (${frequencyDetails.days.join(', ')} each week)`;
+        } else if (frequency === 'Monthly' && frequencyDetails.day) {
+          frequencyDetail = ` (day ${frequencyDetails.day} of each month)`;
+        }
+      }      
+      
+    }
+    
+    infoMessageEl.innerHTML = `
+      <div class="info-message-content">
+        <strong>You will get the below products in this subscription with their respective quantities:</strong><br>
+      </div>
+    `;
+  }
+}
+
+
+
+    let selectedFrequency = null;
+    let frequencyDetails = {};
+
+    function renderFrequencyUI(defaultFrequency, defaultFrequencyDetails) {
+      const container = document.getElementById("frequencyContainer");
+      if (!container) return;
+      container.innerHTML = "";
+
+      const frequencyOptions = ["Daily", "Alternate Days", "Weekly", "Monthly"];
+
+      const title = document.createElement("h4");
+      title.innerHTML = "Select Subscription Frequency: <span class='required-indicator'>*</span>";
+      title.style.marginBottom = "10px";
+      container.appendChild(title);
+
+      const frequencyOptionsContainer = document.createElement("div");
+      frequencyOptionsContainer.style.display = "flex";
+      frequencyOptionsContainer.style.flexWrap = "wrap";
+      frequencyOptionsContainer.style.gap = "10px";
+      container.appendChild(frequencyOptionsContainer);
+
+      const detailsContainer = document.createElement("div");
+      detailsContainer.id = "frequencyDetailsContainer";
+      detailsContainer.style.marginTop = "15px";
+      container.appendChild(detailsContainer);
+
+      // Check if this is a predefined frequency (read-only)
+      const isPredefined = defaultFrequency !== null && defaultFrequency !== undefined;
+      
+      frequencyOptions.forEach(option => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.textContent = option;
+        btn.className = "freq-ui";
+        btn.setAttribute("aria-label", `Select ${option} frequency`);
+
+        // Pre-select if this is the default frequency
+        if (isPredefined && option === defaultFrequency) {
+          btn.classList.add("selected");
+          selectedFrequency = option;
+          // Set frequencyDetails from predefined data
+          if (defaultFrequencyDetails) {
+            frequencyDetails = JSON.parse(JSON.stringify(defaultFrequencyDetails));
+          }
+        }
+
+        // If predefined, disable buttons (read-only display)
+        if (isPredefined) {
+          btn.disabled = true;
+          btn.style.opacity = option === defaultFrequency ? "1" : "0.5";
+          btn.style.cursor = "not-allowed";
+        } else {
+          // Allow selection for non-predefined frequencies
+          btn.addEventListener("click", () => {
+            selectedFrequency = option;
+            frequencyDetails = {};
+
+            frequencyOptionsContainer.querySelectorAll("button").forEach(b => b.classList.remove("selected"));
+            btn.classList.add("selected");
+
+            renderFrequencyDetails(option, detailsContainer);
+            calculateDeliverables();
+          });
+        }
+
+        frequencyOptionsContainer.appendChild(btn);
+      });
+
+      // Render frequency details if default frequency is set
+      if (isPredefined && defaultFrequency) {
+        renderFrequencyDetails(defaultFrequency, detailsContainer, defaultFrequencyDetails, isPredefined);
+      }
+    }
+
+function renderFrequencyDetails(frequency, container, predefinedDetails, isPredefined) {
+  container.innerHTML = "";
+
+  if (frequency === "Daily") {
+    container.innerHTML = `<p>Occurs every day.</p>`;
+    if (!isPredefined) {
+      frequencyDetails.type = "Daily";
+    }
+
+  } else if (frequency === "Alternate Days") {
+    const wrapper = document.createElement("div");
+    wrapper.style.display = "flex";
+    wrapper.style.alignItems = "center";
+    wrapper.style.gap = "10px";
+
+    const label = document.createElement("span");
+    label.textContent = "Every";
+
+    const input = document.createElement("input");
+    input.type = "number";
+    input.min = 1;
+    input.value = predefinedDetails?.days || 2;
+    input.className = "freq-ui";
+    input.style.width = "60px";
+    input.style.textAlign = "center";
+    input.setAttribute("aria-label", "Number of days between deliveries");
+    
+    if (isPredefined) {
+      input.disabled = true;
+      input.style.backgroundColor = "#f5f5f5";
+      input.style.cursor = "not-allowed";
+    } else {
+      input.addEventListener("input", () => {
+        frequencyDetails.type = "Alternate Days";
+        frequencyDetails.days = parseInt(input.value) || 2;
+        calculateDeliverables();
+      });
+    }
+
+    const text = document.createElement("span");
+    text.textContent = "days";
+
+    wrapper.appendChild(label);
+    wrapper.appendChild(input);
+    wrapper.appendChild(text);
+    container.appendChild(wrapper);
+    
+    if (!isPredefined) {
+      frequencyDetails.type = "Alternate Days";
+      frequencyDetails.days = parseInt(input.value) || 2;
+    }
+
+  } else if (frequency === "Weekly") {
+    const days = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+    const wrapper = document.createElement("div");
+    wrapper.className = "weekly-days";
+
+    // Use predefined days if available, otherwise empty array
+    const predefinedDays = predefinedDetails?.days || [];
+    if (!isPredefined) {
+      frequencyDetails.days = [];
+    }
+
+    days.forEach(day => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.textContent = day;
+      btn.className = "freq-ui";
+      btn.setAttribute("aria-label", `Select ${day} for weekly delivery`);
+      
+      // Pre-select days from predefined data
+      if (isPredefined && predefinedDays.includes(day)) {
+        btn.classList.add("selected");
+        if (!frequencyDetails.days) frequencyDetails.days = [];
+        if (!frequencyDetails.days.includes(day)) {
+          frequencyDetails.days.push(day);
+        }
+      }
+      
+      if (isPredefined) {
+        btn.disabled = true;
+        btn.style.opacity = predefinedDays.includes(day) ? "1" : "0.5";
+        btn.style.cursor = "not-allowed";
+      } else {
+        btn.addEventListener("click", () => {
+          if (frequencyDetails.days.includes(day)) {
+            frequencyDetails.days = frequencyDetails.days.filter(d => d !== day);
+            btn.classList.remove("selected");
+          } else {
+            frequencyDetails.days.push(day);
+            btn.classList.add("selected");
+          }
+          calculateDeliverables();
+        });
+      }
+
+      wrapper.appendChild(btn);
+    });
+
+    container.appendChild(wrapper);
+
+  } else if (frequency === "Monthly") {
+    const wrapper = document.createElement("div");
+    wrapper.style.display = "flex";
+    wrapper.style.alignItems = "center";
+    wrapper.style.gap = "10px";
+
+    const label = document.createElement("span");
+    label.textContent = "Day of month:";
+
+    const input = document.createElement("input");
+    input.type = "number";
+    input.min = 1;
+    input.max = 31;
+    input.value = predefinedDetails?.day || 1;
+    input.className = "freq-ui";
+    input.style.width = "60px";
+    input.style.textAlign = "center";
+    input.setAttribute("aria-label", "Day of month for monthly delivery");
+    
+    if (isPredefined) {
+      input.disabled = true;
+      input.style.backgroundColor = "#f5f5f5";
+      input.style.cursor = "not-allowed";
+    } else {
+      input.addEventListener("input", () => {
+        frequencyDetails.type = "Monthly";
+        frequencyDetails.day = parseInt(input.value) || 1;
+        calculateDeliverables();
+      });
+    }
+
+    wrapper.appendChild(label);
+    wrapper.appendChild(input);
+    container.appendChild(wrapper);
+    
+    if (!isPredefined) {
+      frequencyDetails.type = "Monthly";
+      frequencyDetails.day = parseInt(input.value) || 1;
+    }
+  }
+}
+
+// -------------------------------------
+// DELIVERY COUNT CALCULATOR
+// -------------------------------------
+function calculateDeliverables() {
+  try {
+    // Check if we have predefined frequency with ordersCount
+    let addData = {};
+    if (productData.additionalData) {
+      try {
+        addData = typeof(productData.additionalData) == "string" ? JSON.parse(productData.additionalData) : productData.additionalData;
+      } catch (e) {
+        console.warn("Error parsing additionalData:", e);
+      }
+    }
+    
+    const isScheduleByCustomer = addData.settings?.isScheduleByCustomer ?? true;
+    const hasPredefinedFrequency = !isScheduleByCustomer && (addData.frequency || addData.frequencyData);
+    const predefinedFrequencyData = addData.frequencyData || {};
+    const predefinedFrequency = addData.frequency || {};
+    
+    // Check if there's a predefined ordersCount to validate against
+    const expectedOrdersCount = hasPredefinedFrequency ? (predefinedFrequency.ordersCount) : null;
+    
+    const startDateInput = document.getElementById("startDate");
+    const endDateInput = document.getElementById("endDate");
+    
+    if (!startDateInput || !endDateInput) return;
+    
+    const start = startDateInput.value;
+    const end = endDateInput.value;
+
+    // Validate dates before calculating
+    const dateValidation = validateDates();
+    if (!dateValidation.valid) {
+      showSubscriptionError(dateValidation.message);
+      const liveOrderCount = document.querySelector(".liveOrderCount");
+      if (liveOrderCount) liveOrderCount.textContent = "0";
+      return;
+    }
+    
+    clearSubscriptionError();
+
+    // If predefined frequency, always get selectedFrequency from predefined data
+    let currentSelectedFrequency = selectedFrequency;
+    if (hasPredefinedFrequency) {
+      // Always use predefined frequency data to ensure accuracy
+      const freqOption = predefinedFrequency.selectedOption || predefinedFrequencyData.selectedOption || 'daily';
+      let freqOptionNormalized = freqOption.toLowerCase();
+      if (predefinedFrequencyData.isDailyFrequency) {
+        currentSelectedFrequency = 'Daily';
+      } else if (predefinedFrequencyData.isWeeklyFrequency) {
+        currentSelectedFrequency = 'Weekly';
+      } else if (predefinedFrequencyData.isMonthlyFrequency) {
+        currentSelectedFrequency = 'Monthly';
+      } else if (predefinedFrequencyData.isAlterNativeFrequency) {
+        currentSelectedFrequency = 'Alternate Days';
+      } else {
+        // Fallback to option name
+        currentSelectedFrequency = freqOption.charAt(0).toUpperCase() + freqOption.slice(1);
+      }
+    }
+
+    if (!start || !end || !currentSelectedFrequency) {
+      const liveOrderCount = document.querySelector(".liveOrderCount");
+      if (liveOrderCount) liveOrderCount.textContent = "0";
+      return;
+    }
+
+  let count = 0;
+  let startDate = new Date(start);
+  let endDate = new Date(end);
+
+  // Normalize to midnight
+  startDate.setHours(0,0,0,0);
+  endDate.setHours(0,0,0,0);
+
+  // Get frequencyDetails for predefined frequencies if not set globally
+  let currentFrequencyDetails = frequencyDetails || {};
+  if (hasPredefinedFrequency && (!currentFrequencyDetails || Object.keys(currentFrequencyDetails).length === 0)) {
+    // Handle Weekly frequency - ensure days array is properly set
+    let weeklyDays = null;
+    if (currentSelectedFrequency === 'Weekly') {
+      // weeklyFreVals should be an array of day names, or we default to all days
+      if (predefinedFrequencyData.weeklyFreVals && Array.isArray(predefinedFrequencyData.weeklyFreVals) && predefinedFrequencyData.weeklyFreVals.length > 0) {
+        weeklyDays = predefinedFrequencyData.weeklyFreVals;
+      } else {
+        // Default to all days if not specified
+        weeklyDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+      }
+    }
+    
+    currentFrequencyDetails = {
+      type: currentSelectedFrequency,
+      days: weeklyDays || (currentSelectedFrequency === 'Alternate Days' ? (predefinedFrequencyData.weeklyFreVal || 2) : null),
+      day: predefinedFrequencyData.day || (currentSelectedFrequency === 'Monthly' ? (predefinedFrequencyData.day || 1) : null)
+    };
+  }
+  
+  // Also ensure frequencyDetails is set globally for future calculations
+  if (hasPredefinedFrequency && (!frequencyDetails || Object.keys(frequencyDetails).length === 0)) {
+    frequencyDetails = currentFrequencyDetails;
+  }
+
+  // ----------------------------------------
+  // DAILY = every single day including both ends
+  // ----------------------------------------
+  if (currentSelectedFrequency === "Daily") {
+    count = Math.floor((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
+  }
+
+  // ----------------------------------------
+  // ALTERNATE DAYS
+  // Deliver every X days from start
+  // Including starting day
+  // ----------------------------------------
+  else if (currentSelectedFrequency === "Alternate Days") {
+    let step = currentFrequencyDetails.days || 2;
+
+    for (let d = new Date(startDate), i = 0; d <= endDate; d.setDate(d.getDate() + step), i++) {
+      count++;
+    }
+  }
+
+  // ----------------------------------------
+  // WEEKLY
+  // Selected specific days of week
+  // ----------------------------------------
+  else if (currentSelectedFrequency === "Weekly") {
+    let selectedDays = currentFrequencyDetails.days || [];
+    
+    // If no days specified, default to all days (once per week = 7 days)
+    if (!Array.isArray(selectedDays) || selectedDays.length === 0) {
+      selectedDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    }
+
+    // Count occurrences of selected days within the date range
+    for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+      let day = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][d.getDay()];
+      if (selectedDays.includes(day)) count++;
+    }
+  }
+
+  // ----------------------------------------
+  // MONTHLY
+  // Day of month (e.g. 5 → 5th every month)
+  // Handles invalid dates (e.g., Feb 31) by using last day of month
+  // ----------------------------------------
+  else if (currentSelectedFrequency === "Monthly") {
+    let dom = currentFrequencyDetails.day || 1;
+
+    // Start from the first occurrence of the day in the start month
+    let currentDate = new Date(startDate);
+    currentDate.setDate(dom);
+    
+    // If the date is before start date, move to next month
+    if (currentDate < startDate) {
+      currentDate.setMonth(currentDate.getMonth() + 1);
+      currentDate.setDate(dom);
+    }
+
+    // Count occurrences until we exceed end date
+    while (currentDate <= endDate) {
+      // Check if date is valid (handles cases like Feb 31)
+      const lastDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate();
+      const validDay = Math.min(dom, lastDayOfMonth);
+      
+      // Create valid date
+      const validDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), validDay);
+      
+      if (validDate >= startDate && validDate <= endDate) {
+        count++;
+      }
+      
+      // Move to next month
+      currentDate.setMonth(currentDate.getMonth() + 1);
+      currentDate.setDate(validDay);
+    }
+  }
+
+    const liveOrderCount = document.querySelector(".liveOrderCount");
+    if (liveOrderCount) {
+      liveOrderCount.textContent = count;
+    }
+    
+    // If there's an expected order count, validate against it
+    if (expectedOrdersCount !== null && expectedOrdersCount !== undefined) {
+      if (count !== expectedOrdersCount) {
+        showSubscriptionError(`The selected dates result in ${count} deliveries, but this subscription requires exactly ${expectedOrdersCount} deliveries. Please adjust your dates.`);
+      } else {
+        // Clear any previous errors when count matches
+        clearSubscriptionError();
+      }
+    } else {
+      // If no expected count, clear any errors
+      clearSubscriptionError();
+    }
+    
+    updateSubscriptionPriceUI();
+  } catch (error) {
+    console.error("Error calculating deliverables:", error);
+    showSubscriptionError("Error calculating delivery count. Please check your dates.");
+    const liveOrderCount = document.querySelector(".liveOrderCount");
+    if (liveOrderCount) liveOrderCount.textContent = "0";
+  }
+}
+
+
+function updateSubscriptionPriceUI() {
+  try {
+    let total = 0;
+    const liveOrderCountEl = document.querySelector(".liveOrderCount");
+    let deliverables = liveOrderCountEl ? parseInt(liveOrderCountEl.textContent) || 1 : 1;
+    
+    // Parse additionalData if needed
+    let additionalData = {};
+    try {
+      additionalData = typeof(productData.additionalData) == "string" 
+        ? JSON.parse(productData.additionalData || "{}") 
+        : productData.additionalData;
+    } catch (e) {
+      console.warn("Error parsing additionalData:", e);
+    }
+    
+    let items = [];
+    // Must explicitly check IsSubscriptionPrice
+    if (additionalData.IsSubscriptionPrice === true) {
+      const isScheduleByCustomer = additionalData.settings?.isScheduleByCustomer ?? true;
+      const isProductChoiceEnabled = additionalData.settings?.isProductChoiceEnabled ?? true;
+      const allProductsRequired = !isScheduleByCustomer || !isProductChoiceEnabled;
+
+      // If isScheduleByCustomer is false, include ALL subscription products
+      if (allProductsRequired) {
+        // Get all subscription products from productData
+        const allSubscriptions = productData.subscriptions || [];
+        allSubscriptions.forEach(sub => {
+          const quantity = sub.quantity || 1;
+          const price = parseFloat(sub.prices?.price || sub.price || 0);
+          const subId = parseInt(sub.productId || sub.id || 0);
+          
+          if (subId > 0 && price >= 0) {
+            items.push({
+              id: subId,
+              name: sub.name || '',
+              quantity: quantity,
+              price: price,
+              orderTotal: price * quantity
+            });
+            total += price * quantity;
+          }
+        });
+        
+        // For predefined subscriptions, check if orderTotal is already provided
+        // If orderTotal exists, it's already the total for all deliveries, don't multiply
+        const predefinedOrderTotal = additionalData.subscriptionDetails?.orderTotal;
+        if (predefinedOrderTotal) {
+          // Use the predefined orderTotal directly (already includes all deliveries)
+          deliverables = Math.max(1, deliverables);
+          total = total * deliverables;
+          total = total;
+        } else {
+          // If no predefined orderTotal, calculate from perOrderPrice if available
+          const perOrderPrice = additionalData.settings?.perOrderPrice;
+          if (perOrderPrice) {
+            total = parseFloat(perOrderPrice) || total;
+            // Multiply by deliverables only if using perOrderPrice
+            deliverables = Math.max(1, deliverables);
+            total = total * deliverables;
+          } else {
+            // Fallback: multiply calculated total by deliverables
+            deliverables = Math.max(1, deliverables);
+            total = total * deliverables;
+          }
+        }
+      } else {
+        // ⛳ find ALL selected subscriptions (customer can choose)
+        const selectedSubs = document.querySelectorAll(".subscription-item.selected");
+        
+        selectedSubs.forEach(subItem => {
+          const idEl = subItem.querySelector(".sub-id");
+          const priceEl = subItem.querySelector(".sub-price");
+          const qtyEl = subItem.querySelector(".qty-value");
+          const nameEl = subItem.querySelector("h4");
+
+          // Sanitize and validate inputs
+          let price = parseFloat(priceEl.textContent.replace(/[^\d.-]/g, '')) || 0;
+          let qty = Math.max(1, parseInt(qtyEl.textContent) || 1); // Ensure positive integer
+          let subId = parseInt(idEl.value) || 0;
+          let name = nameEl ? nameEl.textContent.replace(/\s*\(Included\)/g, '').trim() : '';
+
+          if (subId > 0 && price >= 0 && qty > 0) {
+            items.push({
+              id: subId,
+              name: name,
+              quantity: qty,
+              price: price,
+              orderTotal: price * qty
+            });
+            total += price * qty;
+          }
+        });
+        
+        // For customer-selectable subscriptions, multiply by deliverables
+        deliverables = Math.max(1, deliverables);
+        total = total * deliverables;
+      }
+
+    } else {
+      total = productData.price || 0;
+      // For non-subscription products, multiply by deliverables
+      deliverables = Math.max(1, deliverables);
+      total = total * deliverables;
+    }
+    
+    if (priceElement) {
+      priceElement.textContent = formatMoney(total);
+    }
+    updateSubscriptionData(items, deliverables, total);
+  } catch (error) {
+    console.error("Error updating subscription price UI:", error);
+    showSubscriptionError("Error calculating price. Please refresh the page.");
+  }
+}
+
+function updateSubscriptionData(items, deliverables, priceTotal) {
+  try {
+    const startDateInput = document.getElementById("startDate");
+    const endDateInput = document.getElementById("endDate");
+    
+    if (!startDateInput || !endDateInput) return;
+
+    let startDate = startDateInput.value;
+    let endDate = endDateInput.value;
+
+    // Validate and sanitize dates
+    if (!startDate || !endDate) return;
+
+    // ensure ISO dates
+    let isoStart = startDate ? new Date(startDate).toISOString() : null;
+    let isoEnd = endDate ? new Date(endDate).toISOString() : null;
+    
+    // Validate dates are valid
+    if (isoStart && isNaN(new Date(isoStart).getTime())) {
+      console.warn("Invalid start date");
+      return;
+    }
+    if (isoEnd && isNaN(new Date(isoEnd).getTime())) {
+      console.warn("Invalid end date");
+      return;
+    }
+
+  // Get original settings from additionalData to preserve isScheduleByCustomer and other settings
+  let originalAddData = {};
+  try {
+    const originalDataEl = document.getElementById('productData');
+    if (originalDataEl) {
+      const originalProductData = JSON.parse(originalDataEl.textContent);
+      if (originalProductData.additionalData) {
+        originalAddData = typeof(originalProductData.additionalData) == "string" 
+          ? JSON.parse(originalProductData.additionalData || "{}") 
+          : originalProductData.additionalData;
+      }
+    }
+  } catch (e) {
+    console.warn("Error parsing original additionalData:", e);
+  }
+
+  let subscriptionPayload = {
+    QuantityVariation: [],
+    IsCombinationPrice: false,
+
+    settings: {
+      isScheduleByCustomer: originalAddData.settings?.isScheduleByCustomer ?? true,
+      typeOfOrder: originalAddData.settings?.typeOfOrder ?? 10,
+      // Set shipping class based on order count (deliverables)
+      // Use original shippingClassId if available, otherwise calculate based on order count
+      // Default to 3 if no order count, otherwise use order count (capped at reasonable max)
+      shippingClassId: originalAddData.settings?.shippingClassId || (deliverables > 0 ? Math.max(3, Math.min(deliverables, 50)) : 3),
+      offersSetting: originalAddData.settings?.offersSetting || [],
+      perOrderPrice: deliverables > 0 ? priceTotal / deliverables : priceTotal,
+      nextBillDate: originalAddData.settings?.nextBillDate || null,
+      startDate: isoStart,
+      endDate: isoEnd,
+      isProductChoiceEnabled: originalAddData.settings?.isProductChoiceEnabled ?? true,
+      isQuantityChangeAllowed: originalAddData.settings?.isQuantityChangeAllowed ?? true,
+      minSubscriptionProducts: originalAddData.settings?.minSubscriptionProducts ?? 1,
+      maxSubscriptionProducts: originalAddData.settings?.maxSubscriptionProducts ?? 100
+    },
+
+    subscriptionDetails: {
+      shippingFeeAmount: originalAddData.subscriptionDetails?.shippingFeeAmount || 0,
+      paymentFeeAmount: originalAddData.subscriptionDetails?.paymentFeeAmount || 0,
+      roundOff: originalAddData.subscriptionDetails?.roundOff || 0,
+      discountAmount: originalAddData.subscriptionDetails?.discountAmount || 0,
+      subscriptionCoupon: originalAddData.subscriptionDetails?.subscriptionCoupon || {},
+      orderTotal: priceTotal.toFixed(2)
+    },
+
+    IsSubscriptionPrice: true,
+
+    paymentSettings: {
+      detectPaymentFromLP: true,
+      createInvoiceWithoutPayment: true
+    },
+
+    QuantityManualInput: false,
+
+    items: items,
+
+    frequency: originalAddData.frequency || {
+      selectedOption: selectedFrequency?.toLowerCase(),
+      timeFre: originalAddData.frequency?.timeFre || null,
+      ordersCount: deliverables
+    },
+    frequencyData: {
+      ...(originalAddData.frequencyData || {}),
+      selectedOption: selectedFrequency?.toLowerCase() || originalAddData.frequencyData?.selectedOption,
+      ordersCount: deliverables || originalAddData.frequencyData?.ordersCount || originalAddData.frequency?.ordersCount,
+      startDate: isoStart || originalAddData.frequencyData?.startDate,
+      endDate: isoEnd || originalAddData.frequencyData?.endDate,
+      isDailyFrequency: (selectedFrequency == "Daily") || originalAddData.frequencyData?.isDailyFrequency || false,
+      isWeeklyFrequency: (selectedFrequency == "Weekly") || originalAddData.frequencyData?.isWeeklyFrequency || false,
+      isAlterNativeFrequency: (selectedFrequency == "Alternate Days") || originalAddData.frequencyData?.isAlterNativeFrequency || false,
+      isMonthlyFrequency: (selectedFrequency == "Monthly") || originalAddData.frequencyData?.isMonthlyFrequency || false,
+      isYearlyFrequency: originalAddData.frequencyData?.isYearlyFrequency || false
+    }
+  };
+
+    // 🧠 replace original product additional data
+    productData.additionalData = subscriptionPayload;
+
+    console.log("UPDATED additionalData:", subscriptionPayload);
+  } catch (error) {
+    console.error("Error updating subscription data:", error);
+    showSubscriptionError("Error updating subscription settings. Please try again.");
+  }
+}
+
+
+  function toggleComboSelection(btn) {
+      const group = btn.dataset.group;
+      const productId = btn.dataset.productId;
+      const item = productData.combinations.find(x => x.productId == productId);
+
+      if (!bundleSelections[group]) bundleSelections[group] = [];
+
+      const selected = bundleSelections[group];
+
+      // deselect
+      if (selected.includes(productId)) {
+        bundleSelections[group] = selected.filter(x => x !== productId);
+        btn.classList.remove("selected");
+        updateBundlePriceUI();
+        return;
+      }
+
+      // ENFORCE MAX RULE
+      if (selected.length >= item.maximumSelectable) {
+        showCombinationError(`You can select only ${item.maximumSelectable} item${item.maximumSelectable > 1 ? 's' : ''} from "${item.groupName}".`);
+        return;
+      }
+
+      // select
+      bundleSelections[group].push(productId);
+      btn.classList.add("selected");
+
+      updateBundlePriceUI();
+    }
+
+    //-------------------------------
+    // VALIDATE BEFORE CART ADDING
+    //-------------------------------
+    function validateBundle() {
+      for (const group in bundleSelections) {
+        const items = productData.combinations.filter(x => x.groupName == group);
+        const min = items[0].minimumSelectable;
+        const selectedCount = bundleSelections[group].length;
+
+        if (selectedCount < min) {
+          showCombinationError(`Please select at least ${min} item${min > 1 ? 's' : ''} from "${group}".`);
+          return false;
+        }
+      }
+      return true;
+    }
+
+  function updateBundlePriceUI() {
+    let total = 0;
+    const items = [];
+
+    // Don't interfere with subscription products (productType == 90)
+    const isSubscriptionProduct = productData.productType == 90;
+    
+    // Parse additionalData (string → JSON)
+    let additionalData = {};
+    try {
+      additionalData = typeof(productData.additionalData) == "string" ? JSON.parse(productData.additionalData || "{}") :productData.additionalData;
+    } catch (e) {
+      additionalData = {};
+    }
+
+    // Check if this is a combination product
+    const hasCombinations = productData.combinations && productData.combinations.length > 0;
+    
+    if (hasCombinations && Object.keys(bundleSelections).length > 0) {
+      // Combination-based pricing - build Items array
+      for (const g in bundleSelections) {
+        bundleSelections[g].forEach(productId => {
+          const item = productData.combinations.find(c => c.productId == productId);
+          if (item) {
+            const quantity = item.quantity || 1;
+            total += item.prices.price * quantity;
+            
+            // Add to Items array for additionalSettings
+            items.push({
+              Id: parseInt(item.productId),
+              Name: item.name || '',
+              Price: parseFloat(item.prices.price || 0),
+              Quantity: parseInt(quantity)
+            });
+          }
+        });
+      }
+      
+      // Only update additionalData for combination products (not subscription products)
+      if (!isSubscriptionProduct) {
+        // Update additionalData with only Items structure
+        productData.additionalData = {
+          Items: items
+        };
+      }
+    } else if (hasCombinations && !isSubscriptionProduct) {
+      // Use main product price
+      total = productData.prices.price || 0;
+      
+      // Clear additionalData if no combinations selected (only for non-subscription products)
+      productData.additionalData = {
+        Items: []
+      };
+    } else {
+      // Use main product price or existing pricing logic
+      if (additionalData.IsCombinationPrice === true && hasCombinations) {
+        // Combination-based pricing from existing data
+        for (const g in bundleSelections) {
+          bundleSelections[g].forEach(productId => {
+            const item = productData.combinations.find(c => c.productId == productId);
+            if (item) {
+              total += item.prices.price * (item.quantity || 1);
+            }
+          });
+        }
+      } else {
+        // Use main product price
+        total = productData.prices.price || 0;
+      }
+    }
+
+    if (priceElement) {
+      priceElement.textContent = formatMoney(total);
+    }
+  }
+
+    // Build option groups from variants
+    function buildOptionGroups() {
+      const variants = productData.variants || productData.variants || [];
+      const combinations = productData.combinations || [];
+      const subscriptions = productData.subscriptions || [];
+      if ((!variants || variants.length === 0) && (!combinations || combinations.length === 0) && (!subscriptions || subscriptions.length === 0)) return null;
+      
+      if(combinations && combinations.length > 0){
+        renderCombinationUI();
+      }
+
+      if(subscriptions && subscriptions.length > 0){
+        renderSubscriptionUI();
+      }
+      if (variants || variants.length > 0) {
+            const optionGroups = {};
+            
+            // Process each variation
+            variants.forEach(variation => {
+              const options = variation.options || [];
+              
+              
+              options.forEach(option => {
+                const optionName = (option.optionName || 'Option').toLowerCase();
+                const cleanName = optionName.replace(/[^a-z]/g, ''); // Remove non-alphabetic chars
+                
+                // Map common option names
+                let mappedName = cleanName;
+                if (cleanName.includes('color') || cleanName.includes('colour')) {
+                  mappedName = 'color';
+                } else if (cleanName.includes('size')) {
+                  mappedName = 'size';
+                }
+                
+                if (!optionGroups[mappedName]) {
+                  optionGroups[mappedName] = {
+                    name: mappedName === 'color' ? 'Color' : (mappedName === 'size' ? 'Size' : option.optionName || 'Option'),
+                    type: option.displayType || (mappedName === 'color' ? 'color' : 'text'),
+                    values: new Map()
+                  };
+                }
+                
+                const value = option.value || '';
+                if (!optionGroups[mappedName].values.has(value)) {
+                  optionGroups[mappedName].values.set(value, {
+                    value: value,
+                    available: variation.inStock !== false && variation.available !== false,
+                    images: variation.images || [],
+                    combinationId: combinations.length > 0 ? combinations[0].productId : variation.productId
+                  });
+                }
+              });
+            });
+            
+            return optionGroups;
+      }
+    }
+    
+    // Render option groups
+    function renderOptionGroups() {
+      const optionGroups = buildOptionGroups();
+      if (!optionGroups || Object.keys(optionGroups).length === 0) return;
+      
+      optionsContainer.innerHTML = '';
+      
+      // Sort options: color first, then size, then others
+      const sortedKeys = Object.keys(optionGroups).sort((a, b) => {
+        const order = { color: 1, size: 2 };
+        return (order[a] || 99) - (order[b] || 99);
+      });
+      
+      sortedKeys.forEach((key, groupIndex) => {
+        const group = optionGroups[key];
+        const optionDiv = document.createElement('div');
+        optionDiv.className = 'product-option';
+        
+        const label = document.createElement('label');
+        label.className = 'option-label';
+        label.textContent = group.name;
+        optionDiv.appendChild(label);
+        
+        const valuesDiv = document.createElement('div');
+        valuesDiv.className = 'option-values';
+        
+        const valuesArray = Array.from(group.values.values());
+        valuesArray.forEach((valueObj, index) => {
+          const isFirst = groupIndex === 0 && index === 0;
+          if (isFirst && !selectedOptions[key]) {
+            selectedOptions[key] = valueObj.value;
+          }
+          
+          const button = document.createElement('button');
+          button.type = 'button';
+          button.className = `option-value option-value-${group.type} ${(selectedOptions[key] === valueObj.value) ? 'selected' : ''} ${!valueObj.available ? 'disabled' : ''}`;
+          button.dataset.optionKey = key;
+          button.dataset.optionValue = valueObj.value;
+          button.dataset.combinationId = valueObj.combinationId;
+          button.dataset.available = valueObj.available;
+          
+          if (group.type === 'color') {
+            // Color swatch
+            const colorValue = valueObj.value.toLowerCase().trim();
+            const colorMap = {
+              'red': '#ef4444',
+              'blue': '#3b82f6',
+              'green': '#10b981',
+              'yellow': '#fbbf24',
+              'black': '#000000',
+              'white': '#ffffff',
+              'gray': '#6b7280',
+              'grey': '#6b7280',
+              'pink': '#ec4899',
+              'purple': '#a855f7',
+              'orange': '#f97316',
+              'brown': '#92400e',
+              'navy': '#1e3a8a',
+              'tan': '#d4a574',
+              'beige': '#f5f5dc',
+              'cream': '#fffdd0',
+              'pumice': '#c8c5b9'
+            };
+            
+            const color = colorMap[colorValue] || colorValue;
+            button.style.backgroundColor = color;
+            button.style.borderColor = (color === '#ffffff' || color === '#fffdd0' || color === '#f5f5dc') ? 'rgba(0, 0, 0, 0.2)' : 'rgba(0, 0, 0, 0.1)';
+            
+            // Add screen reader text
+            const srText = document.createElement('span');
+            srText.className = 'sr-only';
+            srText.textContent = valueObj.value;
+            button.appendChild(srText);
+          } else {
+            // Text/Size button
+            button.textContent = valueObj.value;
+          }
+          
+          if (!valueObj.available) {
+            button.disabled = true;
+          }
+          
+          valuesDiv.appendChild(button);
+        });
+        
+        optionDiv.appendChild(valuesDiv);
+        optionsContainer.appendChild(optionDiv);
+      });
+      
+      // Find initial variant
+      findMatchingVariant();
+    }
+
+  
+    function renderCombinationUI() {
+      const combos = productData.combinations || [];
+      if (combos.length === 0) return;
+
+      const grouped = {};
+      combos.forEach(c => {
+        if (!grouped[c.groupName]) grouped[c.groupName] = [];
+        grouped[c.groupName].push(c);
+      });
+
+      const container = document.getElementById("comboContainer");
+      container.innerHTML = "";
+
+      Object.keys(grouped).forEach(groupName => {
+        const items = grouped[groupName];
+
+        const header = document.createElement("div");
+        header.className = "combo-group-header";
+        header.innerHTML = `<strong>${groupName}</strong> (Select ${items[0].minimumSelectable}-${items[0].maximumSelectable})`;
+        container.appendChild(header);
+
+        const groupDiv = document.createElement("div");
+        groupDiv.className = "combo-group";
+
+        items.forEach(item => {
+          const card = document.createElement("div");
+          card.className = "combo-card";
+          card.dataset.group = groupName;
+          card.dataset.productId = item.productId;
+          card.dataset.price = item.prices.price;
+
+          card.innerHTML = `
+          <div class="combo-image">
+            <img src="${item.thumbnailImage1.url}" alt="${item.name}" />
+            <div class="combo-checkbox">
+              <label>
+                <input type="checkbox" />
+                <span class="checkbox-custom"></span>
+              </label>
+            </div>
+          </div>
+          <div class="combo-info">
+            <span class="combo-name">${item.name} × 1</span>
+            <span class="combo-price">${formatMoney(item.prices.price)}</span>
+          </div>`;
+
+          card.addEventListener("click", () => toggleComboSelection(card));
+          groupDiv.appendChild(card);
+        });
+
+      container.appendChild(groupDiv);
+      });
+
+      // ⬇️ AUTO SELECT MINIMUM REQUIRED CARDS IN EACH GROUP
+      Object.keys(grouped).forEach(groupName => {
+        const items = grouped[groupName];
+        const minSelectable = items[0]?.minimumSelectable || 1;
+        
+        // Get all cards for this group
+        const groupCards = Array.from(container.querySelectorAll(`.combo-card[data-group="${groupName}"]`));
+        
+        // Select minimum required items
+        let selected = 0;
+        for (let i = 0; i < groupCards.length && selected < minSelectable; i++) {
+          const card = groupCards[i];
+          if (card && !card.classList.contains("selected")) {
+            card.classList.add("selected");
+            const checkbox = card.querySelector('input[type="checkbox"]');
+            if (checkbox) {
+              checkbox.checked = true;
+            }
+
+            if (!bundleSelections[groupName]) bundleSelections[groupName] = [];
+            bundleSelections[groupName].push(card.dataset.productId);
+            selected++;
+          }
+        }
+      });
+
+    updateBundlePriceUI();
+  }
+
+    
+    // Find matching variant based on selected options
+    function findMatchingVariant() {
+      const variants = productData.variants || productData.variants || [];
+      
+      // If no variants, use base product
+      if (variants.length === 0) {
+        currentVariant = {
+          productId: productData.productId,
+          price: productData.price,
+          mrp: productData.mrp,
+          inStock: productData.inStock,
+          available: productData.available
+        };
+        updateVariantUI();
+        return;
+      }
+      
+      // Find matching variation
+      for (const variation of variants) {
+        const options = variation.options || [];
+        let matches = true;
+        
+        for (const [key, value] of Object.entries(selectedOptions)) {
+          const hasMatchingOption = options.some(opt => {
+            const optName = (opt.optionName || 'Option').toLowerCase().replace(/[^a-z]/g, '');
+            let mappedName = optName;
+            if (optName.includes('color') || optName.includes('colour')) {
+              mappedName = 'color';
+            } else if (optName.includes('size')) {
+              mappedName = 'size';
+            }
+            const optValue = opt.value || '';
+            return mappedName === key && optValue === value;
+          });
+          
+          if (!hasMatchingOption) {
+            matches = false;
+            break;
+          }
+        }
+        
+        if (matches) {
+          currentVariant = {
+            productId: variation.productId,
+            price: variation.prices.price || productData.price,
+            mrp: variation.prices.mrp || productData.mrp,
+            inStock: variation.inStock !== false,
+            available: variation.available !== false,
+            images: variation.images || [],
+            stockQuantity: variation.stockQuantity || 0
+          };
+          updateVariantUI();
+          return;
+        }
+      }
+      
+      // If no match found, use first variation
+      if (variants.length > 0) {
+        const firstVar = variants[0];
+        currentVariant = {
+          productId: firstVar.productId,
+          price: firstVar.prices.price || productData.price,
+          mrp: firstVar.prices.mrp || productData.mrp,
+          inStock: firstVar.inStock !== false,
+          available: firstVar.available !== false,
+          images: firstVar.images || [],
+          stockQuantity: firstVar.stockQuantity || 0
+        };
+      } else {
+        currentVariant = {
+          productId: productData.productId,
+          price: productData.price,
+          mrp: productData.mrp,
+          inStock: productData.inStock,
+          available: productData.available
+        };
+      }
+      
+      updateVariantUI();
+    }
+    
+    // Update UI based on selected variant
+    // Update product attributes based on current variant
+    function updateAttributesUI() {
+      if (!currentVariant) return;
+
+      try {
+        const variants = productData.variants || [];
+        const matchingVariant = variants.find(v => v.productId === currentVariant.productId);
+
+        // Select all attribute cards
+        const attributeCards = document.querySelectorAll('.attributes-card[data-attribute-name]');
+        if (!attributeCards || attributeCards.length === 0) return;
+
+        // Build map of possible attribute values from the variant
+        const attributeValueMap = {};
+
+        if (matchingVariant) {
+          // variantAttributes
+          if (matchingVariant.variantAttributes && Array.isArray(matchingVariant.variantAttributes)) {
+            matchingVariant.variantAttributes.forEach(a => {
+              const name = a.name || a.attributeName;
+              if (name) attributeValueMap[name] = a.value;
+            });
+          }
+
+          // options
+          if (matchingVariant.options && Array.isArray(matchingVariant.options)) {
+            matchingVariant.options.forEach(o => {
+              const name = o.optionName || o.name;
+              if (name) attributeValueMap[name] = o.value;
+            });
+          }
+
+          // attributes root
+          if (matchingVariant.attributes && Array.isArray(matchingVariant.attributes)) {
+            matchingVariant.attributes.forEach(a => {
+              const name = a.name || a.attributeName;
+              if (name) attributeValueMap[name] = a.value;
+            });
+          }
+
+          // additionalData
+          if (matchingVariant.additionalData) {
+            let add = matchingVariant.additionalData;
+            if (typeof add === 'string') {
+              try { add = JSON.parse(add); } catch(e) { add = null; }
+            }
+            if (add && add.attributes && Array.isArray(add.attributes)) {
+              add.attributes.forEach(a => {
+                const name = a.name || a.attributeName;
+                if (name) attributeValueMap[name] = a.value;
+              });
+            }
+          }
+        }
+
+        // Update DOM cards
+        attributeCards.forEach(card => {
+          const name = card.getAttribute('data-attribute-name');
+          const base = card.getAttribute('data-base-value');
+          const valueEl = card.querySelector('.attribute-value-text');
+          if (!valueEl) return;
+
+          // exact or case-insensitive match
+          let newVal = null;
+          if (attributeValueMap[name]) newVal = attributeValueMap[name];
+          else {
+            for (const k in attributeValueMap) {
+              if (k && k.toLowerCase() === (name || '').toLowerCase()) { newVal = attributeValueMap[k]; break; }
+            }
+          }
+
+          if (newVal !== null && newVal !== undefined) {
+            valueEl.textContent = newVal;
+            valueEl.setAttribute('data-current-value', newVal);
+          } else if (base !== null && base !== undefined) {
+            valueEl.textContent = base;
+            valueEl.setAttribute('data-current-value', base);
+          }
+        });
+      } catch (err) {
+        console.error('Error updating attributes UI', err);
+      }
+    }
+    
+    function updateVariantUI() {
+      if (!currentVariant) return;
+      
+      // Update price
+      if (priceElement) {
+        priceElement.textContent = formatMoney(currentVariant.price);
+      }
+      
+      // Update availability
+      if (addToCartBtn) {
+        addToCartBtn.disabled = !currentVariant.available;
+        const btnText = addToCartBtn.querySelector('.btn-text');
+        if (btnText) {
+          if(productData.productType == 90){
+            btnText.textContent =  'Subscribe';
+          }else{
+            btnText.textContent = currentVariant.available ? 'Add to Cart' : 'Out of Stock';
+          }
+        }
+      }
+      
+      // Update images if variant has specific images
+      if (currentVariant.images && currentVariant.images.length > 0 && mainImages && mainImages.length > 0) {
+        const firstVariantImage = currentVariant.images[0];
+        const variantImageUrl = typeof firstVariantImage === 'string' 
+          ? firstVariantImage 
+          : (firstVariantImage.url || firstVariantImage.Url || firstVariantImage);
+        
+        // Try to find in parent images first (for gallery consistency)
+        const allImages = productData.images || [];
+        const imageIndex = allImages.findIndex(img => {
+          const imgUrl = typeof img === 'string' ? img : (img.url || img.Url || img);
+          return imgUrl === variantImageUrl;
+        });
+        
+        if (imageIndex >= 0) {
+          // Variant image exists in parent images - use index-based switching
+          switchToImage(imageIndex);
+        } else {
+          // Variant image is unique - directly update image sources
+          mainImages.forEach(img => {
+            if (img.tagName === 'IMG') {
+              img.src = variantImageUrl;
+              img.alt = currentVariant.title || productData.title || '';
+            }
+          });
+          // Update thumbnails if needed
+          if (thumbnails && thumbnails.length > 0) {
+            thumbnails.forEach(thumb => {
+              const thumbImg = thumb.querySelector('img');
+              if (thumbImg) {
+                thumbImg.src = variantImageUrl;
+              }
+            });
+          }
+        }
+      }
+      
+      // Update quantity max
+      if (quantityInput && currentVariant.stockQuantity) {
+        quantityInput.max = currentVariant.stockQuantity;
+      }
+      
+      // Update product attributes based on variant
+      updateAttributesUI();
+    }
+    
+    // Switch to image by index
+    function switchToImage(index) {
+      if (!mainImages || mainImages.length === 0) return;
+      
+      mainImages.forEach((img, i) => {
+        if (i === index) {
+          img.classList.add('active');
+          currentImageIndex = index;
+        } else {
+          img.classList.remove('active');
+        }
+      });
+      
+      updateThumbnails();
+    }
+    
+    // Update thumbnails active state
+    function updateThumbnails() {
+      if (!thumbnails || thumbnails.length === 0) return;
+      thumbnails.forEach((thumb, index) => {
+        if (parseInt(thumb.dataset.index) === currentImageIndex) {
+          thumb.classList.add('active');
+        } else {
+          thumb.classList.remove('active');
+        }
+      });
+    }
+
+    document.addEventListener("click", function(e){
+      let btn = e.target.closest(".product-option-btn");
+      if(!btn) return;
+
+      let key = btn.dataset.optionKey;
+
+      document.querySelectorAll(`.product-option-btn[data-option-key="${key}"]`)
+        .forEach(b => b.classList.remove("selected"));
+
+      btn.classList.add("selected");
+      findMatchingVariant()
+    });
+    
+    // Initialize on DOM ready
+    document.addEventListener('DOMContentLoaded', function() {
+      // Initialize DOM elements
+      mainImages = document.querySelectorAll('.gallery-main-image');
+      thumbnails = document.querySelectorAll('.gallery-thumbnail');
+      productForm = document.getElementById('productForm');
+      addToCartBtn = document.getElementById('addToCartBtn');
+      quantityInput = document.getElementById('quantity');
+      priceElement = document.getElementById('productPrice');
+      optionsContainer = document.getElementById('productOptionsContainer');
+      galleryModal = document.getElementById('galleryModal');
+      galleryModalImage = document.getElementById('galleryModalImage');
+      galleryModalClose = document.getElementById('galleryModalClose');
+      galleryModalPrev = document.getElementById('galleryModalPrev');
+      galleryModalNext = document.getElementById('galleryModalNext');
+      galleryModalCounter = document.getElementById('galleryModalCounter');
+      galleryZoomBtn = document.getElementById('galleryZoomBtn');
+      cartMessage = document.getElementById('cartMessage');
+      
+      // Render option groups
+      renderOptionGroups();
+      
+      // Initialize shipping methods
+      initializeShippingMethods();
+      
+      // Initialize Product Attributes Tabs
+      const attributeTabLinks = document.querySelectorAll('.attributes-tab-link');
+      attributeTabLinks.forEach(link => {
+        link.addEventListener('click', function(e) {
+          e.preventDefault();
+          const tabId = this.getAttribute('data-tab');
+          
+          // Remove active class from all links and panes
+          attributeTabLinks.forEach(l => l.classList.remove('active'));
+          document.querySelectorAll('.attributes-tab-pane').forEach(pane => pane.classList.remove('active'));
+          
+          // Add active class to clicked link and corresponding pane
+          this.classList.add('active');
+          this.setAttribute('aria-selected', 'true');
+          
+          const activePane = document.getElementById(tabId);
+          if (activePane) {
+            activePane.classList.add('active');
+          }
+        });
+      });
+      
+      // Image Gallery Thumbnails
+      if (thumbnails && thumbnails.length > 0) {
+        thumbnails.forEach(thumbnail => {
+          thumbnail.addEventListener('click', function() {
+            const imageIndex = parseInt(this.dataset.index);
+            switchToImage(imageIndex);
+          });
+        });
+      }
+      
+      // Option selection
+      document.addEventListener('click', function(e) {
+        const optionBtn = e.target.closest('.option-value');
+        if (!optionBtn || optionBtn.disabled) return;
+        
+        const optionKey = optionBtn.dataset.optionKey;
+        const optionValue = optionBtn.dataset.optionValue;
+        
+        if (!optionKey || !optionValue) return;
+        
+        // Deselect other options in same group
+        const optionGroup = optionBtn.closest('.product-option');
+        optionGroup.querySelectorAll('.option-value').forEach(btn => {
+          btn.classList.remove('selected');
+        });
+        
+        // Select clicked option
+        optionBtn.classList.add('selected');
+        
+        // Update selected options
+        selectedOptions[optionKey] = optionValue;
+        
+        // Find matching variant
+        findMatchingVariant();
+        
+        // Explicitly update attributes immediately
+        setTimeout(() => {
+          updateAttributesUI();
+        }, 50);
+      });
+      
+      // Quantity Controls
+      const decreaseBtn = document.querySelector('.quantity-decrease');
+      const increaseBtn = document.querySelector('.quantity-increase');
+      
+      if (decreaseBtn && quantityInput) {
+        decreaseBtn.addEventListener('click', () => {
+          const val = parseInt(quantityInput.value) || 1;
+          if (val > 1) {
+            quantityInput.value = val - 1;
+          }
+        });
+      }
+      
+      if (increaseBtn && quantityInput) {
+        increaseBtn.addEventListener('click', () => {
+          const val = parseInt(quantityInput.value) || 1;
+          const max = parseInt(quantityInput.max) || 99;
+          if (val < max) {
+            quantityInput.value = val + 1;
+          }
+        });
+      }
+      
+      // Add to Cart
+      if (productForm && addToCartBtn) {
+        productForm.addEventListener('submit', async function(e) {
+          e.preventDefault();
+          
+          if (addToCartBtn.disabled || addToCartBtn.classList.contains('loading')) return;
+          
+          const productId = currentVariant ? currentVariant.productId : productData.productId;
+          const quantity = quantityInput != null && quantityInput.value != null && quantityInput.value != ""? parseInt(quantityInput.value)  : 1;
+          
+          addToCartBtn.classList.add('loading');
+          const btnText = addToCartBtn.querySelector('.btn-text');
+          if (btnText) {
+            btnText.textContent = 'Adding...';
+          }
+          
+          try {
+            // Validate subscription before submission
+            if (productData.productType == 90) {
+              const validation = validateSubscription();
+              if (!validation.valid) {
+                showSubscriptionError(validation.message);
+                addToCartBtn.classList.remove('loading');
+                if (btnText) {
+                  btnText.textContent = productData.productType == 90 ? 'Subscribe' : 'Add to Cart';
+                }
+                return;
+              }
+              clearSubscriptionError();
+            }
+            
+            // Validate combination products before submission
+            const hasCombinations = productData.combinations && productData.combinations.length > 0;
+            if (hasCombinations) {
+              const bundleValidation = validateBundle();
+              if (!bundleValidation) {
+                addToCartBtn.classList.remove('loading');
+                if (btnText) {
+                  btnText.textContent = 'Add to Cart';
+                }
+                return;
+              }
+            }
+
+            // Store variation image in localStorage before adding to cart
+            if (currentVariant && currentVariant.images && currentVariant.images.length > 0) {
+              const firstVariantImage = currentVariant.images[0];
+              const variantImageUrl = typeof firstVariantImage === 'string' 
+                ? firstVariantImage 
+                : (firstVariantImage.url || firstVariantImage.Url || firstVariantImage);
+              
+              if (variantImageUrl) {
+                // Store variation image for this productId
+                const imageKey = `variantImage_${productId}`;
+                try {
+                  localStorage.setItem(imageKey, variantImageUrl);
+                } catch (e) {
+                  console.warn('Failed to store variant image in localStorage:', e);
+                }
+              }
+            }
+
+            let bodyData = {
+              productId: parseInt(productId),
+              quantity: quantity
+            };
+
+            // If product type is subscription → attach Additional Settings
+            if (productData.productType == 90) {
+              try {
+                bodyData.additionalSettings = typeof(productData.additionalData) == "string" 
+                  ? productData.additionalData 
+                  : JSON.stringify(productData.additionalData);
+              } catch(e) {
+                console.warn("Invalid additionalData JSON");
+                showSubscriptionError("Error preparing subscription data. Please try again.");
+                addToCartBtn.classList.remove('loading');
+                if (btnText) {
+                  btnText.textContent = productData.productType == 90 ? 'Subscribe' : 'Add to Cart';
+                }
+                return;
+              }
+            }
+            // If product has combinations (and is NOT a subscription) → attach Additional Settings with Items array
+            else {
+              const hasCombinations = productData.combinations && productData.combinations.length > 0;
+              if (hasCombinations) {
+                try {
+                  // Ensure bundle selections are up to date
+                  updateBundlePriceUI();
+                  
+                  // Get the Items array from additionalData
+                  const combinationData = productData.additionalData || {};
+                  const items = combinationData.Items || [];
+                  
+                  // Only include additionalSettings if there are selected items
+                  if (items.length > 0) {
+                    bodyData.additionalSettings = JSON.stringify({
+                      Items: items
+                    });
+                  }
+                } catch(e) {
+                  console.warn("Error preparing combination data:", e);
+                  addToCartBtn.classList.remove('loading');
+                  if (btnText) {
+                    btnText.textContent = 'Add to Cart';
+                  }
+                  return;
+                }
+              }
+            }
+
+            const response = await fetch('/webstoreapi/carts/add', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+              },
+              body: JSON.stringify(bodyData)
+            });
+            
+            const data = await response.json();
+            
+            // Check if authentication is required
+            if (data.requiresAuth) {
+              // Open login modal using the same pattern as widgets
+              if (window.Theme && window.Theme.openLoginModal) {
+                window.Theme.openLoginModal();
+              } else if (window.CartManager && window.CartManager.openLoginModal) {
+                window.CartManager.openLoginModal();
+              } else {
+                // Fallback: trigger login modal via data attribute
+                const loginTrigger = document.querySelector('[data-login-modal-trigger]');
+                if (loginTrigger) {
+                  loginTrigger.click();
+                }
+              }
+              
+              // Reset button state
+              if (btnText) {
+                btnText.textContent = productData.productType == 90 ? 'Subscribe' : 'Add to Cart';
+              }
+              addToCartBtn.classList.remove('loading');
+              return;
+            }
+            
+            if (data.success) {
+              // Fetch cart count after successful add to ensure instant update (like other pages)
+              // Use CartManager to get cart count, which uses /carts/quantity API
+              let cartCount = 0;
+              try {
+                if (window.CartManager && typeof window.CartManager.getCartCount === 'function') {
+                  // Force refresh to get the latest count after adding item
+                  cartCount = await window.CartManager.getCartCount(true);
+                  // Update cart data with the fetched count
+                  data.data = data.data || {};
+                  data.data.itemCount = cartCount;
+                  // Dispatch cart updated event to update all badges instantly
+                  if (window.CartManager && typeof window.CartManager.dispatchCartUpdated === 'function') {
+                    window.CartManager.dispatchCartUpdated({ itemCount: cartCount, cart: data.data });
+                  }
+                } else {
+                  // Fallback to direct fetch if CartManager not available
+                  const countResponse = await fetch('/webstoreapi/carts/quantity', {
+                    method: 'GET',
+                    credentials: 'same-origin',
+                    headers: { 'Accept': 'application/json' }
+                  });
+                  if (countResponse.ok) {
+                    const countData = await countResponse.json();
+                    if (countData.success && countData.data) {
+                      cartCount = countData.data.cartQuantity || 0;
+                      data.data = data.data || {};
+                      data.data.itemCount = cartCount;
+                      // Fallback: update badges manually if CartManager not available
+                      const countElements = document.querySelectorAll('[data-cart-count]');
+                      countElements.forEach(element => {
+                        element.textContent = cartCount;
+                        element.setAttribute('data-cart-count', cartCount.toString());
+                        if (cartCount > 0) {
+                          element.removeAttribute('style');
+                        } else {
+                          const isDrawerTitle = element.closest('.cart-drawer-title');
+                          if (!isDrawerTitle) {
+                            element.style.display = 'none';
+                          }
+                        }
+                      });
+                    }
+                  }
+                }
+              } catch (e) {
+                console.warn('Failed to fetch cart count after add:', e);
+                // If we have itemCount in the response, use it as fallback
+                if (data.data && (data.data.itemCount !== undefined || data.data.items)) {
+                  cartCount = data.data.itemCount || (data.data.items ? data.data.items.length : 0);
+                }
+              }
+              
+              // Show success message - match widget format
+              const successMessage = productData.productType == 90 
+                ? 'Subscription added to cart successfully!' 
+                : 'Product added to cart!';
+              showUserMessage(successMessage, 'success');
+              
+              if (btnText) {
+                btnText.textContent = productData.productType == 90 ? 'Subscribe' : 'Add to Cart';
+              }
+              addToCartBtn.classList.remove('loading');
+              
+              // Clear any validation errors
+              clearSubscriptionError();
+              showCombinationError("");
+              
+              // Update cart UI with the latest data (includes total and count)
+              if (window.Theme && typeof window.Theme.updateCartUI === 'function') {
+                window.Theme.updateCartUI(data.data);
+              } else if (window.theme && typeof window.theme.updateCartUI === 'function') {
+                window.theme.updateCartUI(data.data);
+              }
+            } else {
+              throw new Error(data.error || 'Failed to add to cart');
+            }
+          } catch (error) {
+            console.error('Error adding to cart:', error);
+            
+            // Show user-friendly error message
+            const errorMessage = error.message || 'Failed to add item to cart. Please try again.';
+            showUserMessage(errorMessage, 'error');
+            
+            if (btnText) {
+              btnText.textContent = productData.productType == 90 ? 'Subscribe' : 'Add to Cart';
+            }
+            addToCartBtn.classList.remove('loading');
+          }
+        });
+      }
+      
+      // Full Screen Gallery
+      if (galleryZoomBtn && galleryModal) {
+        const images = productData.images || [];
+        
+        // Process images to extract URLs
+        const imageUrls = images.map(img => {
+          return typeof img === 'string' ? img : (img.url || img);
+        });
+        
+        if (imageUrls.length > 0) {
+          galleryZoomBtn.style.display = 'flex';
+          
+          galleryZoomBtn.addEventListener('click', () => {
+            currentImageIndex = 0;
+            galleryModalImage.src = imageUrls[currentImageIndex];
+            updateGalleryModal();
+            galleryModal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+          });
+          
+          galleryModalPrev.addEventListener('click', () => {
+            if (currentImageIndex > 0) {
+              currentImageIndex--;
+            } else {
+              currentImageIndex = imageUrls.length - 1;
+            }
+            galleryModalImage.src = imageUrls[currentImageIndex];
+            updateGalleryModal();
+          });
+          
+          galleryModalNext.addEventListener('click', () => {
+            if (currentImageIndex < imageUrls.length - 1) {
+              currentImageIndex++;
+            } else {
+              currentImageIndex = 0;
+            }
+            galleryModalImage.src = imageUrls[currentImageIndex];
+            updateGalleryModal();
+          });
+          
+          function updateGalleryModal() {
+            galleryModalCounter.textContent = `${currentImageIndex + 1} / ${imageUrls.length}`;
+          }
+        } else {
+          if (galleryZoomBtn) galleryZoomBtn.style.display = 'none';
+        }
+        
+        galleryModalClose.addEventListener('click', () => {
+          galleryModal.classList.remove('active');
+          document.body.style.overflow = '';
+        });
+        
+        galleryModal.addEventListener('click', (e) => {
+          if (e.target === galleryModal || e.target.classList.contains('gallery-modal-overlay')) {
+            galleryModal.classList.remove('active');
+            document.body.style.overflow = '';
+          }
+        });
+        
+        // Keyboard navigation
+        document.addEventListener('keydown', (e) => {
+          if (!galleryModal.classList.contains('active')) return;
+          
+          if (e.key === 'Escape') {
+            galleryModal.classList.remove('active');
+            document.body.style.overflow = '';
+          } else if (e.key === 'ArrowLeft' && galleryModalPrev) {
+            galleryModalPrev.click();
+          } else if (e.key === 'ArrowRight' && galleryModalNext) {
+            galleryModalNext.click();
+          }
+        });
+      }
+    });
+  })();
+ 
+</script>
+
+
+
+

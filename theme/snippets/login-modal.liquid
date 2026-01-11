@@ -1,0 +1,346 @@
+{% comment %}
+  Global Login Modal
+  Supports three methods: email/password, email OTP, mobile OTP
+  Opened via JS (no route change)
+{% endcomment %}
+
+<div id="login-modal" class="login-modal" aria-hidden="true" role="dialog" aria-modal="true">
+  <div class="login-modal__overlay" data-login-overlay></div>
+  <div class="login-modal__panel" role="document">
+    <header class="login-modal__header">
+      <div>
+        <h2 class="login-modal__title">Sign in</h2>
+        <p class="login-modal__subtitle">Choose how you’d like to continue</p>
+      </div>
+      <button class="login-modal__close" type="button" aria-label="Close" data-login-close>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </header>
+
+    <div class="login-modal__body">      
+      <!-- Method selection -->
+      <div class="login-modal__methods" data-login-view="methods">
+        <button type="button" class="login-modal__method-card" data-login-method="email-otp">
+          <div class="login-modal__method-title">Email OTP</div>
+          <div class="login-modal__method-desc">Receive a one-time code to your email.</div>
+        </button>
+
+        <button type="button" class="login-modal__method-card" data-login-method="phone-otp">
+          <div class="login-modal__method-title">Mobile OTP</div>
+          <div class="login-modal__method-desc">Receive a one-time code via SMS.</div>
+        </button>
+      </div>
+
+      <!-- Email OTP flow (hidden until method is chosen) -->
+      <div class="login-modal__flow" data-login-view="email-otp" hidden>
+        <form class="login-modal__form" data-login-step="email-input" novalidate>
+          <div class="form-group">
+            <label for="login-email-otp" class="form-label">Email</label>
+            <input id="login-email-otp" name="email" type="email" class="form-input" required autocomplete="email">
+          </div>
+          <div class="login-modal__error" data-login-error="email-otp-input"></div>
+          <button type="submit" class="btn btn-primary btn-block" data-login-send-email-otp>
+            Send OTP
+          </button>
+        </form>
+
+        <form class="login-modal__form" data-login-step="email-verify" novalidate style="display:none;">
+          <p class="login-modal__info">
+            Enter the code we sent to <span data-login-email-display></span>
+          </p>
+          <div class="form-group">
+            <label for="login-email-otp-code" class="form-label">OTP code</label>
+            <input id="login-email-otp-code" name="otp" type="text" class="form-input" required maxlength="6" inputmode="numeric">
+          </div>
+          <div class="login-modal__resend">
+            <button type="button" class="btn btn-ghost btn-sm" data-login-resend-email-otp>
+              Resend code
+            </button>
+            <span class="login-modal__resend-timer" data-login-resend-email-timer></span>
+          </div>
+          <div class="login-modal__error" data-login-error="email-otp-verify"></div>
+          <button type="submit" class="btn btn-primary btn-block" data-login-verify-email-otp>
+            Verify &amp; continue
+          </button>
+        </form>
+      </div>
+
+      <!-- Phone OTP flow (hidden until method is chosen) -->
+      <div class="login-modal__flow" data-login-view="phone-otp" hidden>
+        <form class="login-modal__form" data-login-step="phone-input" novalidate>
+          <div class="form-group">
+            <label for="login-phone-otp" class="form-label">Mobile number</label>
+            <input id="login-phone-otp" name="phone" type="tel" class="form-input login-phone-input" required inputmode="tel">
+          </div>
+          <div class="login-modal__error" data-login-error="phone-otp-input"></div>
+          <button type="submit" class="btn btn-primary btn-block" data-login-send-phone-otp>
+            Send OTP
+          </button>
+        </form>
+
+        <form class="login-modal__form" data-login-step="phone-verify" novalidate style="display:none;">
+          <p class="login-modal__info">
+            Enter the code we sent to <span data-login-phone-display></span>
+          </p>
+          <div class="form-group">
+            <label for="login-phone-otp-code" class="form-label">OTP code</label>
+            <input id="login-phone-otp-code" name="otp" type="text" class="form-input" required maxlength="6" inputmode="numeric">
+          </div>
+          <div class="login-modal__resend">
+            <button type="button" class="btn btn-ghost btn-sm" data-login-resend-phone-otp>
+              Resend code
+            </button>
+            <span class="login-modal__resend-timer" data-login-resend-phone-timer></span>
+          </div>
+          <div class="login-modal__error" data-login-error="phone-otp-verify"></div>
+          <button type="submit" class="btn btn-primary btn-block" data-login-verify-phone-otp>
+            Verify &amp; continue
+          </button>
+        </form>
+      </div>
+
+      <!-- Success state -->
+      <div class="login-modal__success" data-login-view="success" hidden>
+        <div class="login-modal__success-icon">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M9 12l2 2 4-4"></path>
+            <circle cx="12" cy="12" r="9"></circle>
+          </svg>
+        </div>
+        <h3 class="login-modal__success-title">You’re signed in</h3>
+        <p class="login-modal__success-text">
+          You can now continue shopping with your account benefits.
+        </p>
+        <button type="button" class="btn btn-primary btn-block" data-login-close>
+          Continue
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.login-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: none;
+}
+.login-modal--active {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.login-modal__overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(4px);
+}
+.login-modal__panel {
+  position: relative;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.25);
+  width: 100%;
+  max-width: 480px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.login-modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid #e5e7eb;
+}
+.login-modal__title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: #111827;
+}
+.login-modal__subtitle {
+  margin: 4px 0 0;
+  font-size: 14px;
+  color: #6b7280;
+}
+.login-modal__close {
+  border: none;
+  background: none;
+  padding: 4px;
+  border-radius: 999px;
+  cursor: pointer;
+  color: #6b7280;
+}
+.login-modal__close:hover {
+  background: #f3f4f6;
+  color: #111827;
+}
+.login-modal__body {
+  padding: 20px 24px 24px;
+  overflow-y: auto;
+}
+.login-modal__steps {
+  display: flex;
+  gap: 12px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 16px;
+}
+.login-modal__step {
+  padding-bottom: 4px;
+  border-bottom: 2px solid transparent;
+  color: #9ca3af;
+}
+.login-modal__step--active {
+  border-color: #111827;
+  color: #111827;
+}
+.login-modal__methods {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+.login-modal__method-card {
+  width: 100%;
+  text-align: left;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  padding: 12px 14px;
+  background: #f9fafb;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.login-modal__method-card:hover {
+  border-color: #111827;
+  background: #f3f4f6;
+}
+.login-modal__method-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #111827;
+}
+.login-modal__method-desc {
+  font-size: 12px;
+  color: #6b7280;
+  margin-top: 2px;
+}
+.login-modal__form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 4px;
+}
+.login-modal__flow {
+  margin-top: 8px;
+}
+.login-modal__info {
+  font-size: 13px;
+  color: #4b5563;
+  margin: 0 0 8px;
+}
+.login-modal__resend {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+}
+.login-modal__resend-timer {
+  color: #6b7280;
+}
+.login-modal__error {
+  display: none;
+  font-size: 13px;
+  color: #b91c1c;
+  background: #fee2e2;
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+.login-modal__error--visible {
+  display: block;
+}
+.login-modal__success {
+  text-align: center;
+  padding-top: 8px;
+}
+.login-modal__success-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  background: #ecfdf3;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #16a34a;
+  margin-bottom: 12px;
+}
+.login-modal__success-title {
+  margin: 0 0 4px;
+  font-size: 18px;
+  font-weight: 600;
+}
+.login-modal__success-text {
+  margin: 0 0 16px;
+  font-size: 14px;
+  color: #6b7280;
+}
+
+@media (max-width: 640px) {
+  .login-modal__panel {
+    max-width: 100%;
+    height: 100%;
+    max-height: 100%;
+    border-radius: 0;
+  }
+}
+
+/* intl-tel-input styling for login modal */
+.login-phone-input {
+  padding-left: 3.5rem;
+}
+
+.iti {
+  width: 100%;
+}
+
+.iti__flag-container {
+  z-index: 1;
+}
+
+.iti__selected-flag {
+  padding: 0 0.75rem 0 0.5rem;
+  border-right: 1px solid #e5e7eb;
+}
+
+.iti__selected-flag:hover {
+  background-color: #f3f4f6;
+}
+
+.iti__country-list {
+  z-index: 10001;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.iti__country {
+  padding: 0.5rem 0.75rem;
+}
+
+.iti__country:hover,
+.iti__country.iti__highlight {
+  background-color: #dbeafe;
+}
+</style>
+
+

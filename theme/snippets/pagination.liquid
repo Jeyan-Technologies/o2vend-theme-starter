@@ -1,0 +1,120 @@
+{% comment %}
+  Pagination Component
+  
+  Usage:
+    {% include 'snippets/pagination', pagination: pagination %}
+  
+  Requires:
+    - pagination.currentPage: Current page number
+    - pagination.totalPages: Total number of pages
+    - pagination.hasNext: Boolean for next page availability
+    - pagination.hasPrevious: Boolean for previous page availability
+{% endcomment %}
+
+{% if pagination.totalPages > 1 %}
+  <div class="pagination" id="pagination-container">
+    <!-- Previous Button -->
+    {% if pagination.hasPrevious %}
+      <a href="?page={{ pagination.currentPage | minus: 1 }}" class="pagination-item pagination-prev" data-page="{{ pagination.currentPage | minus: 1 }}">
+        {% raw %}<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="15,18 9,12 15,6"></polyline>
+        </svg>{% endraw %}
+        Previous
+      </a>
+    {% else %}
+      <span class="pagination-item disabled">
+        {% raw %}<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="15,18 9,12 15,6"></polyline>
+        </svg>{% endraw %}
+        Previous
+      </span>
+    {% endif %}
+    
+    <!-- Page Numbers -->
+    <div class="pagination-pages">
+      {% assign startPage = pagination.currentPage | minus: 2 %}
+      {% if startPage < 1 %}
+        {% assign startPage = 1 %}
+      {% endif %}
+      
+      {% assign endPage = pagination.currentPage | plus: 2 %}
+      {% if endPage > pagination.totalPages %}
+        {% assign endPage = pagination.totalPages %}
+      {% endif %}
+      
+      <!-- First page -->
+      {% if startPage > 1 %}
+        <a href="?page=1" class="pagination-item pagination-link" data-page="1">1</a>
+        {% if startPage > 2 %}
+          <span class="pagination-ellipsis">...</span>
+        {% endif %}
+      {% endif %}
+      
+      <!-- Page range -->
+      {% for i in (startPage..endPage) %}
+        {% if i == pagination.currentPage %}
+          <span class="pagination-item active">{{ i }}</span>
+        {% else %}
+          <a href="?page={{ i }}" class="pagination-item pagination-link" data-page="{{ i }}">{{ i }}</a>
+        {% endif %}
+      {% endfor %}
+      
+      <!-- Last page -->
+      {% if endPage < pagination.totalPages %}
+        {% if endPage < pagination.totalPages | minus: 1 %}
+          <span class="pagination-ellipsis">...</span>
+        {% endif %}
+        <a href="?page={{ pagination.totalPages }}" class="pagination-item pagination-link" data-page="{{ pagination.totalPages }}">{{ pagination.totalPages }}</a>
+      {% endif %}
+    </div>
+    
+    <!-- Next Button -->
+    {% if pagination.hasNext %}
+      <a href="?page={{ pagination.currentPage | plus: 1 }}" class="pagination-item pagination-next" data-page="{{ pagination.currentPage | plus: 1 }}">
+        Next
+        {% raw %}<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="9,18 15,12 9,6"></polyline>
+        </svg>{% endraw %}
+      </a>
+    {% else %}
+      <span class="pagination-item disabled">
+        Next
+        {% raw %}<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="9,18 15,12 9,6"></polyline>
+        </svg>{% endraw %}
+      </span>
+    {% endif %}
+  </div>
+  
+  <script>
+  // Preserve URL parameters when navigating pagination
+  (function() {
+    'use strict';
+    
+    const paginationContainer = document.getElementById('pagination-container');
+    if (!paginationContainer) return;
+    
+    // Get all pagination links
+    const paginationLinks = paginationContainer.querySelectorAll('.pagination-link, .pagination-prev, .pagination-next');
+    
+    // Get current URL parameters
+    const currentParams = new URLSearchParams(window.location.search);
+    
+    // Update each link to preserve all parameters except page
+    paginationLinks.forEach(link => {
+      const page = link.getAttribute('data-page');
+      if (!page) return;
+      
+      // Clone current parameters
+      const newParams = new URLSearchParams(currentParams);
+      
+      // Update page parameter
+      newParams.set('page', page);
+      
+      // Update link href
+      link.href = `${window.location.pathname}?${newParams.toString()}`;
+    });
+  })();
+  </script>
+{% endif %}
+

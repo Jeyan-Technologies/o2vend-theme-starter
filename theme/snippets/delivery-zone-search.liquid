@@ -1,0 +1,78 @@
+{% comment %}
+  Delivery Zone Zipcode Search with Autocomplete
+{% endcomment %}
+
+<div class="delivery-zone-search-container">
+  <input 
+    type="text" 
+    id="delivery-zone-zipcode" 
+    name="zipcode" 
+    class="delivery-zone-input"
+    placeholder="Enter Location"
+    value="{{ deliveryZone.defaultZipcode }}"
+    autocomplete="off"
+    required
+    maxlength="10">
+  
+  <div class="delivery-zone-search-results" id="delivery-zone-search-results" style="display: none;"></div>
+</div>
+
+<style>
+.delivery-zone-search-container {
+  position: relative;
+  width: 100%;
+}
+
+.delivery-zone-search-results {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 4px;
+  background: white;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  max-height: 300px;
+  overflow-y: auto;
+  z-index: 10;
+}
+
+.delivery-zone-search-result {
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.delivery-zone-search-result:last-child {
+  border-bottom: none;
+}
+
+.delivery-zone-search-result:hover {
+  background-color: #f9fafb;
+}
+
+.delivery-zone-search-result.active {
+  background-color: #f3f4f6;
+}
+
+.delivery-zone-result-zipcode {
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 2px;
+}
+
+.delivery-zone-result-details {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.delivery-zone-search-empty {
+  padding: 16px;
+  text-align: center;
+  color: #6b7280;
+  font-size: 14px;
+}
+</style>
+

@@ -1,0 +1,676 @@
+{% liquid
+  assign widget_settings = widget.settings
+  assign widget_data = widget.data
+
+  comment
+    Dynamic Widget: Brands come from widget_data.brands (enriched by WidgetService)
+    Settings come from widget_settings
+  endcomment
+  assign brands = widget_data.Brands | default: widget_data.brands
+  assign heading = widget_settings.title | default: widget.Title | default: widget.title
+  assign subtitle = widget_settings.subtitle
+  assign background_color = widget_settings.backgroundColor
+  assign text_color = widget_settings.textColor
+    assign show_container = widget_settings.showContainer
+  assign show_bottom_margin = widget_settings.showWidgetBottomMargin
+  assign show_widget_title_raw = widget_settings.showWidgetTitle | default: 'Yes'
+  if show_widget_title_raw == null or show_widget_title_raw == blank or show_widget_title_raw == 'null'
+    assign show_widget_title = true
+  else
+    if show_widget_title_raw == 'Yes'
+      assign show_widget_title = true
+    elsif show_widget_title_raw == true
+      assign show_widget_title = true
+    else
+      assign show_widget_title = false
+    endif
+  endif
+  assign widget_title_alignment_raw = widget_settings.widgetTitleAlignment | default: 'center'
+  assign widget_title_alignment = widget_title_alignment_raw | downcase
+  if widget_title_alignment != 'left' and widget_title_alignment != 'right' and widget_title_alignment != 'center'
+    assign widget_title_alignment = 'center'
+  endif
+%}
+
+<section class="widget widget-brand-carousel" data-widget-id="{{ widget.id }}" data-brand-carousel{% if background_color and background_color != blank and background_color != 'null' %} style="background-color: {{ background_color }};"{% endif %}>
+  <div class="brand-carousel-container">
+    {% if show_widget_title %}
+      {% if heading or subtitle %}
+        <header class="brand-carousel-header">
+        <div class="brand-carousel-header__text" style="text-align: {{ widget_title_alignment }};">
+          {% if heading %}
+            <h2 class="brand-carousel-title"{% if text_color and text_color != 'null' %} style="color: {{ text_color }};"{% endif %}>{{ heading }}</h2>
+          {% endif %}
+          {% if subtitle %}
+            <p class="brand-carousel-subtitle"{% if text_color and text_color != 'null' %} style="color: {{ text_color }};"{% endif %}>{{ subtitle }}</p>
+          {% endif %}
+        </div>
+        {% if brands and brands.size > 0 %}
+          <div class="brand-carousel-nav">
+            <button type="button" class="brand-carousel-arrow brand-carousel-arrow--prev" data-carousel-prev aria-label="Previous">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="15 18 9 12 15 6"></polyline>
+              </svg>
+            </button>
+            <button type="button" class="brand-carousel-arrow brand-carousel-arrow--next" data-carousel-next aria-label="Next">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="9 18 15 12 9 6"></polyline>
+              </svg>
+            </button>
+          </div>
+        {% endif %}
+        </header>
+      {% endif %}
+    {% endif %}
+
+    {% if brands and brands.size > 0 %}
+      <div class="brand-carousel-wrapper">
+        <!-- Side Navigation Arrows (Desktop) -->
+        <button type="button" class="brand-carousel-side-arrow brand-carousel-side-arrow--prev" data-carousel-prev aria-label="Previous">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 18 9 12 15 6"></polyline>
+          </svg>
+        </button>
+        
+        <div class="brand-carousel-track-wrapper" data-carousel-viewport>
+          <div class="brand-carousel-track" data-carousel-track>
+            {% for brand in brands %}
+              {% assign brand_id = brand.Id | default: brand.id | default: brand.brandId %}
+              {% assign brand_name = brand.Name | default: brand.name %}
+              {% assign brand_slug = brand.Slug | default: brand.slug %}
+              {% assign brand_url = brand.Url | default: brand.url | default: brand.link %}
+              {% if brand_url == blank %}
+                {% if brand_slug and brand_slug != blank %}
+                  {% assign brand_url = brand_slug %}
+                {% else %}
+                  {% assign brand_url = '#' %}
+                {% endif %}
+              {% endif %}
+              
+              {% comment %} Image fallback: thumbnailImage.url > Logo > logo > image {% endcomment %}
+              {% assign brand_image = nil %}
+              {% if brand.thumbnailImage and brand.thumbnailImage.url %}
+                {% assign brand_image = brand.thumbnailImage.url %}
+              {% elsif brand.ThumbnailImage and brand.ThumbnailImage.Url %}
+                {% assign brand_image = brand.ThumbnailImage.Url %}
+              {% elsif brand.Logo %}
+                {% assign brand_image = brand.Logo %}
+              {% elsif brand.logo %}
+                {% assign brand_image = brand.logo %}
+              {% elsif brand.image %}
+                {% assign brand_image = brand.image %}
+              {% elsif brand.Image %}
+                {% assign brand_image = brand.Image %}
+              {% endif %}
+              
+              <div class="brand-carousel-slide" data-slide-index="{{ forloop.index0 }}">
+                <a href="{{ brand_url }}" class="brand-carousel-item" aria-label="{{ brand_name }}">
+                  {% if brand_image != blank and brand_image != '' and brand_image != 'null' %}
+                    <div class="brand-carousel-item__image">
+                      <img src="{{ brand_image }}" alt="{{ brand_name }}" width="200" height="60" loading="lazy" onerror="this.style.display='none'; this.parentElement.nextElementSibling.style.display='flex';">
+                    </div>
+                    <span class="brand-carousel-item__name brand-carousel-item__name--fallback" style="display: none;">{{ brand_name }}</span>
+                  {% else %}
+                    <span class="brand-carousel-item__name">{{ brand_name }}</span>
+                  {% endif %}
+                </a>
+              </div>
+            {% endfor %}
+          </div>
+        </div>
+        
+        <button type="button" class="brand-carousel-side-arrow brand-carousel-side-arrow--next" data-carousel-next aria-label="Next">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="9 18 15 12 9 6"></polyline>
+          </svg>
+        </button>
+      </div>
+      
+      <!-- Dot Indicators -->
+      <div class="brand-carousel-dots" data-carousel-dots></div>
+    {% else %}
+      <div class="widget-empty">
+        <p>{{ widget_settings.empty_state | default: 'No brands to display yet.' }}</p>
+      </div>
+    {% endif %}
+  </div>
+
+  <style>
+  .widget-brand-carousel {
+      {% if show_bottom_margin == 'Yes' %}
+      padding: 2.5rem 0;
+      {% elsif show_bottom_margin == 'No' %}
+      padding: 2.5rem 0 0;
+      {% else %}
+      padding: 2.5rem 0;
+      {% endif %}
+      background: {{ background_color | default: widget_settings.background_color | default: 'transparent' }};
+    }
+   .brand-carousel-container {
+        {% if show_container == 'Yes' %}
+          max-width: 1400px;
+          margin-left: auto;
+          margin-right: auto;
+        {% endif %}
+        padding-left: 24px;
+        padding-right: 24px;
+    }
+    .brand-carousel-slide {
+  position: relative;
+  border-radius: 12px;
+  background: #fff;
+  min-height: 100px;
+  text-decoration: none;
+  color: inherit;
+  overflow: hidden;
+
+  box-shadow:
+    0 0 8px rgba(15, 23, 42, 0.06),
+    0 0 16px rgba(15, 23, 42, 0.04);
+
+  transition:
+    transform 0.25s ease,
+    box-shadow 0.25s ease;
+}
+
+/* Hover / Focus */
+.brand-carousel-slide:hover,
+.brand-carousel-slide:focus-visible {
+  transform: translateY(-2px);
+
+  box-shadow:
+    0 4px 12px rgba(15, 23, 42, 0.10),
+    0 8px 24px rgba(15, 23, 42, 0.06);
+}
+
+    /* Brand Carousel - True Carousel Behavior */
+    .widget-brand-carousel {
+      padding: 48px 0;
+      overflow: hidden;
+    }
+    
+    .widget-brand-carousel .brand-carousel-container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+    
+    /* Header */
+    .widget-brand-carousel .brand-carousel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 28px;
+      gap: 16px;
+    }
+    
+    .widget-brand-carousel .brand-carousel-header__text {
+      flex: 1;
+    }
+    
+    .widget-brand-carousel .brand-carousel-header {
+      position: static;
+      z-index: auto;
+    }
+    .widget-brand-carousel .brand-carousel-title {
+      font-size: 1.4rem;
+      font-weight: 500;
+      line-height: 1.3;
+      color: #111;
+      margin: 0;
+      letter-spacing: -0.01em;
+    }
+    
+    .widget-brand-carousel .brand-carousel-subtitle {
+      font-size: 14px;
+      color: #6b7280;
+      margin: 6px 0 0 0;
+    }
+    
+    /* Header Nav Arrows */
+    .widget-brand-carousel .brand-carousel-nav {
+      display: flex;
+      gap: 8px;
+    }
+    
+    .widget-brand-carousel .brand-carousel-arrow {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: 1px solid #e0e0e0;
+      background: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: #333;
+      transition: all 0.2s ease;
+      flex-shrink: 0;
+    }
+    
+    .widget-brand-carousel .brand-carousel-arrow:hover:not(:disabled) {
+      background: #111;
+      color: #fff;
+      border-color: #111;
+    }
+    
+    .widget-brand-carousel .brand-carousel-arrow:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+    }
+    
+    /* Carousel Wrapper with Side Arrows */
+    .widget-brand-carousel .brand-carousel-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    
+    /* Side Navigation Arrows */
+    .widget-brand-carousel .brand-carousel-side-arrow {
+      display: none; /* Hidden by default, shown on desktop */
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      border: none;
+      background: #fff;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.12);
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: #333;
+      transition: all 0.2s ease;
+      flex-shrink: 0;
+      z-index: 10;
+    }
+    
+    .widget-brand-carousel .brand-carousel-side-arrow:hover:not(:disabled) {
+      background: #111;
+      color: #fff;
+      transform: scale(1.05);
+    }
+    
+    .widget-brand-carousel .brand-carousel-side-arrow:disabled {
+      opacity: 0;
+      pointer-events: none;
+    }
+    
+    /* Track Wrapper */
+    .widget-brand-carousel .brand-carousel-track-wrapper {
+      flex: 1;
+      overflow: hidden;
+      position: relative;
+    }
+    
+    /* The Scrolling Track */
+    .widget-brand-carousel .brand-carousel-track {
+      display: flex !important;
+      gap: 20px;
+      overflow-x: auto !important;
+      overflow-y: hidden !important;
+      scroll-snap-type: x mandatory;
+      scroll-behavior: smooth;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+      padding: 4px 0;
+    }
+    
+    .widget-brand-carousel .brand-carousel-track::-webkit-scrollbar {
+      display: none;
+    }
+    
+    /* Individual Slides - Desktop: 6 items */
+    .widget-brand-carousel .brand-carousel-slide {
+      flex: 0 0 calc(16.666% - 17px);
+      min-width: 0;
+      max-width: calc(16.666% - 17px);
+      scroll-snap-align: start;
+      scroll-snap-stop: normal;
+    }
+    
+    /* Brand Item Card */
+    .widget-brand-carousel .brand-carousel-item {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;     
+      background: #fff;      
+      min-height: 100px;
+      text-decoration: none;
+      color: inherit;      
+      overflow: hidden;
+      position: relative;
+    }    
+    
+    
+    .widget-brand-carousel .brand-carousel-item__image {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 60px;
+    }
+    
+    .widget-brand-carousel .brand-carousel-item__image img {
+      max-width: 100%;
+      max-height: 60px;
+      width: auto;
+      height: auto;
+      object-fit: contain;
+    }
+    
+    .widget-brand-carousel .brand-carousel-item__name {
+      font-size: 14px;
+      font-weight: 600;
+      color: #111;
+      text-align: center;
+      line-height: 1.3;
+      word-break: break-word;
+      letter-spacing: -0.01em;
+    }
+    
+    .widget-brand-carousel .brand-carousel-item__name--fallback {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 100%;
+      padding: 0 8px;
+      box-sizing: border-box;
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    /* Dot Indicators */
+    .widget-brand-carousel .brand-carousel-dots {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 20px;
+    }
+    
+    .widget-brand-carousel .brand-carousel-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #d1d5db;
+      border: none;
+      padding: 0;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    
+    .widget-brand-carousel .brand-carousel-dot:hover {
+      background: #9ca3af;
+    }
+    
+    .widget-brand-carousel .brand-carousel-dot.active {
+      background: #111;
+      width: 24px;
+      border-radius: 4px;
+    }
+    
+    /* Desktop: Show side arrows, hide header arrows */
+    @media (min-width: 1025px) {
+      .widget-brand-carousel .brand-carousel-side-arrow {
+        display: flex;
+      }
+      .widget-brand-carousel .brand-carousel-nav {
+        display: none;
+      }
+    }
+    
+    /* Large Tablet: 5 items */
+    @media (max-width: 1200px) {
+      .widget-brand-carousel .brand-carousel-slide {
+        flex: 0 0 calc(20% - 16px);
+        max-width: calc(20% - 16px);
+      }
+    }
+    
+    /* Tablet: 4 items */
+    @media (max-width: 1024px) {
+      .widget-brand-carousel .brand-carousel-slide {
+        flex: 0 0 calc(25% - 15px);
+        max-width: calc(25% - 15px);
+      }
+      .widget-brand-carousel .brand-carousel-track {
+        gap: 20px;
+      }
+    }
+    
+    /* Small Tablet: 3 items */
+    @media (max-width: 768px) {
+      .widget-brand-carousel {
+        padding: 36px 0;
+      }
+      .widget-brand-carousel .brand-carousel-container {
+        padding: 0 16px;
+      }
+      .widget-brand-carousel .brand-carousel-title {
+        font-size: 1.3rem;
+      }
+      .widget-brand-carousel .brand-carousel-track {
+        gap: 12px;
+      }
+      .widget-brand-carousel .brand-carousel-slide {
+        flex: 0 0 calc(33.333% - 8px);
+        max-width: calc(33.333% - 8px);
+      }
+      .widget-brand-carousel .brand-carousel-item {
+        padding: 16px;
+        min-height: 80px;
+      }
+      .widget-brand-carousel .brand-carousel-item__image {
+        height: 45px;
+      }
+      .widget-brand-carousel .brand-carousel-item__image img {
+        max-height: 45px;
+      }
+      .widget-brand-carousel .brand-carousel-arrow {
+        width: 36px;
+        height: 36px;
+      }
+      .widget-brand-carousel .brand-carousel-dots {
+        margin-top: 16px;
+      }
+    }
+    
+    /* Mobile: 2.5 items (partial view for hint) */
+    @media (max-width: 480px) {
+      .widget-brand-carousel .brand-carousel-container {
+        padding: 0 12px;
+      }
+      .widget-brand-carousel .brand-carousel-track {
+        gap: 10px;
+      }
+      .widget-brand-carousel .brand-carousel-slide {
+        flex: 0 0 calc(40% - 6px);
+        max-width: calc(40% - 6px);
+      }
+      .widget-brand-carousel .brand-carousel-item {
+        padding: 12px;
+        min-height: 70px;
+        border-radius: 8px;
+      }
+      .widget-brand-carousel .brand-carousel-item__image {
+        height: 40px;
+      }
+      .widget-brand-carousel .brand-carousel-item__image img {
+        max-height: 40px;
+      }
+      .widget-brand-carousel .brand-carousel-title {
+        font-size: 1.2rem;
+      }
+      .widget-brand-carousel .brand-carousel-item__name {
+        font-size: 12px;
+      }
+    }
+    
+    /* Extra Small: 2 items */
+    @media (max-width: 360px) {
+      .widget-brand-carousel .brand-carousel-slide {
+        flex: 0 0 calc(50% - 5px);
+        max-width: calc(50% - 5px);
+      }
+      .widget-brand-carousel .brand-carousel-track {
+        gap: 8px;
+      }
+    }
+  </style>
+
+  <script>
+  (function() {
+    // Wait for DOM
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initBrandCarousel);
+    } else {
+      initBrandCarousel();
+    }
+    
+    function initBrandCarousel() {
+      const widget = document.querySelector('[data-widget-id="{{ widget.id }}"][data-brand-carousel]');
+      if (!widget) return;
+      
+      const track = widget.querySelector('[data-carousel-track]');
+      const viewport = widget.querySelector('[data-carousel-viewport]');
+      const prevBtns = widget.querySelectorAll('[data-carousel-prev]');
+      const nextBtns = widget.querySelectorAll('[data-carousel-next]');
+      const dotsContainer = widget.querySelector('[data-carousel-dots]');
+      const slides = widget.querySelectorAll('.brand-carousel-slide');
+      
+      if (!track || slides.length === 0) return;
+      
+      // Calculate items per view based on screen width
+      function getItemsPerView() {
+        const width = window.innerWidth;
+        if (width <= 360) return 2;
+        if (width <= 480) return 2.5;
+        if (width <= 768) return 3;
+        if (width <= 1024) return 4;
+        if (width <= 1200) return 5;
+        return 6;
+      }
+      
+      // Calculate number of pages
+      function getPageCount() {
+        const itemsPerView = Math.floor(getItemsPerView());
+        return Math.ceil(slides.length / itemsPerView);
+      }
+      
+      // Get current page based on scroll position
+      function getCurrentPage() {
+        if (!track.scrollWidth || track.scrollWidth <= viewport.clientWidth) return 0;
+        const scrollRatio = track.scrollLeft / (track.scrollWidth - viewport.clientWidth);
+        return Math.round(scrollRatio * (getPageCount() - 1));
+      }
+      
+      // Create dot indicators
+      function createDots() {
+        if (!dotsContainer) return;
+        dotsContainer.innerHTML = '';
+        const pageCount = getPageCount();
+        if (pageCount <= 1) return;
+        
+        for (let i = 0; i < pageCount; i++) {
+          const dot = document.createElement('button');
+          dot.className = 'brand-carousel-dot' + (i === 0 ? ' active' : '');
+          dot.setAttribute('aria-label', 'Go to page ' + (i + 1));
+          dot.addEventListener('click', () => goToPage(i));
+          dotsContainer.appendChild(dot);
+        }
+      }
+      
+      // Update active dot
+      function updateDots() {
+        if (!dotsContainer) return;
+        const dots = dotsContainer.querySelectorAll('.brand-carousel-dot');
+        const currentPage = getCurrentPage();
+        dots.forEach((dot, index) => {
+          dot.classList.toggle('active', index === currentPage);
+        });
+      }
+      
+      // Update arrow states
+      function updateArrows() {
+        const atStart = track.scrollLeft <= 5;
+        const atEnd = track.scrollLeft >= track.scrollWidth - viewport.clientWidth - 5;
+        
+        prevBtns.forEach(btn => {
+          btn.disabled = atStart;
+        });
+        nextBtns.forEach(btn => {
+          btn.disabled = atEnd;
+        });
+      }
+      
+      // Navigate to specific page
+      function goToPage(pageIndex) {
+        const itemsPerView = Math.floor(getItemsPerView());
+        const slide = slides[0];
+        if (!slide) return;
+        
+        const gap = parseFloat(getComputedStyle(track).gap) || 20;
+        const slideWidth = slide.offsetWidth + gap;
+        const scrollTo = pageIndex * itemsPerView * slideWidth;
+        
+        track.scrollTo({ left: scrollTo, behavior: 'smooth' });
+      }
+      
+      // Scroll by items
+      function scrollByItems(direction) {
+        const itemsPerView = Math.floor(getItemsPerView());
+        const slide = slides[0];
+        if (!slide) return;
+        
+        const gap = parseFloat(getComputedStyle(track).gap) || 20;
+        const scrollAmount = (slide.offsetWidth + gap) * Math.max(1, itemsPerView - 1);
+        
+        track.scrollBy({ left: direction * scrollAmount, behavior: 'smooth' });
+      }
+      
+      // Event listeners
+      prevBtns.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          scrollByItems(-1);
+        });
+      });
+      
+      nextBtns.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          scrollByItems(1);
+        });
+      });
+      
+      // Track scroll events
+      let scrollTimeout;
+      track.addEventListener('scroll', () => {
+        clearTimeout(scrollTimeout);
+        scrollTimeout = setTimeout(() => {
+          updateDots();
+          updateArrows();
+        }, 50);
+      }, { passive: true });
+      
+      // Handle resize
+      let resizeTimeout;
+      window.addEventListener('resize', () => {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(() => {
+          createDots();
+          updateArrows();
+        }, 200);
+      });
+      
+      // Initialize
+      createDots();
+      updateArrows();
+    }
+  })();
+  </script>
+</section>

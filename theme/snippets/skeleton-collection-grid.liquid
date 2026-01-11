@@ -1,0 +1,114 @@
+{% comment %}
+  Skeleton Loader for Collection/Category Grid
+  Parameters:
+    - count: Number of skeleton cards to display (default: 6)
+{% endcomment %}
+
+{% assign skeletonCount = count | default: 6 %}
+
+<div class="collections-grid skeleton-grid">
+  {% if skeletonCount >= 1 %}
+    <div class="collection-card skeleton-card">
+      <div class="collection-image-container skeleton-image">
+        <div class="skeleton-shimmer"></div>
+      </div>
+      <div class="collection-content">
+        <div class="skeleton-text skeleton-title"></div>
+        <div class="skeleton-text skeleton-description"></div>
+        <div class="skeleton-text skeleton-meta"></div>
+      </div>
+    </div>
+  {% endif %}
+  {% if skeletonCount >= 2 %}
+    <div class="collection-card skeleton-card">
+      <div class="collection-image-container skeleton-image">
+        <div class="skeleton-shimmer"></div>
+      </div>
+      <div class="collection-content">
+        <div class="skeleton-text skeleton-title"></div>
+        <div class="skeleton-text skeleton-description"></div>
+        <div class="skeleton-text skeleton-meta"></div>
+      </div>
+    </div>
+  {% endif %}
+  {% if skeletonCount >= 3 %}
+    <div class="collection-card skeleton-card">
+      <div class="collection-image-container skeleton-image">
+        <div class="skeleton-shimmer"></div>
+      </div>
+      <div class="collection-content">
+        <div class="skeleton-text skeleton-title"></div>
+        <div class="skeleton-text skeleton-description"></div>
+        <div class="skeleton-text skeleton-meta"></div>
+      </div>
+    </div>
+  {% endif %}
+  {% if skeletonCount >= 4 %}
+    <div class="collection-card skeleton-card">
+      <div class="collection-image-container skeleton-image">
+        <div class="skeleton-shimmer"></div>
+      </div>
+      <div class="collection-content">
+        <div class="skeleton-text skeleton-title"></div>
+        <div class="skeleton-text skeleton-description"></div>
+        <div class="skeleton-text skeleton-meta"></div>
+      </div>
+    </div>
+  {% endif %}
+  {% if skeletonCount >= 5 %}
+    <div class="collection-card skeleton-card">
+      <div class="collection-image-container skeleton-image">
+        <div class="skeleton-shimmer"></div>
+      </div>
+      <div class="collection-content">
+        <div class="skeleton-text skeleton-title"></div>
+        <div class="skeleton-text skeleton-description"></div>
+        <div class="skeleton-text skeleton-meta"></div>
+      </div>
+    </div>
+  {% endif %}
+  {% if skeletonCount >= 6 %}
+    <div class="collection-card skeleton-card">
+      <div class="collection-image-container skeleton-image">
+        <div class="skeleton-shimmer"></div>
+      </div>
+      <div class="collection-content">
+        <div class="skeleton-text skeleton-title"></div>
+        <div class="skeleton-text skeleton-description"></div>
+        <div class="skeleton-text skeleton-meta"></div>
+      </div>
+    </div>
+  {% endif %}
+</div>
+
+<style>
+.skeleton-card .collection-image-container {
+  background: #f0f0f0;
+  position: relative;
+  overflow: hidden;
+  aspect-ratio: 1;
+  border-radius: 12px;
+}
+
+.skeleton-card .collection-content {
+  padding: 1rem 0;
+}
+
+.skeleton-card .skeleton-title {
+  width: 80%;
+  height: 20px;
+  margin-bottom: 8px;
+}
+
+.skeleton-card .skeleton-description {
+  width: 100%;
+  height: 14px;
+  margin-bottom: 6px;
+}
+
+.skeleton-card .skeleton-meta {
+  width: 50%;
+  height: 12px;
+}
+</style>
+

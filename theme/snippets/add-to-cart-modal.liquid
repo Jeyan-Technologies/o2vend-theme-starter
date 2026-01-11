@@ -1,0 +1,484 @@
+{% comment %}
+  Add to Cart Modal
+  Displays product details for confirmation before adding to cart
+{% endcomment %}
+
+<div class="add-to-cart-modal" id="add-to-cart-modal" aria-hidden="true">
+  <div class="add-to-cart-modal-overlay" data-add-to-cart-modal-close></div>
+  <div class="add-to-cart-modal-panel" role="dialog" aria-label="Add to cart confirmation">
+    <button class="add-to-cart-modal-close" aria-label="Close" data-add-to-cart-modal-close>
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="18" y1="6" x2="6" y2="18"></line>
+        <line x1="6" y1="6" x2="18" y2="18"></line>
+      </svg>
+    </button>
+    
+    <div class="add-to-cart-modal-content">
+      <!-- Product Image -->
+      <div class="add-to-cart-modal-image-container">
+        <img id="add-to-cart-modal-image" src="" alt="" class="add-to-cart-modal-image">
+      </div>
+      
+      <!-- Product Details -->
+      <div class="add-to-cart-modal-details">
+        <h3 class="add-to-cart-modal-title" id="add-to-cart-modal-title"></h3>
+        
+        <!-- Price (shown after title, before variants) -->
+        <div class="add-to-cart-modal-price">
+          <span class="add-to-cart-modal-price-current" id="add-to-cart-modal-price-current"></span>
+          <span class="add-to-cart-modal-price-original" id="add-to-cart-modal-price-original" style="display: none;"></span>
+        </div>
+        
+        <!-- Variant Option Selectors (Buttons/Swatches) -->
+        <div class="add-to-cart-modal-variant-options" id="add-to-cart-modal-variant-options"></div>
+        
+        <!-- Combinations -->
+        <div id="add-to-cart-modal-comboContainer"></div>
+        <div id="add-to-cart-modal-combinationValidationMsg"></div>
+        
+        <!-- Subscriptions -->
+        <div class="add-to-cart-modal-subscription-option" id="add-to-cart-modal-subscription-option" style="display: none;">
+          <div id="add-to-cart-modal-subscriptionInfoMessage"></div>
+          <div id="add-to-cart-modal-subscriptionPlanContainer" class="subscription-list"></div>
+          <div id="add-to-cart-modal-frequencyContainer"></div>
+          <div class="sub-modern-box">
+            <div class="sub-row">
+              <span class="sub-label">Shipping</span>
+              <select id="add-to-cart-modal-shippingMethod" class="sub-input" aria-label="Select shipping method">
+                <option value="">Select</option>
+              </select>
+              <div id="add-to-cart-modal-shippingMethodDetails"></div>
+            </div>
+            <div class="sub-row">
+              <span class="sub-label">Start Date <span class="required-indicator">*</span></span>
+              <div class="flex-column">
+                <input type="date" id="add-to-cart-modal-startDate" class="sub-input" aria-label="Subscription start date (required)" aria-required="true">
+              </div>
+            </div>
+            <div class="sub-row">
+              <span class="sub-label">End Date <span class="required-indicator">*</span></span>
+              <div class="flex-column">
+                <input type="date" id="add-to-cart-modal-endDate" class="sub-input" aria-label="Subscription end date (required)" aria-required="true">
+              </div>
+            </div>
+            <div class="sub-row">
+              <span class="sub-label">Deliverables</span>
+              <span class="deliver-pill liveOrderCount">0</span>
+            </div>
+            <span id="add-to-cart-modal-subscriptionValidationMsg"></span>
+          </div>
+        </div>
+        
+        <!-- Quantity Selector -->
+        <div class="add-to-cart-modal-quantity">
+          <label class="add-to-cart-modal-quantity-label">QUANTITY:</label>
+          <div class="add-to-cart-modal-quantity-controls">
+            <button type="button" class="add-to-cart-modal-qty-btn" id="add-to-cart-modal-qty-decrease" aria-label="Decrease quantity">−</button>
+            <input type="number" class="add-to-cart-modal-qty-input" id="add-to-cart-modal-qty-input" value="1" min="1" max="99" aria-label="Quantity">
+            <button type="button" class="add-to-cart-modal-qty-btn" id="add-to-cart-modal-qty-increase" aria-label="Increase quantity">+</button>
+          </div>
+        </div>
+        
+        <!-- Add to Cart Button -->
+        <button type="button" class="add-to-cart-modal-confirm-btn" id="add-to-cart-modal-confirm-btn">
+          ADD TO CART
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.add-to-cart-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+#add-to-cart-modal.add-to-cart-modal.active {
+  display: flex;
+}
+
+#add-to-cart-modal .add-to-cart-modal-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+}
+
+.add-to-cart-modal-panel {
+  position: relative;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  width: 100%;
+  max-width: 900px;
+  max-height: 90vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+#add-to-cart-modal .add-to-cart-modal-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #6b7280;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+}
+
+#add-to-cart-modal .add-to-cart-modal-close:hover {
+  color: #111827;
+  background: rgba(0, 0, 0, 0.05);
+}
+
+#add-to-cart-modal .add-to-cart-modal-content {
+  display: flex;
+  flex-direction: row;
+  gap: 30px;
+  align-items: flex-start;
+  padding: 24px;
+}
+
+#add-to-cart-modal .add-to-cart-modal-image-container {
+  flex: 0 0 45% !important;
+  max-width: 45% !important;
+  width: 45% !important;
+  aspect-ratio: 1;
+  background: #f5f5f5;
+  border-radius: 12px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  margin-bottom: 0 !important;
+}
+
+#add-to-cart-modal .add-to-cart-modal-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+#add-to-cart-modal .add-to-cart-modal-details {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding-left: 0;
+}
+
+#add-to-cart-modal .add-to-cart-modal-title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: #111827;
+  line-height: 1.4;
+}
+
+#add-to-cart-modal .add-to-cart-modal-variant-options {
+  margin: 16px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Use same classes as product page for consistency - scoped to modal */
+#add-to-cart-modal .add-to-cart-modal-variant-options .product-option {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+#add-to-cart-modal .add-to-cart-modal-variant-options .option-label {
+  font-weight: 500;
+  color: #111;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+
+#add-to-cart-modal .add-to-cart-modal-variant-options .option-values {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+#add-to-cart-modal .add-to-cart-modal-variant-options .product-option-btn,
+#add-to-cart-modal .add-to-cart-modal-variant-options .option-value {
+  border: 1px solid #cccccc;
+  background: white;
+  padding: 8px 14px;
+  margin: 0;
+  border-radius: 6px;
+  cursor: pointer;
+  position: relative;
+  z-index: 10;
+  pointer-events: auto;
+  transition: all 0.2s ease;
+  font-size: 14px;
+  font-weight: 500;
+  color: #111;
+  font-family: inherit;
+  min-width: auto;
+}
+
+#add-to-cart-modal .add-to-cart-modal-variant-options .product-option-btn.selected,
+#add-to-cart-modal .add-to-cart-modal-variant-options .option-value.selected {
+  background: #111827 !important;
+  color: white !important;
+  border-color: #111827 !important;
+}
+
+#add-to-cart-modal .add-to-cart-modal-variant-options .product-option-btn:hover:not(:disabled):not(.selected),
+#add-to-cart-modal .add-to-cart-modal-variant-options .option-value:hover:not(:disabled):not(.selected) {
+  border-color: #111827;
+  background: #f9fafb;
+}
+
+#add-to-cart-modal .add-to-cart-modal-variant-options .product-option-btn[data-display-type="color"],
+#add-to-cart-modal .add-to-cart-modal-variant-options .option-value-color {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  font-size: 0;
+  padding: 0;
+  border: 2px solid #aaa;
+  background-color: currentColor;
+  min-width: 32px;
+}
+
+#add-to-cart-modal .add-to-cart-modal-variant-options .product-option-btn[data-display-type="color"].selected,
+#add-to-cart-modal .add-to-cart-modal-variant-options .option-value-color.selected {
+  border: 2px solid #111827 !important;
+}
+
+/* Screen reader text for color swatches */
+#add-to-cart-modal .add-to-cart-modal-variant-options .sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+#add-to-cart-modal .add-to-cart-modal-variant-options .product-option-btn:disabled,
+#add-to-cart-modal .add-to-cart-modal-variant-options .option-value:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+#add-to-cart-modal .add-to-cart-modal-price {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 24px;
+  font-weight: 700;
+  color: #111827;
+}
+
+#add-to-cart-modal .add-to-cart-modal-price-current {
+  color: #111827;
+}
+
+#add-to-cart-modal .add-to-cart-modal-price-original {
+  font-size: 18px;
+  color: #9ca3af;
+  text-decoration: line-through;
+  font-weight: 400;
+}
+
+#add-to-cart-modal .add-to-cart-modal-quantity {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+#add-to-cart-modal .add-to-cart-modal-quantity-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: #111;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+#add-to-cart-modal .add-to-cart-modal-quantity-controls {
+  display: flex;
+  align-items: center;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+#add-to-cart-modal .add-to-cart-modal-qty-btn {
+  background: white;
+  border: none;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 20px;
+  font-weight: 600;
+  color: #111827;
+  transition: background 0.2s ease;
+  border-right: 1px solid #e5e7eb;
+}
+
+.add-to-cart-modal-qty-btn:last-child {
+  border-right: none;
+  border-left: 1px solid #e5e7eb;
+}
+
+.add-to-cart-modal-qty-btn:hover:not(:disabled) {
+  background: #f9fafb;
+}
+
+.add-to-cart-modal-qty-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+#add-to-cart-modal .add-to-cart-modal-qty-input {
+  width: 60px;
+  height: 40px;
+  border: none;
+  text-align: center;
+  font-size: 16px;
+  font-weight: 600;
+  color: #111827;
+  background: white;
+  -moz-appearance: textfield;
+}
+
+.add-to-cart-modal-qty-input::-webkit-outer-spin-button,
+.add-to-cart-modal-qty-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+#add-to-cart-modal .add-to-cart-modal-confirm-btn {
+  width: 100%;
+  padding: 14px 24px;
+  background: #111827;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  margin-top: 8px;
+}
+
+.add-to-cart-modal-confirm-btn:hover:not(:disabled) {
+  background: #374151;
+}
+
+.add-to-cart-modal-confirm-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Mobile adjustments - switch back to vertical layout on small screens */
+@media (max-width: 768px) {
+  #add-to-cart-modal .add-to-cart-modal-content {
+    flex-direction: column !important;
+    gap: 20px;
+  }
+  
+  #add-to-cart-modal .add-to-cart-modal-image-container {
+    flex: 1 !important;
+    max-width: 100% !important;
+    width: 100% !important;
+  }
+  
+  #add-to-cart-modal .add-to-cart-modal-details {
+    padding-left: 0;
+    width: 100%;
+  }
+}
+
+@media (max-width: 640px) {
+  #add-to-cart-modal.add-to-cart-modal {
+    padding: 10px;
+  }
+  
+  #add-to-cart-modal .add-to-cart-modal-panel {
+    max-width: 100%;
+    border-radius: 12px;
+  }
+  
+  #add-to-cart-modal .add-to-cart-modal-content {
+    padding: 20px;
+    flex-direction: column !important;
+  }
+  
+  #add-to-cart-modal .add-to-cart-modal-title {
+    font-size: 18px;
+  }
+  
+  #add-to-cart-modal .add-to-cart-modal-price {
+    font-size: 20px;
+  }
+  
+  #add-to-cart-modal .add-to-cart-modal-price-original {
+    font-size: 16px;
+  }
+  
+  #add-to-cart-modal .add-to-cart-modal-quantity {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  
+  #add-to-cart-modal .add-to-cart-modal-confirm-btn {
+    padding: 12px 20px;
+    font-size: 15px;
+  }
+}
+
+@media (max-width: 480px) {
+  #add-to-cart-modal .add-to-cart-modal-content {
+    padding: 16px;
+    flex-direction: column !important;
+  }
+  
+  #add-to-cart-modal .add-to-cart-modal-image-container {
+    margin-bottom: 16px;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+  
+  #add-to-cart-modal .add-to-cart-modal-title {
+    font-size: 16px;
+  }
+  
+  #add-to-cart-modal .add-to-cart-modal-price {
+    font-size: 18px;
+  }
+}
+</style>
+

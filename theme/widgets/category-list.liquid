@@ -1,0 +1,340 @@
+{% liquid
+  assign widget_settings = widget.settings
+  assign widget_data = widget.data
+
+  comment
+    Dynamic Widget: Categories come from widget_data.categories (enriched by WidgetService)
+    Settings come from widget_settings
+  endcomment
+  assign categories = widget_data.categories | default: widget_data.Categories
+  assign columns = widget_settings.columns | default: 4
+  assign title = widget_settings.title
+  assign subtitle = widget_settings.subtitle
+  assign show_widget_title_raw = widget_settings.showWidgetTitle | default: 'Yes'
+  if show_widget_title_raw == null or show_widget_title_raw == blank or show_widget_title_raw == 'null'
+    assign show_widget_title = true
+  else
+    if show_widget_title_raw == 'Yes'
+      assign show_widget_title = true
+    elsif show_widget_title_raw == true
+      assign show_widget_title = true
+    else
+      assign show_widget_title = false
+    endif
+  endif
+  assign widget_title_alignment_raw = widget_settings.widgetTitleAlignment | default: 'center'
+  assign widget_title_alignment = widget_title_alignment_raw | downcase
+  if widget_title_alignment != 'left' and widget_title_alignment != 'right' and widget_title_alignment != 'center'
+    assign widget_title_alignment = 'center'
+  endif
+  assign show_counts = widget_settings.showProductCount | default: false
+  assign background_color = widget_settings.backgroundColor
+  assign text_color = widget_settings.textColor
+%}
+
+<section class="widget widget-category-list" data-widget-id="{{ widget.id }}"{% if background_color and background_color != 'null' %} style="background-color: {{ background_color }};"{% endif %}>
+  <div class="widget-category-list__inner">
+    {% if show_widget_title %}
+      {% if title or subtitle %}
+      <header class="widget-header" style="text-align: {{ widget_title_alignment }};{% if text_color and text_color != 'null' %} color: {{ text_color }};{% endif %}">
+        {% if title %}
+          <h2 class="widget-title">{{ title }}</h2>
+        {% endif %}
+        {% if subtitle %}
+          <p class="widget-subtitle">{{ subtitle }}</p>
+        {% endif %}
+      </header>
+    {% endif %}
+    {% endif %}
+
+    {% if categories and categories.size > 0 %}
+      <div class="widget-category-list__grid widget-category-list__grid--{{ columns }}-col">
+        {% for category in categories %}
+          {% comment %} Extract category data with fallbacks for different API formats {% endcomment %}
+          {% assign cat_name = category.name | default: category.Name | default: category.title | default: category.Title %}
+          {% assign cat_slug = category.slug | default: category.Slug | default: category.handle | default: category.Handle %}
+          {% assign cat_id = category.id | default: category.Id | default: category.categoryId | default: category.CategoryId %}
+          {% assign cat_description = category.description | default: category.Description %}
+          {% assign cat_product_count = category.productCount | default: category.ProductCount %}
+          
+          {% comment %} Build category URL - slug is already a complete URL {% endcomment %}
+          {% assign cat_url = category.url | default: category.Url | default: category.link | default: category.Link %}
+          {% if cat_url == blank %}
+            {% if cat_slug and cat_slug != blank %}
+              {% assign cat_url = cat_slug %}
+            {% else %}
+              {% assign cat_url = '#' %}
+            {% endif %}
+          {% endif %}
+          
+          {% comment %} Get category image with fallbacks {% endcomment %}
+          {% assign cat_image = nil %}
+          {% if category.thumbnailImage and category.thumbnailImage.url %}
+            {% assign cat_image = category.thumbnailImage.url %}
+          {% elsif category.ThumbnailImage and category.ThumbnailImage.Url %}
+            {% assign cat_image = category.ThumbnailImage.Url %}
+          {% elsif category.bannerImage and category.bannerImage.url %}
+            {% assign cat_image = category.bannerImage.url %}
+          {% elsif category.BannerImage and category.BannerImage.Url %}
+            {% assign cat_image = category.BannerImage.Url %}
+          {% elsif category.thumbnailImage and category.thumbnailImage != blank %}
+            {% assign cat_image = category.thumbnailImage %}
+          {% elsif category.ThumbnailImage and category.ThumbnailImage != blank %}
+            {% assign cat_image = category.ThumbnailImage %}
+          {% elsif category.bannerImage and category.bannerImage != blank %}
+            {% assign cat_image = category.bannerImage %}
+          {% elsif category.BannerImage and category.BannerImage != blank %}
+            {% assign cat_image = category.BannerImage %}
+          {% elsif category.image %}
+            {% assign cat_image = category.image %}
+          {% elsif category.Image %}
+            {% assign cat_image = category.Image %}
+          {% endif %}
+          
+          <article class="widget-category-list__item">
+            <a href="{{ cat_url }}" class="widget-category-list__link">
+              <div class="widget-category-list__media">
+                {% if cat_image != blank and cat_image != nil and cat_image != 'null' %}
+                  <img src="{{ cat_image }}" alt="{{ cat_name }}" width="300" height="300" loading="lazy" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                  <span class="widget-category-list__placeholder widget-category-list__placeholder--fallback" style="display: none;" aria-hidden="true">
+                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                      <path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z"/>
+                    </svg>
+                  </span>
+                {% else %}
+                  <span class="widget-category-list__placeholder" aria-hidden="true">
+                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                      <path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z"/>
+                    </svg>
+                  </span>
+                {% endif %}
+              </div>
+              <div class="widget-category-list__content">
+                <h3>{{ cat_name }}</h3>
+                {% if show_counts and cat_product_count %}
+                  <p class="widget-category-list__count">{{ cat_product_count }} {{ 'products' | t }}</p>
+                {% elsif cat_description and cat_description != blank %}
+                  <p class="widget-category-list__description">{{ cat_description | truncate: 60 }}</p>
+                {% endif %}
+              </div>
+            </a>
+          </article>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="widget-empty">
+        <p>{{ widget_settings.empty_state | default: 'Categories will appear here soon.' }}</p>
+      </div>
+    {% endif %}
+  </div>
+
+  <style>
+    .widget-category-list {
+      padding: 48px 0;
+      background: transparent;
+      position: relative;
+    }
+    
+    .widget-category-list__inner {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+    
+    .widget-category-list .widget-header {
+      text-align: center;
+      margin-bottom: 32px;
+      position: static;
+      z-index: auto;
+    }
+    
+    .widget-category-list .widget-title {
+      font-size: 1.4rem;
+      font-weight: 500;
+      line-height: 1.3;
+      color: #111;
+      margin: 0 0 8px 0;
+      letter-spacing: -0.01em;
+    }
+    
+    .widget-category-list .widget-subtitle {
+      font-size: 14px;
+      color: #6b7280;
+      margin: 0;
+    }
+    
+    .widget-category-list__grid {
+      display: grid;
+      gap: 24px;
+    }
+    
+    .widget-category-list__grid--2-col { grid-template-columns: repeat(2, 1fr); }
+    .widget-category-list__grid--3-col { grid-template-columns: repeat(3, 1fr); }
+    .widget-category-list__grid--4-col { grid-template-columns: repeat(4, 1fr); }
+    .widget-category-list__grid--5-col { grid-template-columns: repeat(5, 1fr); }
+    .widget-category-list__grid--6-col { grid-template-columns: repeat(6, 1fr); }
+    
+    .widget-category-list__item {
+      background: #fff;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+      transition: transform 0.25s ease, box-shadow 0.25s ease;
+    }
+    
+    .widget-category-list__item:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 24px rgba(15, 23, 42, 0.12);
+    }
+    
+    .widget-category-list__link {
+      display: block;
+      text-decoration: none;
+      color: inherit;
+    }
+    
+    .widget-category-list__media {
+      aspect-ratio: 4 / 3;
+      overflow: hidden;
+      position: relative;
+      background: #f5f5f5;
+    }
+    
+    .widget-category-list__media img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.3s ease;
+    }
+    
+    .widget-category-list__item:hover .widget-category-list__media img {
+      transform: scale(1.05);
+    }
+    
+    .widget-category-list__placeholder {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #f0f0f0 0%, #e8e8e8 100%);
+      color: #9ca3af;
+    }
+    
+    .widget-category-list__placeholder--fallback {
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+    
+    .widget-category-list__content {
+      padding: 16px;
+    }
+    
+    .widget-category-list__content h3 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 600;
+      color: #111;
+      line-height: 1.3;
+    }
+    
+    .widget-category-list__count {
+      margin: 6px 0 0;
+      color: #6b7280;
+      font-size: 13px;
+    }
+    
+    .widget-category-list__description {
+      margin: 6px 0 0;
+      color: #6b7280;
+      font-size: 13px;
+      line-height: 1.4;
+    }
+    
+    .widget-category-list .widget-empty {
+      text-align: center;
+      padding: 60px 24px;
+      color: #6b7280;
+    }
+    
+    /* Tablet: 3 columns for 4+ col layouts */
+    @media screen and (max-width: 1024px) {
+      .widget-category-list__grid--4-col,
+      .widget-category-list__grid--5-col,
+      .widget-category-list__grid--6-col {
+        grid-template-columns: repeat(3, 1fr);
+      }
+      .widget-category-list__grid {
+        gap: 20px;
+      }
+    }
+    
+    /* Small Tablet: 2 columns */
+    @media screen and (max-width: 768px) {
+      .widget-category-list {
+        padding: 36px 0;
+      }
+      .widget-category-list__inner {
+        padding: 0 16px;
+      }
+      .widget-category-list .widget-header {
+        margin-bottom: 24px;
+      }
+      .widget-category-list .widget-title {
+        font-size: 1.3rem;
+      }
+      .widget-category-list__grid,
+      .widget-category-list__grid--3-col,
+      .widget-category-list__grid--4-col,
+      .widget-category-list__grid--5-col,
+      .widget-category-list__grid--6-col {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
+      }
+      .widget-category-list__content {
+        padding: 12px;
+      }
+      .widget-category-list__content h3 {
+        font-size: 14px;
+      }
+    }
+    
+    /* Mobile: 2 columns with smaller cards */
+    @media screen and (max-width: 480px) {
+      .widget-category-list__inner {
+        padding: 0 12px;
+      }
+      .widget-category-list__grid {
+        gap: 12px;
+      }
+      .widget-category-list__item {
+        border-radius: 8px;
+      }
+      .widget-category-list__content {
+        padding: 10px;
+      }
+      .widget-category-list__content h3 {
+        font-size: 13px;
+      }
+      .widget-category-list__count,
+      .widget-category-list__description {
+        font-size: 12px;
+      }
+      .widget-category-list .widget-title {
+        font-size: 1.2rem;
+      }
+    }
+    
+    /* Extra small: still 2 columns */
+    @media screen and (max-width: 360px) {
+      .widget-category-list__grid {
+        gap: 8px;
+      }
+      .widget-category-list__content {
+        padding: 8px;
+      }
+    }
+  </style>
+</section>
+

@@ -1,0 +1,812 @@
+{% comment %}
+  Mega Menu Snippet
+  Displays a full-width mega menu with support for nested items
+  Parameters:
+    - menu: The menu object with items array (required)
+  Usage:
+    {% render 'snippets/mega-menu', menu: mainMenu %}
+    {% render 'snippets/mega-menu', menu: footerMenu %}
+{% endcomment %}
+{% comment %}
+  Header Menu Widget - FINAL FIX
+  Prevents duplicate menus and works on all pages
+{% endcomment %}
+
+
+{% comment %}Desktop Navigation Menu{% endcomment %}
+<nav class="header-menu-nav" data-header-menu-nav role="navigation" aria-label="Main navigation"
+  {% if menu and menu.items and menu.items.size > 0 %}data-server-menu="true"{% endif %}>
+  <div class="header-menu-nav__loading" data-menu-loading style="display: none;">
+    <span>Loading menu...</span>
+  </div>
+  <div class="header-menu-nav__error" data-menu-error style="display: none;">
+    <span>Menu items unavailable</span>
+  </div>
+  <ul class="header-menu-nav__list" data-menu-list>
+    {% if menu and menu.items and menu.items.size > 0 %}
+      {% for item in menu.items %}
+        <li class="header-menu-nav__item {% if item.childItems and item.childItems.size > 0 %}has-children{% endif %}">
+          <a href="{{ item.link | default: '#' }}" class="header-menu-nav__link" aria-label="{{ item.name | default: item.title }}">{{ item.name | default: item.title }}</a>
+          {% if item.childItems and item.childItems.size > 0 %}
+            <ul class="header-menu-nav__submenu">
+              {% for child in item.childItems %}
+                <li class="header-menu-nav__submenu-item"><a href="{{ child.link | default: '#' }}" class="header-menu-nav__submenu-link">{{ child.name | default: child.title }}</a></li>
+              {% endfor %}
+            </ul>
+          {% endif %}
+        </li>
+      {% endfor %}
+    {% endif %}
+  </ul>
+</nav>
+
+{% comment %}Mobile Navigation Drawer{% endcomment %}
+<div class="header-menu-nav__mobile-drawer" id="header-menu-mobile-drawer" aria-hidden="true">
+  <div class="header-menu-nav__mobile-drawer-content">
+    <div class="header-menu-nav__mobile-drawer-header">
+      <h2 class="header-menu-nav__mobile-drawer-title">Menu</h2>
+      <button type="button" class="header-menu-nav__mobile-drawer-close" aria-label="Close menu" data-header-menu-close>
+        <svg class="header-menu-nav__drawer-close-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+    <nav class="header-menu-nav__mobile-drawer-nav" role="navigation" aria-label="Mobile navigation">
+      <ul class="header-menu-nav__mobile-drawer-list" data-mobile-menu-list>
+        {% if menu and menu.items and menu.items.size > 0 %}
+          {% for item in menu.items %}
+            <li class="header-menu-nav__mobile-drawer-item {% if item.childItems and item.childItems.size > 0 %}has-children{% endif %}">
+              <a href="{{ item.link | default: '#' }}" class="header-menu-nav__mobile-drawer-link">{{ item.name | default: item.title }}</a>
+              {% if item.childItems and item.childItems.size > 0 %}
+                <ul class="header-menu-nav__mobile-drawer-sublist">
+                  {% for child in item.childItems %}
+                    <li class="header-menu-nav__mobile-drawer-subitem"><a href="{{ child.link | default: '#' }}" class="header-menu-nav__mobile-drawer-sublink">{{ child.name | default: child.title }}</a></li>
+                  {% endfor %}
+                </ul>
+              {% endif %}
+            </li>
+          {% endfor %}
+        {% endif %}
+      </ul>
+    </nav>
+  </div>
+</div>
+
+<style>
+  /* Menu Navigation Styles */
+  .header-menu-nav {
+    flex: 1 1 auto;
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    min-width: 0;
+    width: 100%;
+  }
+  
+  @media (max-width: 768px) {
+    .header-menu-nav {
+      display: none !important;
+    }
+  }
+
+  .header-menu-nav__loading,
+  .header-menu-nav__error {
+    padding: 0.5rem 0;
+    color: #000;
+    font-size: 1rem;
+    opacity: 0.6;
+  }
+
+  .header-menu-nav__list {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .header-menu-nav__item {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+
+  .header-menu-nav__link {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1, 0.25rem);
+    color: var(--menu-text, var(--header-text, #000));
+    text-decoration: none;
+    font-size: var(--text-base, 1rem);
+    font-weight: var(--font-weight-medium, 500);
+    line-height: var(--leading-normal, 1.5);
+    padding: var(--space-2, 0.5rem) 0;
+    transition: color var(--transition-fast, 150ms ease);
+    position: relative;
+    white-space: nowrap;
+  }
+
+  .header-menu-nav__link:hover {
+    color: #333;
+  }
+
+  .header-menu-nav__item.has-children .header-menu-nav__link::after {
+    content: '';
+    display: inline-block;
+    width: 0;
+    height: 0;
+    border-left: 0.25rem solid transparent;
+    border-right: 0.25rem solid transparent;
+    border-top: 0.3125rem solid #000;
+    margin-left: 0.25rem;
+  }
+
+  .header-menu-nav__submenu {
+    position: absolute;
+    top: calc(100% + 0.5rem);
+    left: 0;
+    display: none;
+    flex-direction: column;
+    background: #fff;
+    padding: 0.5rem 0;
+    border-radius: 8px;
+    box-shadow: 0 1rem 1.5rem rgba(0, 0, 0, 0.1);
+    min-width: 12.5rem;
+    list-style: none;
+    margin: 0;
+    z-index: 100;
+    border: 0.125rem solid rgba(0, 0, 0, 0.08);
+  }
+
+  .header-menu-nav__item.has-children:hover .header-menu-nav__submenu {
+    display: flex;
+  }
+
+  .header-menu-nav__submenu-link {
+    display: block;
+    padding: 0.625rem 1.25rem;
+    color: #000;
+    text-decoration: none;
+    font-size: 0.875rem;
+    transition: background-color 150ms ease;
+  }
+
+  .header-menu-nav__submenu-link:hover {
+    background-color: rgba(0, 0, 0, 0.04);
+  }
+
+  /* Mobile Drawer - Only visible on mobile */
+  @media (max-width: 768px) {
+    /* Ensure drawer is visible even if parent is hidden - use fixed positioning to escape parent */
+    .site-header__bottom-row .header-menu-nav__mobile-drawer,
+    .header-menu-nav__mobile-drawer {
+      position: fixed !important;
+      top: 0 !important;
+      left: 0 !important;
+      right: 0 !important;
+      bottom: 0 !important;
+      width: 100% !important;
+      height: 100vh !important;
+      background-color: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(2px);
+      z-index: 9999 !important;
+      pointer-events: none;
+      display: block !important;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 300ms ease, visibility 300ms ease;
+      margin: 0 !important;
+      padding: 0 !important;
+    }
+    
+    .site-header__bottom-row .header-menu-nav__mobile-drawer.active,
+    .header-menu-nav__mobile-drawer.active {
+      pointer-events: auto !important;
+      opacity: 1 !important;
+      visibility: visible !important;
+    }
+
+    .header-menu-nav__mobile-drawer.active {
+      pointer-events: auto;
+      opacity: 1 !important;
+      visibility: visible !important;
+    }
+
+    .header-menu-nav__mobile-drawer-content {
+      position: absolute !important;
+      top: 0 !important;
+      left: 0 !important;
+      width: 280px !important;
+      max-width: 85vw !important;
+      height: 100% !important;
+      background-color: #fff !important;
+      padding: 1.5rem !important;
+      overflow-y: auto !important;
+      transform: translateX(-100%);
+      transition: transform 300ms ease;
+      box-shadow: 0.125rem 0 0.5rem rgba(0, 0, 0, 0.15);
+      display: flex !important;
+      flex-direction: column !important;
+      margin: 0 !important;
+    }
+
+    .header-menu-nav__mobile-drawer.active .header-menu-nav__mobile-drawer-content {
+      transform: translateX(0) !important;
+    }
+
+    .header-menu-nav__mobile-drawer-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.5rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 0.125rem solid rgba(0, 0, 0, 0.08);
+    }
+
+    .header-menu-nav__mobile-drawer-title {
+      font-size: 1.125rem;
+      font-weight: 600;
+      margin: 0;
+    }
+
+    .header-menu-nav__mobile-drawer-close {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 2.5rem;
+      height: 2.5rem;
+      background: none;
+      border: none;
+      cursor: pointer;
+      border-radius: 0.25rem;
+    }
+
+    .header-menu-nav__mobile-drawer-close:hover {
+      background-color: rgba(0, 0, 0, 0.04);
+    }
+
+    .header-menu-nav__drawer-close-icon {
+      width: 1.5rem;
+      height: 1.5rem;
+    }
+
+    .header-menu-nav__mobile-drawer-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+
+    .header-menu-nav__mobile-drawer-item {
+      border-bottom: 0.125rem solid rgba(0, 0, 0, 0.08);
+    }
+
+    .header-menu-nav__mobile-drawer-link {
+      display: block;
+      padding: 1rem 0;
+      color: #000;
+      text-decoration: none;
+      font-weight: 500;
+      font-size: 1.2rem;
+    }
+
+    .header-menu-nav__mobile-drawer-sublist {
+      list-style: none;
+      margin: 0;
+      padding: 0 0 0 1rem;
+      border-left: 0.125rem solid rgba(0, 0, 0, 0.08);
+      display: none;
+    }
+
+    .header-menu-nav__mobile-drawer-item.open .header-menu-nav__mobile-drawer-sublist {
+      display: block;
+    }
+
+    .header-menu-nav__mobile-drawer-sublink {
+      display: block;
+      padding: 0.75rem 0;
+      color: #000;
+      text-decoration: none;
+      font-size: 0.875rem;
+    }
+  }
+
+  /* Hide mobile drawer on desktop */
+  @media (min-width: 769px) {
+    .header-menu-nav__mobile-drawer {
+      display: none !important;
+    }
+  }
+</style>
+
+<script>
+(function() {
+  'use strict';
+  
+  // Prevent multiple initializations
+  if (window.__headerMenuInitialized) {
+    console.log('[HeaderMenu] Already initialized, skipping');
+    return;
+  }
+  window.__headerMenuInitialized = true;
+  
+  console.log('[HeaderMenu] Initializing (once)...');
+  
+  function init() {
+    const menuNav = document.querySelector('[data-header-menu-nav]');
+    
+    if (!menuNav) {
+      console.error('[HeaderMenu] Menu nav not found');
+      return;
+    }
+    
+    // Move drawer to body level to avoid parent display:none issues
+    const drawer = document.getElementById('header-menu-mobile-drawer');
+    if (drawer && drawer.parentElement && drawer.parentElement !== document.body) {
+      console.log('[HeaderMenu] Moving drawer to body level');
+      document.body.appendChild(drawer);
+    }
+    
+    const hasServerMenu = menuNav.getAttribute('data-server-menu') === 'true';
+    const menuList = menuNav.querySelector('[data-menu-list]');
+    const hasMenuItems = menuList && menuList.children.length > 0;
+    
+    console.log('[HeaderMenu] Status:', {
+      hasServerMenu: hasServerMenu,
+      hasMenuItems: hasMenuItems,
+      itemCount: menuList ? menuList.children.length : 0
+    });
+    
+    // Only fetch from API if NO menu items exist
+    if (!hasMenuItems) {
+      console.log('[HeaderMenu] No menu items found, loading from API...');
+      loadMainMenu(menuNav);
+    } else {
+      console.log('[HeaderMenu] Menu items already present, skipping API call');
+      setupSubmenuToggles();
+    }
+    
+    // Setup hamburger menu with retry (will find drawer internally)
+    setupHamburgerMenu();
+  }
+  
+  function setupHamburgerMenu() {
+    let attempts = 0;
+    const maxAttempts = 15;
+    
+    function trySetup() {
+      const toggle = document.querySelector('[data-header-menu-toggle]');
+      const drawer = document.getElementById('header-menu-mobile-drawer');
+      const drawerClose = document.querySelector('[data-header-menu-close]');
+      
+      if (toggle && drawer) {
+        console.log('[HeaderMenu] Setting up hamburger menu', {
+          toggleFound: !!toggle,
+          drawerFound: !!drawer,
+          drawerCloseFound: !!drawerClose
+        });
+        
+        // Use a flag to prevent duplicate listeners
+        if (toggle.dataset.menuListenerAttached === 'true') {
+          console.log('[HeaderMenu] Listener already attached, skipping');
+          return true;
+        }
+        toggle.dataset.menuListenerAttached = 'true';
+        
+        // Toggle button click handler (only on mobile)
+        toggle.addEventListener('click', function(e) {
+          // Double check we're on mobile
+          if (window.innerWidth > 768) {
+            console.log('[HeaderMenu] Ignoring toggle click on desktop');
+            return;
+          }
+          e.preventDefault();
+          e.stopPropagation();
+          console.log('[HeaderMenu] Toggle clicked');
+          const currentDrawer = document.getElementById('header-menu-mobile-drawer');
+          if (!currentDrawer) {
+            console.error('[HeaderMenu] Drawer not found when toggling');
+            return;
+          }
+          const isOpen = currentDrawer.classList.contains('active');
+          console.log('[HeaderMenu] Drawer state:', isOpen ? 'open' : 'closed');
+          if (isOpen) {
+            closeDrawer(currentDrawer, toggle);
+          } else {
+            openDrawer(currentDrawer, toggle);
+          }
+        });
+        
+        // Close button handler
+        if (drawerClose) {
+          drawerClose.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('[HeaderMenu] Close button clicked');
+            const currentDrawer = document.getElementById('header-menu-mobile-drawer');
+            if (currentDrawer) {
+              closeDrawer(currentDrawer, toggle);
+            }
+          });
+        }
+        
+        // Close on Escape key (only add once)
+        if (!window.__headerMenuEscapeHandler) {
+          window.__headerMenuEscapeHandler = function(e) {
+            if (e.key === 'Escape' && window.innerWidth <= 768) {
+              const currentDrawer = document.getElementById('header-menu-mobile-drawer');
+              if (currentDrawer && currentDrawer.classList.contains('active')) {
+                console.log('[HeaderMenu] Escape key pressed');
+                closeDrawer(currentDrawer, toggle);
+              }
+            }
+          };
+          document.addEventListener('keydown', window.__headerMenuEscapeHandler);
+        }
+        
+        // Close on outside click (only add once)
+        if (!window.__headerMenuOverlayHandler) {
+          window.__headerMenuOverlayHandler = function(e) {
+            if (window.innerWidth > 768) return;
+            const currentDrawer = document.getElementById('header-menu-mobile-drawer');
+            if (currentDrawer && currentDrawer.classList.contains('active')) {
+              const drawerContent = currentDrawer.querySelector('.header-menu-nav__mobile-drawer-content');
+              // Close if clicking the backdrop (drawer itself) but not the content
+              if (e.target === currentDrawer || (drawerContent && !drawerContent.contains(e.target) && currentDrawer.contains(e.target))) {
+                console.log('[HeaderMenu] Backdrop clicked - closing drawer');
+                closeDrawer(currentDrawer, toggle);
+              }
+            }
+          };
+          document.addEventListener('click', window.__headerMenuOverlayHandler);
+        }
+        
+        console.log('[HeaderMenu] Hamburger menu setup complete');
+        return true;
+      } else {
+        attempts++;
+        if (attempts < maxAttempts) {
+          setTimeout(trySetup, 100);
+        } else {
+          console.warn('[HeaderMenu] Could not find hamburger menu elements after', maxAttempts, 'attempts', {
+            toggleFound: !!toggle,
+            drawerFound: !!drawer
+          });
+        }
+        return false;
+      }
+    }
+    
+    trySetup();
+  }
+  
+  function openDrawer(drawer, toggle) {
+    if (!drawer) {
+      console.error('[HeaderMenu] Cannot open drawer - drawer not found');
+      return;
+    }
+    // Only open on mobile
+    if (window.innerWidth > 768) {
+      console.log('[HeaderMenu] Ignoring open on desktop');
+      return;
+    }
+    console.log('[HeaderMenu] Opening drawer', {
+      drawerElement: drawer,
+      drawerId: drawer.id,
+      hasActiveClass: drawer.classList.contains('active'),
+      windowWidth: window.innerWidth,
+      computedStyle: window.getComputedStyle(drawer).display,
+      zIndex: window.getComputedStyle(drawer).zIndex,
+      opacity: window.getComputedStyle(drawer).opacity,
+      visibility: window.getComputedStyle(drawer).visibility
+    });
+    
+    drawer.classList.add('active');
+    drawer.setAttribute('aria-hidden', 'false');
+    
+    // Force browser reflow to ensure styles are applied
+    void drawer.offsetHeight;
+    
+    if (toggle) {
+      toggle.setAttribute('aria-expanded', 'true');
+      toggle.classList.add('is-open');
+    }
+    
+    // Prevent body scroll
+    const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+    document.body.style.paddingRight = scrollbarWidth + 'px';
+    document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
+    
+    // Verify drawer is visible after opening
+    setTimeout(() => {
+      const computedStyle = window.getComputedStyle(drawer);
+      const content = drawer.querySelector('.header-menu-nav__mobile-drawer-content');
+      const contentStyle = content ? window.getComputedStyle(content) : null;
+      console.log('[HeaderMenu] Drawer state after opening:', {
+        hasActiveClass: drawer.classList.contains('active'),
+        display: computedStyle.display,
+        opacity: computedStyle.opacity,
+        visibility: computedStyle.visibility,
+        zIndex: computedStyle.zIndex,
+        contentTransform: contentStyle ? contentStyle.transform : 'N/A',
+        contentDisplay: contentStyle ? contentStyle.display : 'N/A'
+      });
+    }, 100);
+    
+    console.log('[HeaderMenu] Drawer opened successfully');
+  }
+  
+  function closeDrawer(drawer, toggle) {
+    if (!drawer) {
+      console.error('[HeaderMenu] Cannot close drawer - drawer not found');
+      return;
+    }
+    console.log('[HeaderMenu] Closing drawer');
+    drawer.classList.remove('active');
+    drawer.setAttribute('aria-hidden', 'true');
+    if (toggle) {
+      toggle.setAttribute('aria-expanded', 'false');
+      toggle.classList.remove('is-open');
+    }
+    // Restore body scroll
+    document.body.style.paddingRight = '';
+    document.body.style.overflow = '';
+    document.documentElement.style.overflow = '';
+    console.log('[HeaderMenu] Drawer closed successfully');
+  }
+  
+  async function loadMainMenu(menuNav) {
+    const menuList = menuNav.querySelector('[data-menu-list]');
+    const loadingEl = menuNav.querySelector('[data-menu-loading]');
+    const errorEl = menuNav.querySelector('[data-menu-error]');
+    const mobileMenuList = document.querySelector('[data-mobile-menu-list]');
+    
+    try {
+      if (loadingEl) loadingEl.style.display = 'block';
+      if (errorEl) errorEl.style.display = 'none';
+      
+      console.log('[HeaderMenu] Fetching menus from API...');
+      const menusResponse = await fetch('/webstoreapi/menus', {
+        headers: {
+          'Accept': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest'
+        }
+      });
+      
+      if (!menusResponse.ok) throw new Error('Failed to fetch menus: ' + menusResponse.status);
+      
+      const menus = await menusResponse.json();
+      console.log('[HeaderMenu] Fetched menus:', menus);
+      
+      if (!Array.isArray(menus) || menus.length === 0) {
+        throw new Error('No menus available');
+      }
+      
+      // Find main menu
+      let mainMenu = menus.find(m => (m.type || '').toLowerCase().trim() === 'main menu');
+      if (!mainMenu) {
+        console.log('[HeaderMenu] No "Main Menu" found, using first menu');
+        mainMenu = menus[0];
+      }
+      
+      console.log('[HeaderMenu] Selected menu:', mainMenu);
+      
+      // Fetch menu details
+      const menuResponse = await fetch('/webstoreapi/menus/' + mainMenu.id, {
+        headers: {
+          'Accept': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest'
+        }
+      });
+      
+      if (!menuResponse.ok) throw new Error('Failed to fetch menu details: ' + menuResponse.status);
+      
+      const menuData = await menuResponse.json();
+      console.log('[HeaderMenu] Menu data:', menuData);
+      
+      if (!menuData.items || menuData.items.length === 0) {
+        throw new Error('No menu items');
+      }
+      
+      console.log('[HeaderMenu] Rendering', menuData.items.length, 'menu items');
+      renderMenuItems(menuList, menuData.items);
+      if (mobileMenuList) {
+        renderMobileMenuItems(mobileMenuList, menuData.items);
+      }
+      
+      setupSubmenuToggles();
+      
+      if (loadingEl) loadingEl.style.display = 'none';
+      console.log('[HeaderMenu] Menu loaded successfully');
+      
+    } catch (error) {
+      console.error('[HeaderMenu] Error loading menu:', error);
+      if (loadingEl) loadingEl.style.display = 'none';
+      if (errorEl) errorEl.style.display = 'block';
+    }
+  }
+  
+  /**
+   * Normalize menu link to ensure it's an absolute URL
+   * @param {string} link - Menu link from API
+   * @returns {string} Normalized absolute URL
+   */
+  function normalizeMenuLink(link) {
+    if (!link || link === '#' || link.trim() === '') {
+      return '#';
+    }
+    
+    const trimmedLink = link.trim();
+    
+    // If already an absolute URL (http:// or https://), return as-is
+    if (trimmedLink.startsWith('http://') || trimmedLink.startsWith('https://')) {
+      return trimmedLink;
+    }
+    
+    // If already starts with /, it's absolute from root, return as-is
+    if (trimmedLink.startsWith('/')) {
+      return trimmedLink;
+    }
+    
+    // Otherwise, prepend base URL to make it absolute
+    const baseUrl = window.location.origin;
+    // Remove leading slash from link if present, then add it back with baseUrl
+    const cleanLink = trimmedLink.startsWith('/') ? trimmedLink : '/' + trimmedLink;
+    return baseUrl + cleanLink;
+  }
+
+  function renderMenuItems(container, items) {
+    container.innerHTML = '';
+    items.forEach(item => {
+      const li = document.createElement('li');
+      li.className = 'header-menu-nav__item';
+      if (item.childItems && item.childItems.length > 0) {
+        li.classList.add('has-children');
+      }
+      
+      const link = document.createElement('a');
+      link.href = normalizeMenuLink(item.link);
+      link.className = 'header-menu-nav__link';
+      link.textContent = item.name || item.title || '';
+      li.appendChild(link);
+      
+      if (item.childItems && item.childItems.length > 0) {
+        const submenu = document.createElement('ul');
+        submenu.className = 'header-menu-nav__submenu';
+        item.childItems.forEach(child => {
+          const subLi = document.createElement('li');
+          subLi.className = 'header-menu-nav__submenu-item';
+          const subLink = document.createElement('a');
+          subLink.href = normalizeMenuLink(child.link);
+          subLink.className = 'header-menu-nav__submenu-link';
+          subLink.textContent = child.name || child.title || '';
+          subLi.appendChild(subLink);
+          submenu.appendChild(subLi);
+        });
+        li.appendChild(submenu);
+      }
+      
+      container.appendChild(li);
+    });
+  }
+  
+  function renderMobileMenuItems(container, items) {
+    container.innerHTML = '';
+    items.forEach(item => {
+      const li = document.createElement('li');
+      li.className = 'header-menu-nav__mobile-drawer-item';
+      if (item.childItems && item.childItems.length > 0) {
+        li.classList.add('has-children');
+      }
+      
+      const link = document.createElement('a');
+      link.href = normalizeMenuLink(item.link);
+      link.className = 'header-menu-nav__mobile-drawer-link';
+      link.textContent = item.name || item.title || '';
+      li.appendChild(link);
+      
+      if (item.childItems && item.childItems.length > 0) {
+        const submenu = document.createElement('ul');
+        submenu.className = 'header-menu-nav__mobile-drawer-sublist';
+        item.childItems.forEach(child => {
+          const subLi = document.createElement('li');
+          subLi.className = 'header-menu-nav__mobile-drawer-subitem';
+          const subLink = document.createElement('a');
+          subLink.href = normalizeMenuLink(child.link);
+          subLink.className = 'header-menu-nav__mobile-drawer-sublink';
+          subLink.textContent = child.name || child.title || '';
+          subLi.appendChild(subLink);
+          submenu.appendChild(subLi);
+        });
+        li.appendChild(submenu);
+      }
+      
+      container.appendChild(li);
+    });
+  }
+  
+  function setupSubmenuToggles() {
+    const drawer = document.getElementById('header-menu-mobile-drawer');
+    const drawerContainer = drawer ? drawer.querySelector('[data-mobile-menu-list]') : null;
+    
+    // Get items from drawer
+    const items = drawerContainer ? drawerContainer.querySelectorAll('.header-menu-nav__mobile-drawer-item.has-children') : [];
+    
+    console.log('[HeaderMenu] Setting up submenu toggles, found', items.length, 'items with children');
+    
+    items.forEach(item => {
+      const link = item.querySelector('.header-menu-nav__mobile-drawer-link');
+      if (link) {
+        // Remove existing listener if any
+        const newLink = link.cloneNode(true);
+        link.parentNode.replaceChild(newLink, link);
+        
+        newLink.addEventListener('click', function(e) {
+          const submenu = item.querySelector('.header-menu-nav__mobile-drawer-sublist');
+          if (submenu) {
+            e.preventDefault();
+            e.stopPropagation();
+            const isOpen = item.classList.contains('open');
+            item.classList.toggle('open');
+            console.log('[HeaderMenu] Submenu toggled:', item.classList.contains('open') ? 'opened' : 'closed');
+          }
+        });
+      }
+    });
+  }
+  
+  /**
+   * Normalize menu links that were rendered server-side via Liquid
+   * This ensures links are absolute URLs even when rendered from templates
+   */
+  function normalizeServerRenderedLinks() {
+    const normalizeLink = (link) => {
+      if (!link || link === '#' || link.trim() === '') {
+        return '#';
+      }
+      
+      const trimmedLink = link.trim();
+      
+      // If already an absolute URL (http:// or https://), return as-is
+      if (trimmedLink.startsWith('http://') || trimmedLink.startsWith('https://')) {
+        return trimmedLink;
+      }
+      
+      // If already starts with /, it's absolute from root, return as-is
+      if (trimmedLink.startsWith('/')) {
+        return trimmedLink;
+      }
+      
+      // Otherwise, prepend base URL to make it absolute
+      const baseUrl = window.location.origin;
+      const cleanLink = trimmedLink.startsWith('/') ? trimmedLink : '/' + trimmedLink;
+      return baseUrl + cleanLink;
+    };
+
+    // Find all menu links in the server-rendered menu
+    const menuLinks = document.querySelectorAll('[data-header-menu-nav] .header-menu-nav__link, [data-header-menu-nav] .header-menu-nav__submenu-link, [data-header-menu-nav] .header-menu-nav__mobile-drawer-link, [data-header-menu-nav] .header-menu-nav__mobile-drawer-sublink');
+    
+    menuLinks.forEach(link => {
+      const currentHref = link.getAttribute('href');
+      if (currentHref && currentHref !== '#') {
+        const normalizedHref = normalizeLink(currentHref);
+        if (normalizedHref !== currentHref) {
+          link.setAttribute('href', normalizedHref);
+        }
+      }
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function() {
+      init();
+      normalizeServerRenderedLinks();
+    });
+  } else {
+    init();
+    normalizeServerRenderedLinks();
+  }
+})();
+</script>

@@ -1,0 +1,297 @@
+{% layout 'layout/theme' %}
+
+{% hook 'page_before' %}
+<div class="page-content">
+  <div class="page-header">
+    <h1 class="page-title">{{ page.title }}</h1>
+    {% if page.subtitle %}
+      <p class="page-subtitle">{{ page.subtitle }}</p>
+    {% endif %}
+  </div>
+  
+  <div class="page-body">
+    {% hook 'page_content_before' %}
+    <div class="page-content-wrapper">
+      {% if page.content %}
+        <div class="page-text">
+          {{ page.content }}
+        </div>
+      {% else %}
+        <div class="page-text">
+          <p>Welcome to {{ shop.name }}! This is a sample page content.</p>
+          <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+          
+          <h2>Our Mission</h2>
+          <p>Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
+          
+          <h2>Contact Information</h2>
+          <p>If you have any questions or need assistance, please don't hesitate to contact us:</p>
+          <ul>
+            <li>Email: support@{{ shop.domain }}</li>
+            <li>Phone: (555) 123-4567</li>
+            <li>Address: 123 Main Street, City, State 12345</li>
+          </ul>
+        </div>
+      {% endif %}
+    </div>
+    
+    <!-- Page sidebar (optional) -->
+    <div class="page-sidebar">
+      <div class="sidebar-widget">
+        <h3>Quick Links</h3>
+        <ul class="sidebar-links">
+          <li><a href="/">Home</a></li>
+          <li><a href="/products">Products</a></li>
+          <li><a href="/">Collections</a></li>
+          <li><a href="/pages/about">About Us</a></li>
+          <li><a href="/pages/contact">Contact</a></li>
+        </ul>
+      </div>
+      
+      <div class="sidebar-widget">
+        <h3>Customer Service</h3>
+        <ul class="sidebar-links">
+          <li><a href="/pages/shipping">Shipping Info</a></li>
+          <li><a href="/pages/returns">Returns & Exchanges</a></li>
+          <li><a href="/pages/privacy">Privacy Policy</a></li>
+          <li><a href="/pages/terms">Terms of Service</a></li>
+        </ul>
+      </div>
+      
+      <div class="sidebar-widget">
+        <h3>Newsletter</h3>
+        <p>Stay updated with our latest products and offers.</p>
+        <form class="newsletter-form" action="/webstoreapi/newsletter/subscribe" method="post">
+          <input type="email" name="email" placeholder="Enter your email" required>
+          <button type="submit" class="btn btn-primary">Subscribe</button>
+        </form>
+      </div>
+    </div>
+    {% hook 'page_content_after' %}
+  </div>
+</div>
+{% hook 'page_after' %}
+
+<style>
+.page-content {
+  padding: 40px 0;
+}
+
+.page-header {
+  text-align: center;
+  margin-bottom: 50px;
+  padding: 40px 20px;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border-radius: 12px;
+}
+
+.page-title {
+  font-size: 3rem;
+  margin-bottom: 20px;
+  color: #333;
+  font-weight: 700;
+}
+
+.page-subtitle {
+  font-size: 1.2rem;
+  color: #666;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.page-body {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 60px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.page-content-wrapper {
+  background: white;
+  border-radius: 12px;
+  padding: 40px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.page-text {
+  line-height: 1.8;
+  color: #333;
+}
+
+.page-text h1,
+.page-text h2,
+.page-text h3,
+.page-text h4,
+.page-text h5,
+.page-text h6 {
+  color: #333;
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+}
+
+.page-text h2 {
+  font-size: 1.8rem;
+  border-bottom: 2px solid #667eea;
+  padding-bottom: 0.5rem;
+}
+
+.page-text p {
+  margin-bottom: 1.5rem;
+  color: #666;
+}
+
+.page-text ul,
+.page-text ol {
+  margin-bottom: 1.5rem;
+  padding-left: 2rem;
+}
+
+.page-text li {
+  margin-bottom: 0.5rem;
+  color: #666;
+}
+
+.page-text a {
+  color: #667eea;
+  text-decoration: underline;
+}
+
+.page-text a:hover {
+  color: #5a6fd8;
+}
+
+.page-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+
+.sidebar-widget {
+  background: white;
+  border-radius: 12px;
+  padding: 25px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.sidebar-widget h3 {
+  font-size: 1.3rem;
+  margin-bottom: 20px;
+  color: #333;
+  font-weight: 600;
+  border-bottom: 2px solid #f8f9fa;
+  padding-bottom: 10px;
+}
+
+.sidebar-links {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.sidebar-links li {
+  margin-bottom: 12px;
+}
+
+.sidebar-links a {
+  color: #666;
+  text-decoration: none;
+  padding: 8px 0;
+  display: block;
+  border-radius: 6px;
+  transition: all 0.3s ease;
+  position: relative;
+  padding-left: 20px;
+}
+
+.sidebar-links a::before {
+  content: '→';
+  position: absolute;
+  left: 0;
+  color: #667eea;
+  font-weight: bold;
+  transition: transform 0.3s ease;
+}
+
+.sidebar-links a:hover {
+  color: #667eea;
+  background: #f8f9ff;
+  padding-left: 25px;
+}
+
+.sidebar-links a:hover::before {
+  transform: translateX(3px);
+}
+
+.newsletter-form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.newsletter-form input {
+  padding: 12px 15px;
+  border: 2px solid #e1e5e9;
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: border-color 0.3s ease;
+}
+
+.newsletter-form input:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.newsletter-form button {
+  padding: 12px 20px;
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .page-body {
+    grid-template-columns: 1fr;
+    gap: 40px;
+  }
+  
+  .page-content-wrapper {
+    padding: 30px 20px;
+  }
+  
+  .page-title {
+    font-size: 2.5rem;
+  }
+  
+  .page-header {
+    padding: 30px 20px;
+  }
+  
+  .sidebar-widget {
+    padding: 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .page-content {
+    padding: 20px 0;
+  }
+  
+  .page-content-wrapper {
+    padding: 20px 15px;
+  }
+  
+  .page-title {
+    font-size: 2rem;
+  }
+  
+  .page-header {
+    padding: 20px 15px;
+  }
+  
+  .sidebar-widget {
+    padding: 15px;
+  }
+}
+</style>

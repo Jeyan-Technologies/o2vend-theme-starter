@@ -1,0 +1,143 @@
+{% comment %}
+  Hero Section
+  
+  This section renders widgets from the "hero" section in order.
+  Widgets are rendered one below another, sorted by Position field.
+  Supports drag-and-drop ordering in visual editor.
+{% endcomment %}
+
+{% comment %}Hero Section - Always render, with widgets or fallback{% endcomment %}
+{% assign hero_widgets = widgets.hero %}
+{% if hero_widgets and hero_widgets.size > 0 %}
+  <section class="theme-section theme-section--hero" data-section="hero" data-section-id="{{ section.id }}">
+    {% for widget in hero_widgets %}
+      <div class="theme-widget-wrapper" 
+           data-widget-id="{{ widget.id }}" 
+           data-widget-type="{{ widget.type }}"
+           data-widget-position="{{ widget.Position | default: widget.position | default: forloop.index }}">
+        {% if widget and widget.template_path %}
+          {% render widget.template_path, widget: widget, settings: settings %}
+        {% else %}
+          <div class="widget-error" data-widget-error>
+            <p>Widget template not found: {{ widget.template_path | default: 'unknown' }}</p>
+            <p>Widget type: {{ widget.type | default: 'unknown' }}</p>
+          </div>
+        {% endif %}
+      </div>
+    {% endfor %}
+  </section>
+  <style>
+    .theme-section--hero .theme-widget-wrapper {
+      display: block;
+    }
+    .widget-error {
+      padding: 1rem;
+      background: #fee2e2;
+      border: 1px solid #fecaca;
+      border-radius: 0.5rem;
+      color: #991b1b;
+      font-size: 0.875rem;
+    }
+  </style>
+{% else %}
+  {% render 'sections/hero-fallback' %}
+{% endif %}
+
+{% schema %}
+{
+  "name": "Hero",
+  "settings": [
+    {
+      "type": "paragraph",
+      "content": "This section displays widgets from the 'hero' section. Widgets are automatically ordered by their Position field and can be reordered in the visual editor."
+    },
+    {
+      "type": "image_picker",
+      "id": "hero_image",
+      "label": "Hero Image",
+      "info": "Recommended size: 1920x800px"
+    },
+    {
+      "type": "text",
+      "id": "hero_title",
+      "label": "Hero Title",
+      "default": "Welcome to Our Store"
+    },
+    {
+      "type": "textarea",
+      "id": "hero_subtitle",
+      "label": "Hero Subtitle",
+      "default": "Discover amazing products at great prices"
+    },
+    {
+      "type": "text",
+      "id": "hero_button_text",
+      "label": "Primary Button Text",
+      "default": "Shop Now"
+    },
+    {
+      "type": "url",
+      "id": "hero_button_url",
+      "label": "Primary Button URL",
+      "default": "/collections/all"
+    },
+    {
+      "type": "text",
+      "id": "hero_button_2_text",
+      "label": "Secondary Button Text"
+    },
+    {
+      "type": "url",
+      "id": "hero_button_2_url",
+      "label": "Secondary Button URL"
+    },
+    {
+      "type": "select",
+      "id": "text_position",
+      "label": "Text Position",
+      "options": [
+        {
+          "value": "left",
+          "label": "Left"
+        },
+        {
+          "value": "center",
+          "label": "Center"
+        },
+        {
+          "value": "right",
+          "label": "Right"
+        }
+      ],
+      "default": "center"
+    },
+    {
+      "type": "color",
+      "id": "text_color",
+      "label": "Text Color",
+      "default": "#ffffff"
+    },
+    {
+      "type": "range",
+      "id": "overlay_opacity",
+      "label": "Overlay Opacity",
+      "min": 0,
+      "max": 0.8,
+      "step": 0.1,
+      "default": 0.4
+    }
+  ],
+  "presets": [
+    {
+      "name": "Hero",
+      "settings": {
+        "hero_title": "Welcome to Our Store",
+        "hero_subtitle": "Discover amazing products at great prices",
+        "hero_button_text": "Shop Now",
+        "hero_button_url": "/collections/all"
+      }
+    }
+  ]
+}
+{% endschema %}
+

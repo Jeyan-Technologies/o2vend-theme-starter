@@ -1,0 +1,720 @@
+{% layout 'layout/theme' %}
+
+<section class="order-confirmation-page">
+  <div class="container">
+
+    <!-- Header -->
+    <div class="confirmation-header">
+      <div class="confirmation-icon"><i class="fas fa-check-circle"></i></div>
+      <h1 class="confirmation-title">Order{% if orders.size > 1 %}s{% endif %} Confirmed!</h1>
+      <p class="confirmation-subtitle">Thank you for your purchase</p>
+      
+      {% if orders.size > 1 %}
+        <div class="multiple-orders-badge">
+          <i class="fas fa-shopping-bag"></i>
+          <span>{{ orders.size }} Orders Placed</span>
+        </div>
+      {% else %}
+        <div class="order-number">
+          <span>Order Number:</span>
+          <strong>#{{ order.orderNumber }}</strong>
+        </div>
+        <div class="order-info">
+          <div><i class="far fa-calendar"></i> {{ order.createdAt | date: '%d-%m-%Y %H:%M' }}</div>
+          <div><span class="status-badge status-{{ order.status | downcase | replace: ' ', '-' }}">{{ order.status }}</span></div>
+        </div>
+      {% endif %}
+    </div>
+
+    <!-- Multiple Orders Layout -->
+    {% if orders.size > 1 %}
+      {% for orderItem in orders %}
+      <div class="order-wrapper">
+        <div class="order-header-bar">
+          <div class="order-header-info">
+            <h3>Order #{{ orderItem.orderNumber }}</h3>
+            <div class="order-meta">
+              <span><i class="far fa-calendar"></i> {{ orderItem.createdAt | date: '%d-%m-%Y %H:%M' }}</span>
+              <span class="status-badge status-{{ orderItem.status | downcase | replace: ' ', '-' }}">{{ orderItem.status }}</span>
+            </div>
+          </div>
+          <div class="order-total-badge">
+            {{ orderItem.total  | money_with_settings: shop.settings }}
+          </div>
+        </div>
+
+        <div class="content-grid">
+          <!-- Main Content -->
+          <div class="main-content">
+            <!-- Items -->
+            <div class="section-card">
+              <h2>Order Items ({{ orderItem.items.size }})</h2>
+              <div class="items-list">
+                {% for item in orderItem.items %}
+                <div class="order-item">
+                  <div class="item-image">
+                    {% if item.productImageUrl %}
+                    <img src="{{ item.productImageUrl }}" alt="{{ item.productName }}">
+                    {% else %}
+                    <i class="fas fa-image"></i>
+                    {% endif %}
+                  </div>
+                  <div class="item-info">
+                    <h3>{{ item.productName }}</h3>
+                    <div>{{ item.productPrice  | money_with_settings: shop.settings }} × {{ item.quantity }}</div>
+                    {% if item.discountAmount > 0 %}
+                    <div>Discount: {{ item.discountAmount  | money_with_settings: shop.settings }}</div>
+                    {% endif %}
+                  </div>
+                  <div class="item-total">{{ item.total  | money_with_settings: shop.settings }}</div>
+                </div>
+                {% endfor %}
+              </div>
+            </div>
+
+            <!-- Addresses -->
+            <div class="section-card">
+              <h2>Delivery Information</h2>
+              <div class="address-grid">
+                {% if orderItem.shippingAddress %}
+                <div class="address-box">
+                  <h6>Shipping Address</h6>
+                  <p>{{ orderItem.shippingAddress.contactName }}</p>
+                  <p>{{ orderItem.shippingAddress.addressLine1 }}</p>
+                  {% if orderItem.shippingAddress.addressLine2 %}<p>{{ orderItem.shippingAddress.addressLine2 }}</p>{% endif %}
+                  <p>{{ orderItem.shippingAddress.city }}, {{ orderItem.shippingAddress.stateOrProvinceName }} {{ orderItem.shippingAddress.zipCode }}</p>
+                  <p>{{ orderItem.shippingAddress.countryName }}</p>
+                  {% if orderItem.shippingAddress.phone %}<p>📞 {{ orderItem.shippingAddress.phone }}</p>{% endif %}
+                </div>
+                {% endif %}
+                
+                {% if orderItem.billingAddress %}
+                <div class="address-box">
+                  <h6>Billing Address</h6>
+                  <p>{{ orderItem.billingAddress.contactName }}</p>
+                  <p>{{ orderItem.billingAddress.addressLine1 }}</p>
+                  {% if orderItem.billingAddress.addressLine2 %}<p>{{ orderItem.billingAddress.addressLine2 }}</p>{% endif %}
+                  <p>{{ orderItem.billingAddress.city }}, {{ orderItem.billingAddress.stateOrProvinceName }} {{ orderItem.billingAddress.zipCode }}</p>
+                  <p>{{ orderItem.billingAddress.countryName }}</p>
+                  {% if orderItem.billingAddress.phone %}<p>📞 {{ orderItem.billingAddress.phone }}</p>{% endif %}
+                </div>
+                {% endif %}
+              </div>
+            </div>
+
+            {% if orderItem.note %}
+            <div class="section-card">
+              <h2>Order Note</h2>
+              <p>{{ orderItem.note }}</p>
+            </div>
+            {% endif %}
+          </div>
+
+          <!-- Sidebar -->
+          <aside class="sidebar">
+            <div class="section-card">
+              <h2>Order Summary</h2>
+              <div class="summary-content">
+                <div class="summary-row"><span>Subtotal</span><span>{{ orderItem.subtotal  | money_with_settings: shop.settings }}</span></div>
+                {% if orderItem.discount > 0 %}
+                <div class="summary-row"><span>Discount{% if orderItem.couponCode %} ({{ orderItem.couponCode }}){% endif %}</span><span>-{{ orderItem.discount  | money_with_settings: shop.settings }}</span></div>
+                {% endif %}
+                <div class="summary-row"><span>Shipping</span><span>{% if orderItem.shipping > 0 %}{{ orderItem.shipping  | money_with_settings: shop.settings }}{% else %}FREE{% endif %}</span></div>
+                <div class="summary-row"><span>Tax</span><span>{{ orderItem.tax  | money_with_settings: shop.settings }}</span></div>
+                <div class="summary-row total-row"><strong>Total</strong><strong>{{ orderItem.total  | money_with_settings: shop.settings }}</strong></div>
+              </div>
+              <div class="payment-method"><span>Payment:</span> <strong>{{ orderItem.paymentMethod | default: 'Online Payment' }}</strong></div>
+            </div>
+          </aside>
+        </div>
+      </div>
+      {% endfor %}
+
+      <!-- Combined Grand Total for Multiple Orders -->
+      <div class="grand-total-card">
+        <div class="grand-total-content">
+          <span class="grand-total-label">Grand Total ({{ orders.size }} Orders)</span>
+          <span class="grand-total-amount">
+            {% assign grandTotal = 0 %}
+            {% for orderItem in orders %}
+              {% assign grandTotal = grandTotal | plus: orderItem.total %}
+            {% endfor %}
+            {{ grandTotal  | money_with_settings: shop.settings }}
+          </span>
+        </div>
+      </div>
+
+    {% else %}
+      <!-- Single Order Layout (Original) -->
+      <div class="content-grid">
+        <!-- Main -->
+        <div class="main-content">
+          <!-- Items -->
+          <div class="section-card">
+            <h2>Order Items ({{ order.items.size }})</h2>
+            <div class="items-list">
+              {% for item in order.items %}
+              <div class="order-item">
+                <div class="item-image">
+                  {% if item.productImageUrl %}
+                  <img src="{{ item.productImageUrl }}" alt="{{ item.productName }}">
+                  {% else %}
+                  <i class="fas fa-image"></i>
+                  {% endif %}
+                </div>
+                <div class="item-info">
+                  <h3>{{ item.productName }}</h3>
+                  <div>{{ item.productPrice  | money_with_settings: shop.settings }} × {{ item.quantity }}</div>
+                  {% if item.discountAmount > 0 %}
+                  <div>Discount: {{ item.discountAmount  | money_with_settings: shop.settings }}</div>
+                  {% endif %}
+                </div>
+                <div class="item-total">{{ item.total  | money_with_settings: shop.settings }}</div>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+
+          <!-- Addresses -->
+          <div class="section-card">
+            <h2>Delivery Information</h2>
+            <div class="address-grid">
+              {% if order.shippingAddress %}
+              <div class="address-box">
+                <h6>Shipping Address</h6>
+                <p>{{ order.shippingAddress.contactName }}</p>
+                <p>{{ order.shippingAddress.addressLine1 }}</p>
+                {% if order.shippingAddress.addressLine2 %}<p>{{ order.shippingAddress.addressLine2 }}</p>{% endif %}
+                <p>{{ order.shippingAddress.city }}, {{ order.shippingAddress.stateOrProvinceName }} {{ order.shippingAddress.zipCode }}</p>
+                <p>{{ order.shippingAddress.countryName }}</p>
+                {% if order.shippingAddress.phone %}<p>📞 {{ order.shippingAddress.phone }}</p>{% endif %}
+              </div>
+              {% endif %}
+              
+              {% if order.billingAddress %}
+              <div class="address-box">
+                <h6>Billing Address</h6>
+                <p>{{ order.billingAddress.contactName }}</p>
+                <p>{{ order.billingAddress.addressLine1 }}</p>
+                {% if order.billingAddress.addressLine2 %}<p>{{ order.billingAddress.addressLine2 }}</p>{% endif %}
+                <p>{{ order.billingAddress.city }}, {{ order.billingAddress.stateOrProvinceName }} {{ order.billingAddress.zipCode }}</p>
+                <p>{{ order.billingAddress.countryName }}</p>
+                {% if order.billingAddress.phone %}<p>📞 {{ order.billingAddress.phone }}</p>{% endif %}
+              </div>
+              {% endif %}
+            </div>
+          </div>
+
+          {% if order.note %}
+          <div class="section-card">
+            <h2>Order Note</h2>
+            <p>{{ order.note }}</p>
+          </div>
+          {% endif %}
+
+        
+
+          <!-- Related Products -->
+          {% if relatedProducts and relatedProducts.size > 0 %}
+          <div class="section-card">
+            <h2>You Might Also Like</h2>
+            <div class="products-grid">
+              {% for product in relatedProducts limit:4 %}
+                {% include 'snippets/product-card', product: product %}
+              {% endfor %}
+            </div>
+          </div>
+          {% endif %}
+        </div>
+
+        <!-- Sidebar -->
+        <aside class="sidebar">
+          <div class="section-card">
+            <h2>Order Summary</h2>
+            <div class="summary-content">
+              <div class="summary-row"><span>Subtotal</span><span>{{ order.subtotal  | money_with_settings: shop.settings }}</span></div>
+              {% if order.discount > 0 %}
+              <div class="summary-row"><span>Discount{% if order.couponCode %} ({{ order.couponCode }}){% endif %}</span><span>-{{ order.discount  | money_with_settings: shop.settings }}</span></div>
+              {% endif %}
+              <div class="summary-row"><span>Shipping</span><span>{% if order.shipping > 0 %}{{ order.shipping  | money_with_settings: shop.settings }}{% else %}FREE{% endif %}</span></div>
+              <div class="summary-row"><span>Tax</span><span>{{ order.tax  | money_with_settings: shop.settings }}</span></div>
+              <div class="summary-row total-row"><strong>Total</strong><strong>{{ order.total  | money_with_settings: shop.settings }}</strong></div>
+            </div>
+            <div class="payment-method"><span>Payment:</span> <strong>{{ order.paymentMethod | default: 'Online Payment' }}</strong></div>
+          </div>
+        </aside>
+      </div>
+    {% endif %}
+
+    <!-- Action Buttons (shown for both single and multiple orders) -->
+    <div class="action-buttons">
+      <a href="/orders" class="btn btn-primary">View My Orders</a>
+      <a href="/products" class="btn btn-secondary">Continue Shopping</a>
+    </div>
+
+    <!-- Related Products (shown for both) -->
+    {% if relatedProducts and relatedProducts.size > 0 %}
+    <div class="section-card">
+      <h2>You Might Also Like</h2>
+      <div class="products-grid">
+        {% for product in relatedProducts limit:4 %}
+          {% include 'snippets/product-card', product: product %}
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</section>
+
+<style>/* =========================================================
+   Base & Reset
+========================================================= */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+  font-size: 15px;
+  line-height: 1.6;
+  color: #333;
+  background: #f8f9fa;
+}
+
+/* =========================================================
+   Page Layout
+========================================================= */
+.order-confirmation-page {
+  padding: 20px 20px;
+  min-height: 100vh;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* =========================================================
+   Header
+========================================================= */
+.confirmation-header {
+  background: #fff;
+  padding: 17px 10px;
+  border-radius: 12px;
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  margin-bottom: 20px;
+}
+
+.confirmation-icon i {
+  font-size: 56px;
+  color: #10b981;
+  margin-bottom: 16px;
+}
+
+.confirmation-title {
+  font-size: 28px;
+  font-weight: 700;
+  color: #111;
+  margin: 0 0 6px;
+}
+
+.confirmation-subtitle {
+  font-size: 16px;
+  color: #6b7280;
+  margin-bottom: 20px;
+}
+
+.multiple-orders-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 24px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+  border-radius: 30px;
+  font-size: 16px;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.multiple-orders-badge i {
+  font-size: 18px;
+}
+
+.order-number {
+  display: inline-flex;
+  gap: 10px;
+  padding: 10px 20px;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  font-size: 14px;
+}
+
+.order-number strong {
+  font-family: monospace;
+  font-size: 15px;
+}
+
+.order-info {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  flex-wrap: wrap;
+  font-size: 14px;
+  color: #6b7280;
+}
+
+/* =========================================================
+   Multiple Orders Wrapper
+========================================================= */
+.order-wrapper {
+  background: #fff;
+  border-radius: 12px;
+  padding: 0;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  margin-bottom: 30px;
+  overflow: hidden;
+}
+
+.order-header-bar {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+  padding: 20px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.order-header-info h3 {
+  margin: 0 0 8px;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.order-meta {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  align-items: center;
+  font-size: 14px;
+}
+
+.order-meta span i {
+  margin-right: 6px;
+}
+
+.order-total-badge {
+  font-size: 24px;
+  font-weight: 700;
+  background: rgba(255,255,255,0.2);
+  padding: 10px 20px;
+  border-radius: 8px;
+  backdrop-filter: blur(10px);
+}
+
+.order-wrapper .content-grid {
+  padding: 24px;
+}
+
+/* =========================================================
+   Grand Total Card
+========================================================= */
+.grand-total-card {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 4px 16px rgba(102, 126, 234, 0.4);
+  margin-bottom: 30px;
+}
+
+.grand-total-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: #fff;
+}
+
+.grand-total-label {
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.grand-total-amount {
+  font-size: 32px;
+  font-weight: 700;
+}
+
+/* =========================================================
+   Status Badge
+========================================================= */
+.status-badge {
+  padding: 5px 14px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.order-header-bar .status-badge {
+  background: rgba(255,255,255,0.25);
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.3);
+}
+
+.status-new { background: #dbeafe; color: #1e40af; }
+.status-processing { background: #fef3c7; color: #92400e; }
+.status-shipped { background: #e0e7ff; color: #4338ca; }
+.status-delivered,
+.status-completed { background: #d1fae5; color: #065f46; }
+
+/* =========================================================
+   Main Grid
+========================================================= */
+.content-grid {
+  display: grid;
+  grid-template-columns: 1fr 310px;
+  gap: 15px;
+  align-items: start;
+}
+
+/* =========================================================
+   Cards
+========================================================= */
+.section-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  margin-bottom: 24px;
+}
+
+.section-card h2 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #111;
+  margin-bottom: 16px;
+}
+
+/* =========================================================
+   Order Items
+========================================================= */
+.items-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.order-item {
+  display: grid;
+  grid-template-columns: 80px 1fr auto;
+  gap: 16px;
+  background: #f9fafb;
+  padding: 16px;
+  border-radius: 8px;
+}
+
+.item-image {
+  width: 80px;
+  height: 80px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.item-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.item-image i {
+  font-size: 32px;
+  color: #d1d5db;
+}
+
+.item-info h3 {
+  font-size: 15px;
+  font-weight: 600;
+  margin: 0 0 6px;
+  color: #111;
+}
+
+.item-info div {
+  font-size: 14px;
+  color: #6b7280;
+}
+
+.item-total {
+  display: flex;
+  align-items: center;
+  font-size: 15px;
+  font-weight: 700;
+  color: #111;
+}
+
+/* =========================================================
+   Addresses
+========================================================= */
+.address-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+}
+
+.address-box {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 16px;
+  font-size: 14px;
+}
+
+.address-box h6 {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 10px;
+  color: #111;
+}
+
+.address-box p {
+  margin: 0 0 6px;
+  color: #6b7280;
+}
+
+/* =========================================================
+   Order Summary (Sidebar)
+========================================================= */
+.sidebar {
+  position: sticky;
+  top: 20px;
+}
+
+.summary-content {
+  font-size: 14px;
+}
+
+.summary-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.summary-row span:last-child,
+.summary-row strong {
+  font-weight: 600;
+  color: #111;
+}
+
+.total-row {
+  font-size: 17px;
+  margin-top: 8px;
+  padding-top: 12px;
+  border-top: 2px solid #e5e7eb;
+}
+
+.payment-method {
+  margin-top: 14px;
+  padding: 12px;
+  background: #f9fafb;
+  border-radius: 8px;
+  font-size: 14px;
+  display: flex;
+  justify-content: space-between;
+}
+
+/* =========================================================
+   Buttons
+========================================================= */
+.action-buttons {
+  display: flex;
+  gap: 16px;
+  margin: 32px 0;
+}
+
+.btn {
+  flex: 1;
+  padding: 14px;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.btn-primary {
+  background: #111;
+  color: #fff;
+}
+
+.btn-primary:hover {
+  background: #000;
+}
+
+.btn-secondary {
+  background: #fff;
+  color: #111;
+  border: 2px solid #e5e7eb;
+}
+
+.btn-secondary:hover {
+  background: #f9fafb;
+}
+
+/* =========================================================
+   Responsive
+========================================================= */
+@media (max-width: 992px) {
+  .content-grid {
+    grid-template-columns: 1fr;
+  }
+  .sidebar {
+    position: static;
+  }
+  .order-header-bar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .order-total-badge {
+    align-self: stretch;
+    text-align: center;
+  }
+}
+
+@media (max-width: 768px) {
+  .order-item {
+    grid-template-columns: 60px 1fr;
+  }
+  .item-total {
+    grid-column: 2;
+    margin-top: 6px;
+    justify-content: flex-start;
+  }
+  .action-buttons {
+    flex-direction: column;
+  }
+  .grand-total-content {
+    flex-direction: column;
+    gap: 12px;
+    text-align: center;
+  }
+  .confirmation-title {
+    font-size: 24px;
+  }
+  .multiple-orders-badge {
+    font-size: 14px;
+    padding: 10px 20px;
+  }
+}
+</style>

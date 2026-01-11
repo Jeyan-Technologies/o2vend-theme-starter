@@ -1,0 +1,601 @@
+{% layout 'layout/theme' %}
+
+<section class="account-page">
+  <div class="container">
+
+    <!-- Page Header -->
+    <header class="account-header">
+      <h1 class="account-title">My Subscriptions</h1>
+      <p class="account-subtitle">Manage your active and stopped subscriptions</p>
+    </header>
+
+    <div class="account-layout">
+
+      <!-- Sidebar -->
+      <aside class="account-sidebar">
+        {% render 'snippets/account-sidebar' %}
+      </aside>
+
+      <!-- Subscriptions Content -->
+      <main class="account-content">
+        <div class="account-section-header">
+          <h2 class="account-section-title">Subscription History</h2>
+        </div>
+
+        <div class="orders-list">
+          {% assign subscriptions = orders.subscriptions | default: subscriptions %}
+
+          {% if subscriptions and subscriptions.size > 0 %}
+            {% for sub in subscriptions %}
+              <article class="order-card">
+
+                <!-- LEFT -->
+                <div class="order-card-left">
+                  <h3 class="order-number">
+                    {{ sub.productName }}
+                  </h3>
+
+                  <div class="order-meta">
+                    <span>
+                      {{ sub.createdOn | date: "%d-%m-%Y" }}
+                    </span>
+                  </div>
+                </div>
+
+                <!-- CENTER -->
+                <div class="order-card-center">
+                  <span class="status-badge status-{{ sub.status | downcase }}">
+                    {{ sub.status }}
+                  </span>
+                </div>
+
+                <!-- RIGHT -->
+                <div class="order-card-right">
+                  <button
+                    class="btn btn-sm btn-outline"
+                    data-frequency="{{ sub.frequency | escape }}"
+                    data-product-name="{{ sub.productName | escape }}"
+                    onclick="openFrequencyModal(this)"
+                  >
+                    View Details
+                  </button>
+                </div>
+
+              </article>
+            {% endfor %}
+          {% else %}
+            <div class="empty-state">
+              <h3>No subscriptions found</h3>
+              <p>You don't have any subscriptions yet.</p>
+            </div>
+          {% endif %}
+             <!-- Pagination -->
+    {% include 'snippets/pagination', pagination: pagination %}
+        </div>
+
+      </main>
+
+    </div>
+  </div>
+</section>
+
+<!-- Frequency Modal -->
+<div id="frequencyModal" class="modal">
+  <div class="modal-overlay" onclick="closeFrequencyModal()"></div>
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2 class="modal-title">Subscription Frequency Details</h2>
+      <button class="modal-close" onclick="closeFrequencyModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <h3 id="modalProductName" class="product-name"></h3>
+      <div class="frequency-grid">
+        <div class="frequency-item">
+          <span class="frequency-label">Frequency Type:</span>
+          <span id="freqType" class="frequency-value">-</span>
+        </div>
+        <div class="frequency-item">
+          <span class="frequency-label">Start Date:</span>
+          <span id="startDate" class="frequency-value">-</span>
+        </div>
+        <div class="frequency-item">
+          <span class="frequency-label">End Date:</span>
+          <span id="endDate" class="frequency-value">-</span>
+        </div>
+        <div class="frequency-item">
+          <span class="frequency-label">Time:</span>
+          <span id="timeFre" class="frequency-value">-</span>
+        </div>
+        <div class="frequency-item">
+          <span class="frequency-label">Orders Count:</span>
+          <span id="ordersCount" class="frequency-value">-</span>
+        </div>
+        <div class="frequency-item" id="dayFreItem" style="display: none;">
+          <span class="frequency-label">Day Frequency:</span>
+          <span id="dayFre" class="frequency-value">-</span>
+        </div>
+        <div class="frequency-item" id="weeklyItem" style="display: none;">
+          <span class="frequency-label">Weekly Days:</span>
+          <span id="weeklyDays" class="frequency-value">-</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+/* Account subscriptions page uses theme.css variables - no local :root needed */
+
+.account-page {
+  background: var(--bg);
+  padding: 3rem 1rem;
+  min-height: 100vh;
+}
+.container {
+    max-width: var(--container-width);
+    margin: 0 auto;
+    padding: 0 var(--spacing-small);
+}
+.pagination {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+}
+.account-header {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+.account-title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.account-subtitle {
+  color: var(--muted);
+  font-size: 1rem;
+}
+
+.account-layout {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 2rem;
+}
+
+.account-sidebar,
+.account-content {
+  background: var(--card);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+}
+
+.account-content {
+  padding: 2rem;
+}
+
+.account-section-title {
+  font-size: 1.8rem;
+  font-weight: 600;
+  margin-bottom: 0;
+}
+
+.orders-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+  margin-top: 1.5rem;
+}
+
+.order-card {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: 1.5rem;
+  align-items: center;
+  padding: 1.4rem 1.6rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  transition: all .25s ease;
+}
+
+.order-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow);
+}
+
+.order-card-left {
+  min-width: 0;
+}
+
+.order-number {
+  font-size: 1.4rem;
+  margin-bottom: .3rem;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.order-meta {
+  font-size: .9rem;
+  color: var(--muted);
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.order-card-center {
+  display: flex;
+  justify-content: center;
+}
+
+.status-badge {
+  padding: .4rem .9rem;
+  border-radius: 999px;
+  font-size: 1.4rem;
+  font-weight: 600;
+  white-space: nowrap;
+  display: inline-block;
+}
+
+.status-active,
+.status-completed {
+  background: var(--success-bg);
+  color: var(--success-text);
+}
+
+.status-pending {
+  background: var(--warning-bg);
+  color: var(--warning-text);
+}
+
+.status-cancelled,
+.status-failed,
+.status-stopped {
+  background: var(--danger-bg);
+  color: var(--danger-text);
+}
+
+.order-card-right {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.btn {
+  padding: .5rem 1rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: white;
+  color: var(--text);
+  text-decoration: none;
+  font-size: 1.4rem;
+  cursor: pointer;
+  transition: all .2s ease;
+  white-space: nowrap;
+}
+
+.btn-outline:hover {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+
+.empty-state {
+  text-align: center;
+  padding: 4rem 1rem;
+}
+
+.empty-state h3 {
+  font-size: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.empty-state p {
+  color: var(--muted);
+}
+
+/* Modal Styles */
+.modal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1000;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.modal.active {
+  display: flex;
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+}
+
+.modal-content {
+  position: relative;
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: 0 20px 60px rgba(0,0,0,.3);
+  max-width: 600px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  animation: modalSlideIn .3s ease;
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.modal-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  font-size: 2rem;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 0;
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all .2s ease;
+}
+
+.modal-close:hover {
+  background: var(--border);
+  color: var(--text);
+}
+
+.modal-body {
+  padding: 1.5rem;
+}
+
+.product-name {
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+  color: var(--primary);
+}
+
+.frequency-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+.frequency-item {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  gap: 1rem;
+  padding: 0.75rem;
+  background: var(--bg);
+  border-radius: 8px;
+  align-items: center;
+}
+
+.frequency-label {
+  font-weight: 600;
+  color: var(--text);
+  font-size: 1.4rem;
+}
+
+.frequency-value {
+  color: var(--muted);
+  font-size: 1.4rem;
+}
+
+/* Tablet Styles */
+@media (max-width: 1024px) {
+  .account-layout {
+    grid-template-columns: 1fr;
+  }
+  
+
+  
+  .account-content {
+    order: 1;
+  }
+}
+
+/* Mobile Styles */
+@media (max-width: 768px) {
+  .account-page {
+    padding: 2rem 1rem;
+  }
+  
+  .account-title {
+    font-size: 2rem;
+  }
+  
+  .account-content {
+    padding: 1.5rem;
+  }
+  
+  .order-card {
+    padding: 1.2rem;
+  }
+  
+  .order-card-center {
+    justify-content: flex-start;
+  }
+
+  .order-card-right {
+    justify-content: flex-start;
+  }
+  
+  .btn {
+    width: 100%;
+    text-align: center;
+  }
+  
+  .modal-content {
+    max-height: 85vh;
+  }
+  
+  .modal-header {
+    padding: 1.25rem;
+  }
+  
+  .modal-body {
+    padding: 1.25rem;
+  }
+  
+  .frequency-item {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+  }
+  
+  .frequency-label {
+    font-size: 1.4rem;
+  }
+  
+  .frequency-value {
+    font-size: 1.4rem;
+    font-weight: 500;
+  }
+}
+
+@media (max-width: 480px) {
+  .account-title {
+    font-size: 1.75rem;
+  }
+  
+  .account-subtitle {
+    font-size: 0.9rem;
+  }
+  
+  .account-section-title {
+    font-size: 1.5rem;
+  }
+  
+  .order-number {
+    font-size: 1.4rem;
+  }
+  
+  .order-meta {
+    font-size: 1.3rem;
+  }
+  
+  .modal-title {
+    font-size: 1.25rem;
+  }
+  
+  .product-name {
+    font-size: 1.5rem;
+  }
+}
+</style>
+
+<script>
+function openFrequencyModal(button) {
+  const modal = document.getElementById('frequencyModal');
+  const productNameEl = document.getElementById('modalProductName');
+  
+  const frequencyStr = button.getAttribute('data-frequency');
+  const productName = button.getAttribute('data-product-name');
+  
+  productNameEl.textContent = productName;
+  
+  try {
+    const freq = JSON.parse(frequencyStr);
+    
+    // Determine frequency type
+    let freqType = 'Unknown';
+    if (freq.isDailyFrequency) freqType = 'Daily';
+    else if (freq.isWeeklyFrequency) freqType = 'Weekly';
+    else if (freq.isMonthlyFrequency) freqType = 'Monthly';
+    else if (freq.isYearlyFrequency) freqType = 'Yearly';
+    else if (freq.isAlterNativeFrequency) freqType = 'Alternative';
+    
+    document.getElementById('freqType').textContent = freqType;
+    
+    // Format dates
+    const startDate = freq.startDate ? new Date(freq.startDate).toLocaleDateString() : 'Not set';
+    const endDate = freq.endDate ? new Date(freq.endDate).toLocaleDateString() : 'Not set';
+    
+    document.getElementById('startDate').textContent = startDate;
+    document.getElementById('endDate').textContent = endDate;
+    
+    // Format time
+    const time = freq.timeFre ? new Date(freq.timeFre).toLocaleTimeString() : 'Not set';
+    document.getElementById('timeFre').textContent = time;
+    
+    // Orders count
+    document.getElementById('ordersCount').textContent = freq.ordersCount || 0;
+    
+    // Day frequency
+    const dayFreItem = document.getElementById('dayFreItem');
+    if (freq.dayFre && freq.dayFre > 0) {
+      dayFreItem.style.display = 'grid';
+      document.getElementById('dayFre').textContent = `Every ${freq.dayFre} day(s)`;
+    } else {
+      dayFreItem.style.display = 'none';
+    }
+    
+    // Weekly days
+    const weeklyItem = document.getElementById('weeklyItem');
+    if (freq.weeklyFreVals && freq.weeklyFreVals.length > 0) {
+      weeklyItem.style.display = 'grid';
+      const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+      const selectedDays = freq.weeklyFreVals.map(d => days[d] || d).join(', ');
+      document.getElementById('weeklyDays').textContent = selectedDays;
+    } else {
+      weeklyItem.style.display = 'none';
+    }
+    
+  } catch (e) {
+    console.error('Error parsing frequency:', e);
+    document.getElementById('freqType').textContent = 'Error loading data';
+  }
+  
+  modal.classList.add('active');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeFrequencyModal() {
+  const modal = document.getElementById('frequencyModal');
+  modal.classList.remove('active');
+  document.body.style.overflow = '';
+}
+
+// Close modal on Escape key
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    closeFrequencyModal();
+  }
+});
+</script>

@@ -1,0 +1,26 @@
+{% liquid
+  assign widget_settings = widget.settings
+  assign widget_content = widget.content
+  assign widget_data = widget.data
+
+  assign products = widget_data.products | default: widget_content.products | default: widget_settings.products | default: cart.recentlyViewed
+  assign heading = widget_settings.title | default: widget_content.title | default: 'Recently viewed'
+  assign description = widget_settings.subtitle | default: widget_content.subtitle
+  assign columns = widget_settings.columns | default: widget_content.columns | default: 4
+  assign show_add_to_cart = widget_settings.show_add_to_cart
+  if show_add_to_cart == nil and widget_content and widget_content.show_add_to_cart != nil
+    assign show_add_to_cart = widget_content.show_add_to_cart
+  endif
+  if show_add_to_cart == nil
+    assign show_add_to_cart = false
+  endif
+%}
+
+{% render 'widgets/shared/product-grid',
+  widget: widget,
+  heading: heading,
+  description: description,
+  products: products,
+  columns: columns,
+  show_add_to_cart: show_add_to_cart %}
+

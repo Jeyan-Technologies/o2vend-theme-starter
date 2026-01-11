@@ -1,0 +1,92 @@
+{% comment %}
+  Price Display Snippet
+  
+  Displays product price with currency formatting and sale price support.
+  Usage: {% render 'snippets/price', product: product %}
+{% endcomment %}
+
+{% liquid
+  assign product = product | default: null
+  assign price_string = price | default: product.prices.priceString
+  assign price_value = price | default: product.prices.price
+  assign compare_at_price_string = compare_at_price | default: product.compareAtPrice | default: product.prices.mrpString
+  assign compare_at_price_value = compare_at_price | default: product.compareAtPrice | default: product.prices.mrp
+  assign show_compare = show_compare | default: true
+  assign currency_symbol = currency_symbol | default: shop.settings.currencySymbol | default: shop.currency | default: '$'
+  assign currency_code = currency_code | default: shop.currency | default: 'USD'
+  
+  if price_string == null or price_string == empty
+    if price_value == null or price_value == empty
+      assign price_string = currency_symbol | append: '0.00'
+      assign price_value = 0
+    else
+      assign price_formatted = price_value  | round: 2
+      assign price_string = currency_symbol | append: price_formatted
+    endif
+  endif
+  
+  if compare_at_price_string == null or compare_at_price_string == empty
+    if compare_at_price_value == null or compare_at_price_value == empty
+      assign compare_at_price_string = ''
+      assign compare_at_price_value = 0
+    else
+      assign compare_at_price_formatted = compare_at_price_value  | round: 2
+      assign compare_at_price_string = currency_symbol | append: compare_at_price_formatted
+    endif
+  endif
+  
+  assign is_on_sale = compare_at_price_value > price_value and compare_at_price_value > 0
+%}
+
+<div class="price" data-price>
+  {% if is_on_sale and show_compare %}
+    <span class="price-compare" data-price-compare>
+      {{ compare_at_price_string }}
+    </span>
+    <span class="price-sale" data-price-sale>
+      {{ price_string }}
+    </span>
+  {% else %}
+    <span class="price-regular" data-price-regular>
+      {{ price_string }}
+    </span>
+  {% endif %}
+  
+  {% if currency_code != 'USD' %}
+    <span class="price-currency" data-price-currency>{{ currency_code }}</span>
+  {% endif %}
+</div>
+
+<style>
+  .price {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  .price-compare {
+    text-decoration: line-through;
+    color: {{ settings.color_text_light }};
+    font-size: 0.875rem;
+  }
+
+  .price-sale {
+    color: #dc2626;
+    font-weight: 600;
+    font-size: 1.125rem;
+  }
+
+  .price-regular {
+    color: {{ settings.color_text }};
+    font-weight: 600;
+    font-size: 1.125rem;
+  }
+
+  .price-currency {
+    font-size: 0.75rem;
+    color: {{ settings.color_text_light }};
+    text-transform: uppercase;
+  }
+</style>
+

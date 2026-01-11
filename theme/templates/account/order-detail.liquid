@@ -1,0 +1,230 @@
+{% layout 'layout/theme' %}
+
+<section class="account-page">
+  <div class="container">
+    <div class="account-header">
+      <h1 class="account-title display-2">Order Details</h1>
+      {% if order %}
+        <p class="account-subtitle">Order #{{ order.orderNumber }}</p>
+      {% endif %}
+    </div>
+
+    <div class="account-layout">
+      <!-- Sidebar -->
+      <aside class="account-sidebar">
+        {% render 'snippets/account-sidebar' %}
+      </aside>
+
+      <!-- Content -->
+      <div class="account-content">
+        {% if order %}
+          <div class="account-section-header">
+            <h2 class="account-section-title">Order #{{ order.orderNumber }}</h2>
+          </div>
+
+          <div class="order-detail">
+
+            <!-- ORDER INFO -->
+            <div class="order-detail-summary">
+              <p><strong>Date:</strong> {{ order.createdOn | date: '%d-%m-%Y %H:%M' }}</p>
+              <p><strong>Status:</strong> {{ order.orderStatus }}</p>
+              {% if order.couponCode %}
+                <p><strong>Coupon:</strong> {{ order.couponCode }}</p>
+              {% endif %}
+            </div>
+
+            <!-- PAYMENT DETAILS -->
+            <div class="payment-details">
+              <h5>Payment Details</h5>
+
+              <div class="payment-row">
+                <span>Subtotal</span>
+                <span>{{ order.subTotal | money_with_settings: shop.settings }}</span>
+              </div>
+
+              <div class="payment-row">
+                <span>Tax Amount</span>
+                <span>{{ order.taxAmount | money_with_settings: shop.settings }}</span>
+              </div>
+
+              <div class="payment-row">
+                <span>Discount</span>
+                <span>- {{ order.discountAmount | money_with_settings: shop.settings }}</span>
+              </div>
+
+              <div class="payment-row">
+                <span>Payment Fee</span>
+                <span>{{ order.paymentFeeAmount | money_with_settings: shop.settings }}</span>
+              </div>
+
+              <div class="payment-row payment-total">
+                <span>Order Total</span>
+                <span>{{ order.orderTotal | money_with_settings: shop.settings }}</span>
+              </div>
+            </div>
+
+            <!-- ITEMS -->
+            <div class="order-items">
+              <h5>Items</h5>
+              {% if order.items and order.items.size > 0 %}
+                <table class="order-items-table">
+                  <thead>
+                    <tr>
+                      <th>Product</th>
+                      <th>Qty</th>
+                      <th>Price</th>
+                      <th>Total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for item in order.items %}
+                      <tr>
+                        <td>{{ item.productName }}</td>
+                        <td>{{ item.quantity }}</td>
+                        <td>{{ item.productPrice | money_with_settings: shop.settings }}</td>
+                        <td>{{ item.total | money_with_settings: shop.settings }}</td>
+                      </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              {% else %}
+                <p>No items found.</p>
+              {% endif %}
+            </div>
+
+            <!-- ADDRESSES -->
+            {% if order.billingAddress %}
+            <div class="order-detail-addresses">
+              <div class="order-address">
+                <h6>Billing Address</h6>
+                <p>{{ order.billingAddress.contactName }}</p>
+                <p>{{ order.billingAddress.addressLine1 }}</p>
+                <p>{{ order.billingAddress.addressLine2 }}</p>
+                <p>{{ order.billingAddress.city }},
+                  {{ order.billingAddress.stateOrProvinceName }}
+                  {{ order.billingAddress.zipCode }}</p>
+                <p>{{ order.billingAddress.countryName }}</p>
+                <p>Phone: {{ order.billingAddress.phone }}</p>
+              </div>
+
+              {% if order.shippingAddress %}
+              <div class="order-address">
+                <h6>Shipping Address</h6>
+                <p>{{ order.shippingAddress.contactName }}</p>
+                <p>{{ order.shippingAddress.addressLine1 }}</p>
+                <p>{{ order.shippingAddress.addressLine2 }}</p>
+                <p>{{ order.shippingAddress.city }},
+                  {{ order.shippingAddress.stateOrProvinceName }}
+                  {{ order.shippingAddress.zipCode }}</p>
+                <p>{{ order.shippingAddress.countryName }}</p>
+                <p>Phone: {{ order.shippingAddress.phone }}</p>
+              </div>
+              {% endif %}
+            </div>
+            {% endif %}
+
+          </div>
+        {% else %}
+          <div class="empty-state">
+            <p>Order not found.</p>
+            <a href="/orders" class="btn btn-primary">Back to Orders</a>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+:root {
+  --color-primary:#2563eb;
+  --color-border:#e5e7eb;
+  --color-border-light:#f3f4f6;
+  --color-text:#1f2937;
+  --color-text-light:#6b7280;
+  --color-bg:#f9fafb;
+  --card:#fff;
+  --radius:0.6rem;
+}
+
+/* Layout */
+.account-page { background:var(--color-bg); padding:3rem 1rem; }
+.container { max-width:1200px; margin:auto; }
+.account-layout { display:grid; grid-template-columns:280px 1fr; gap:2rem; }
+.account-sidebar, .account-content { background:var(--card); border-radius:var(--radius); padding:1.5rem; border:1px solid var(--color-border); }
+
+/* Summary */
+.order-detail-summary {
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+  gap:1rem;
+  background:var(--color-border-light);
+  padding:1rem;
+  border-radius:var(--radius);
+  font-size:1.1rem;
+}
+
+/* Payment */
+.payment-details {
+  max-width:500px;
+  border:1px solid var(--color-border);
+  border-radius:var(--radius);
+  padding:1rem;
+}
+
+.payment-details h5 {
+  font-size:1.3rem;
+  margin-bottom:1rem;
+}
+
+.payment-row {
+  display:flex;
+  justify-content:space-between;
+  padding:.6rem 0;
+  border-bottom:1px dashed var(--color-border);
+  font-size:1.15rem;
+}
+
+.payment-row:last-child { border:none; }
+
+.payment-total {
+  font-size:1.3rem;
+  font-weight:700;
+  color:var(--color-primary);
+}
+
+/* Table */
+.order-items-table {
+  width:100%;
+  border-collapse:collapse;
+  margin-top:1rem;
+}
+
+.order-items-table th,
+.order-items-table td {
+  padding:.8rem;
+  border-bottom:1px solid var(--color-border);
+}
+
+.order-items-table th { background:var(--color-border-light); }
+
+/* Addresses */
+.order-detail-addresses {
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:1.5rem;
+}
+
+.order-address {
+  background:var(--color-border-light);
+  padding:1rem;
+  border-radius:var(--radius);
+}
+
+/* Responsive */
+@media(max-width:768px){
+  .account-layout { grid-template-columns:1fr; }
+  .order-detail-addresses { grid-template-columns:1fr; }
+}
+
+</style>

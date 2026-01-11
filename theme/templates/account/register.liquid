@@ -1,0 +1,232 @@
+{% layout 'layout/theme' %}
+{% comment %}
+  Customer Registration Template
+{% endcomment %}
+
+<div class="customer-register">
+  <div class="customer-register-container">
+    <div class="customer-register-header">
+      <h1 class="customer-register-title">Create Account</h1>
+      <p class="customer-register-subtitle">Sign up to start shopping</p>
+    </div>
+
+    <div class="customer-register-form-wrapper">
+      <form class="customer-register-form" action="/webstoreapi/customer/register" method="post" id="customer-register-form">
+        {% if form.errors %}
+          <div class="form-errors">
+            {% for error in form.errors %}
+              <p class="form-error">{{ error }}</p>
+            {% endfor %}
+          </div>
+        {% endif %}
+
+        <div class="form-group">
+          <label for="customer-first-name" class="form-label">First Name</label>
+          <input type="text" 
+                 id="customer-first-name" 
+                 name="firstName" 
+                 class="form-input" 
+                 placeholder="Enter your first name"
+                 required
+                 autocomplete="given-name">
+        </div>
+
+        <div class="form-group">
+          <label for="customer-last-name" class="form-label">Last Name</label>
+          <input type="text" 
+                 id="customer-last-name" 
+                 name="lastName" 
+                 class="form-input" 
+                 placeholder="Enter your last name"
+                 required
+                 autocomplete="family-name">
+        </div>
+
+        <div class="form-group">
+          <label for="customer-email-register" class="form-label">Email</label>
+          <input type="email" 
+                 id="customer-email-register" 
+                 name="email" 
+                 class="form-input" 
+                 placeholder="Enter your email"
+                 required
+                 autocomplete="email">
+        </div>
+
+        <div class="form-group">
+          <label for="customer-password-register" class="form-label">Password</label>
+          <input type="password" 
+                 id="customer-password-register" 
+                 name="password" 
+                 class="form-input" 
+                 placeholder="Create a password"
+                 required
+                 autocomplete="new-password"
+                 minlength="8">
+          <p class="form-help">Must be at least 8 characters</p>
+        </div>
+
+        <div class="form-group">
+          <label for="customer-password-confirm" class="form-label">Confirm Password</label>
+          <input type="password" 
+                 id="customer-password-confirm" 
+                 name="passwordConfirm" 
+                 class="form-input" 
+                 placeholder="Confirm your password"
+                 required
+                 autocomplete="new-password">
+        </div>
+
+        <div class="form-group">
+          <label class="form-checkbox">
+            <input type="checkbox" name="acceptTerms" id="accept-terms" required>
+            <span>I agree to the <a href="/pages/terms" target="_blank">Terms of Service</a> and <a href="/pages/privacy" target="_blank">Privacy Policy</a></span>
+          </label>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-block">Create Account</button>
+      </form>
+
+      <div class="customer-register-footer">
+        <p>Already have an account? <a href="/customer/login">Sign in</a></p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .customer-register {
+    min-height: 60vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4rem 1rem;
+    background: {{ settings.color_background }};
+  }
+
+  .customer-register-container {
+    max-width: 400px;
+    width: 100%;
+  }
+
+  .customer-register-header {
+    text-align: center;
+    margin-bottom: 2rem;
+  }
+
+  .customer-register-title {
+    font-size: 2rem;
+    font-weight: 700;
+    margin: 0 0 0.5rem 0;
+    color: {{ settings.color_text }};
+  }
+
+  .customer-register-subtitle {
+    font-size: 1rem;
+    color: {{ settings.color_text_light }};
+    margin: 0;
+  }
+
+  .customer-register-form-wrapper {
+    background: white;
+    padding: 2rem;
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  }
+
+  .form-group {
+    margin-bottom: 1.5rem;
+  }
+
+  .form-label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: {{ settings.color_text }};
+  }
+
+  .form-input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.375rem;
+    font-size: 1rem;
+    transition: border-color 0.2s ease;
+  }
+
+  .form-input:focus {
+    outline: none;
+    border-color: {{ settings.color_primary }};
+  }
+
+  .form-help {
+    font-size: 0.875rem;
+    color: {{ settings.color_text_light }};
+    margin: 0.25rem 0 0 0;
+  }
+
+  .form-checkbox {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    cursor: pointer;
+    font-size: 0.875rem;
+  }
+
+  .form-checkbox a {
+    color: {{ settings.color_primary }};
+    text-decoration: none;
+  }
+
+  .form-checkbox a:hover {
+    text-decoration: underline;
+  }
+
+  .form-errors {
+    background: #fee2e2;
+    border: 1px solid #fecaca;
+    border-radius: 0.375rem;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .form-error {
+    color: #991b1b;
+    margin: 0;
+    font-size: 0.875rem;
+  }
+
+  .btn-block {
+    width: 100%;
+  }
+
+  .customer-register-footer {
+    text-align: center;
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid #e5e7eb;
+  }
+
+  .customer-register-footer a {
+    color: {{ settings.color_primary }};
+    text-decoration: none;
+  }
+
+  .customer-register-footer a:hover {
+    text-decoration: underline;
+  }
+</style>
+
+<script>
+  document.getElementById('customer-register-form')?.addEventListener('submit', function(e) {
+    const password = document.getElementById('customer-password-register').value;
+    const passwordConfirm = document.getElementById('customer-password-confirm').value;
+    
+    if (password !== passwordConfirm) {
+      e.preventDefault();
+      alert('Passwords do not match');
+      return false;
+    }
+  });
+</script>
+
