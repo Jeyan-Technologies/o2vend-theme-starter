@@ -368,15 +368,17 @@ See [THEME_PACKAGING.md](./THEME_PACKAGING.md) for detailed packaging instructio
 
 ## Resources
 
-- [O2VEND Theme Documentation](https://docs.o2vend.com/themes)
-- [Liquid Documentation](https://shopify.github.io/liquid/)
-- [Theme Development Guide](https://docs.o2vend.com/themes/development)
+- **[O2VEND Developer Documentation](https://o2vend.com/developer/)** - Complete API documentation and guides
+- [Liquid Documentation](https://shopify.github.io/liquid/) - Shopify-compatible Liquid syntax reference
 
-## Support
+## Support & Resources
 
-For issues and questions:
-- GitHub Issues: [Create an issue](https://github.com/Jeyan-Technologies/o2vend-theme-starter/issues)
-- Documentation: [O2VEND Docs](https://docs.o2vend.com)
+- **[O2VEND Developer Documentation](https://o2vend.com/developer/)** - Complete API documentation and guides
+- **Support Email:** support@o2vend.com or developer@jeyantechnologies.com
+- **Support Desk:** [O2VEND Support Portal](https://o2vend.atlassian.net/servicedesk/customer/portals)
+- **Community:** [O2VEND Community Program](https://o2vend.com/community)
+- **Partnership:** [O2VEND Partnership Program](https://o2vend.com/partnership)
+- **Developer Portal:** [www.o2vend.com](https://www.o2vend.com)
 
 ## License
 

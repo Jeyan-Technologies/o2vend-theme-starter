@@ -233,8 +233,11 @@ o2vend optimize
 
 ## Getting Help
 
-- **Documentation:** [README.md](../README.md)
-- **Issues:** [GitHub Issues](https://github.com/Jeyan-Technologies/o2vend-theme-starter/issues)
-- **Support:** [O2VEND Support](https://support.o2vend.com)
+- **[O2VEND Developer Documentation](https://o2vend.com/developer/)** - Complete API documentation and guides
+- **Support Email:** support@o2vend.com or developer@jeyantechnologies.com
+- **Support Desk:** [O2VEND Support Portal](https://o2vend.atlassian.net/servicedesk/customer/portals)
+- **Community:** [O2VEND Community Program](https://o2vend.com/community)
+- **Partnership:** [O2VEND Partnership Program](https://o2vend.com/partnership)
+- **Developer Portal:** [www.o2vend.com](https://www.o2vend.com)
 
 Happy theme developing! 🎨
