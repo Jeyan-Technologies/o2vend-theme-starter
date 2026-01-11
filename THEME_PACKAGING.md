@@ -207,6 +207,16 @@ For theme updates:
 
 ## Resources
 
-- [O2VEND Marketplace Theme Structure](../docs/THEME_JSON_STRUCTURE.md)
+- **[O2VEND Developer Documentation](https://o2vend.com/developer/)** - Complete API documentation and guides
 - [Semantic Versioning](https://semver.org/)
 - [Theme Development Guide](./GETTING_STARTED.md)
+
+## Support
+
+For packaging and marketplace questions:
+
+- **Support Email:** support@o2vend.com or developer@jeyantechnologies.com
+- **Support Desk:** [O2VEND Support Portal](https://o2vend.atlassian.net/servicedesk/customer/portals)
+- **Developer Documentation:** [https://o2vend.com/developer/](https://o2vend.com/developer/)
+- **Community:** [Join O2VEND Community](https://o2vend.com/community)
+- **Partnership:** [O2VEND Partnership Program](https://o2vend.com/partnership)

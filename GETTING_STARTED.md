@@ -105,7 +105,9 @@ Let's modify the homepage:
 
 ## Step 6: Working with Widgets
 
-Widgets are dynamic content components managed in the O2VEND admin:
+> **Important:** Widgets are **predefined by O2VEND** and loaded from the O2VEND Storefront API. You can customize widget templates but cannot create new widget types.
+
+Widgets are dynamic content components managed through the O2VEND admin panel:
 
 ```liquid
 {% for widget in widgets.section %}

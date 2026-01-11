@@ -59,13 +59,13 @@ This repository contains the complete default O2VEND theme, pre-configured with:
 ```
 o2vend-theme-starter/
 ├── theme/                    # Theme files
-│   ├── assets/              # CSS, JS, images
+│   ├── assets/              # CSS, JS, images (customizable)
 │   ├── config/              # Theme settings
-│   ├── layout/              # Layout templates
-│   ├── sections/            # Section templates
-│   ├── snippets/            # Reusable snippets
-│   ├── templates/           # Page templates
-│   └── widgets/             # Widget templates
+│   ├── layout/              # Layout templates (customizable)
+│   ├── sections/            # Section templates (predefined, customizable)
+│   ├── snippets/            # Reusable snippets (customizable)
+│   ├── templates/           # Page templates (predefined, customizable)
+│   └── widgets/             # Widget templates (predefined, customizable)
 ├── .vscode/                 # VS Code configuration
 │   ├── settings.json        # Editor settings
 │   ├── extensions.json      # Recommended extensions
@@ -76,6 +76,8 @@ o2vend-theme-starter/
 ├── .env.example             # Environment variables template
 └── README.md                # This file
 ```
+
+> **Note:** Templates, sections, and widgets are **predefined by O2VEND**. You can customize the existing files but cannot create new template types, section types, or widget types. Widgets themselves are managed through the O2VEND admin panel and loaded via the Storefront API.
 
 ## Development
 
@@ -126,58 +128,79 @@ To connect to a real O2VEND Storefront API:
 
 ## Theme Development
 
-### Creating a New Section
+### Important Notes
 
-Create a new file in `theme/sections/`:
+**Templates, Sections, and Widgets:**
+- Templates, sections, and widgets are **predefined** by O2VEND
+- These come from the O2VEND Storefront API
+- You **cannot create new templates, sections, or widgets**
+- You can only **customize existing ones** by editing the Liquid files in this theme
+- All available templates, sections, and widgets are provided in this starter theme
+
+### Customizing Existing Templates
+
+You can customize existing templates by editing files in `theme/templates/`:
 
 ```liquid
-<!-- theme/sections/my-section.liquid -->
-<div class="my-section">
-  <h2>{{ section.settings.title }}</h2>
-  {% for widget in widgets.content %}
+<!-- theme/templates/index.liquid -->
+{% layout 'theme' %}
+
+<div class="homepage">
+  <h1>Welcome to {{ shop.name }}</h1>
+  
+  {% for widget in widgets.hero %}
     {{ widget | render_widget }}
   {% endfor %}
 </div>
+```
+
+### Customizing Existing Sections
+
+Edit existing section files in `theme/sections/`:
+
+```liquid
+<!-- theme/sections/header.liquid -->
+<header class="site-header">
+  <!-- Your custom header code -->
+</header>
 
 {% schema %}
 {
-  "name": "My Section",
+  "name": "Header",
   "settings": [
-    {
-      "type": "text",
-      "id": "title",
-      "label": "Title",
-      "default": "My Section Title"
-    }
+    // Customize settings here
   ]
 }
 {% endschema %}
 ```
 
-### Creating a New Widget
+### Customizing Existing Widgets
 
-Create a new file in `theme/widgets/`:
+Edit existing widget files in `theme/widgets/`:
 
 ```liquid
-<!-- theme/widgets/my-widget.liquid -->
-<div class="widget my-widget">
+<!-- theme/widgets/product.liquid -->
+<div class="widget product-widget">
+  <!-- Your custom widget styling -->
   <h3>{{ widget.settings.title }}</h3>
-  <p>{{ widget.settings.description }}</p>
 </div>
 ```
 
-### Creating a New Template
+### Working with Widgets
 
-Create a new file in `theme/templates/`:
+Widgets are dynamic content components managed through the O2VEND admin panel. They are loaded from the O2VEND API:
 
 ```liquid
-<!-- theme/templates/custom-page.liquid -->
-{% layout 'theme' %}
+{% for widget in widgets.section %}
+  <div class="widget-container">
+    {{ widget | render_widget }}
+  </div>
+{% endfor %}
 
-<div class="custom-page">
-  <h1>{{ page.title }}</h1>
-  <div class="content">{{ page.content }}</div>
-</div>
+{% unless widgets.section %}
+  <!-- Fallback content when no widgets -->
+  <p>No widgets configured for this section.</p>
+{% endunless %}
 ```
 
 ## VS Code Integration
@@ -260,52 +283,64 @@ The development server includes automatic hot reload:
 
 ## Theme Structure
 
+> **Important:** Templates, sections, and widgets are **predefined by O2VEND** and come from the O2VEND Storefront API. You can customize existing files but cannot create new templates, sections, or widgets.
+
 ### Layouts
 
 Layouts define the HTML structure of pages:
 
-- `theme/layout/theme.liquid` - Main theme layout
+- `theme/layout/theme.liquid` - Main theme layout (customizable)
 
 ### Templates
 
-Templates define specific page types:
+Templates define specific page types (all predefined by O2VEND):
 
-- `templates/index.liquid` - Homepage
-- `templates/product-detail.liquid` - Product page
-- `templates/products.liquid` - Product listing
-- `templates/categories.liquid` - Category listing
-- `templates/cart.liquid` - Shopping cart
-- `templates/search.liquid` - Search results
-- `templates/page.liquid` - Custom pages
-- `templates/error.liquid` - Error page
+- `templates/index.liquid` - Homepage template
+- `templates/product-detail.liquid` - Product page template
+- `templates/products.liquid` - Product listing template
+- `templates/categories.liquid` - Category listing template
+- `templates/cart.liquid` - Shopping cart template
+- `templates/search.liquid` - Search results template
+- `templates/page.liquid` - Custom page template
+- `templates/error.liquid` - Error page template
+- And more...
+
+**Note:** All templates are provided by O2VEND. You can customize them but cannot create new ones.
 
 ### Sections
 
-Sections are reusable components:
+Sections are reusable components (all predefined by O2VEND):
 
-- `sections/header.liquid` - Site header
-- `sections/footer.liquid` - Site footer
-- `sections/hero.liquid` - Hero banner
+- `sections/header.liquid` - Site header section
+- `sections/footer.liquid` - Site footer section
+- `sections/hero.liquid` - Hero banner section
 - `sections/content.liquid` - Content section
+- And more...
+
+**Note:** All sections are provided by O2VEND. You can customize them but cannot create new ones.
 
 ### Widgets
 
-Widgets are dynamic content components:
+Widgets are dynamic content components loaded from the O2VEND API (all predefined):
 
-- `widgets/product.liquid` - Product widget
-- `widgets/product-carousel.liquid` - Product carousel
-- `widgets/category-list.liquid` - Category list
-- `widgets/brand-carousel.liquid` - Brand carousel
+- `widgets/product.liquid` - Product widget template
+- `widgets/product-carousel.liquid` - Product carousel widget template
+- `widgets/category-list.liquid` - Category list widget template
+- `widgets/brand-carousel.liquid` - Brand carousel widget template
 - And many more...
+
+**Note:** All widget templates are provided by O2VEND. Widgets themselves are managed through the O2VEND admin panel and loaded via the Storefront API. You can customize widget templates but cannot create new widget types.
 
 ### Snippets
 
-Snippets are reusable code fragments:
+Snippets are reusable code fragments that you can use across templates:
 
-- `snippets/product-card.liquid` - Product card
+- `snippets/product-card.liquid` - Product card component
 - `snippets/cart-drawer.liquid` - Shopping cart drawer
-- `snippets/pagination.liquid` - Pagination
+- `snippets/pagination.liquid` - Pagination component
 - And more...
+
+**Note:** Snippets are reusable components you can create and use within your theme templates.
 
 ## Marketplace Submission
 
