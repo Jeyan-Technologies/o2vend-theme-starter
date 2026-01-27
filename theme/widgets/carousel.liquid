@@ -14,17 +14,46 @@
   assign show_bottom_margin = widget_settings.showWidgetBottomMargin | default: 'Yes'
   assign background_color = widget_settings.backgroundColor
   assign text_color = widget_settings.textColor
-  assign image_height = widget_settings.imageHeight
-  assign image_width = widget_settings.imageWidth
   assign hide_dot = widget_settings.hideDot | default: false
   assign hide_arrow = widget_settings.hideArrow | default: false
   assign autoplay = widget_settings.autoplay | default: true
   assign interval = widget_settings.interval | default: 5000
+  assign caption_horizontal = widget_settings.captionHorizontalAlignment | default: 'center'
+  assign caption_vertical = widget_settings.captionVerticalAlignment | default: 'center'
+  
+  comment
+    ShowWidgetInMobileOrDesktop: mobile, desktop, or other (all devices)
+  endcomment
+  assign show_widget_device = widget_settings.showWidgetInMobileOrDesktop | default: widget_settings.ShowWidgetInMobileOrDesktop | default: ''
+  
+  assign items_count = items.size
+  if items_count > 1
+    assign has_multiple_items = true
+  else
+    assign has_multiple_items = false
+  endif
+  if autoplay and has_multiple_items
+    assign enable_autoplay = true
+  else
+    assign enable_autoplay = false
+  endif
 %}
 
-<section class="modern-carousel" 
+{% assign show_widget_device_lower = show_widget_device | default: '' | downcase | strip %}
+{% assign needs_device_wrapper = false %}
+{% if show_widget_device_lower == 'mobile' or show_widget_device_lower == 'desktop' %}
+  {% assign needs_device_wrapper = true %}
+{% endif %}
+
+{% if needs_device_wrapper and show_widget_device_lower == 'mobile' %}
+<div class="carousel-device-wrapper carousel-device-wrapper--mobile-only">
+{% elsif needs_device_wrapper and show_widget_device_lower == 'desktop' %}
+<div class="carousel-device-wrapper carousel-device-wrapper--desktop-only">
+{% endif %}
+
+<section class="modern-carousel{% if show_bottom_margin == 'Yes' %} modern-carousel--bottom-margin{% endif %}" 
          data-widget-id="{{ widget.id }}" 
-         data-autoplay="{{ autoplay }}" 
+         data-autoplay="{{ enable_autoplay }}" 
          data-interval="{{ interval }}"
          {% if background_color and background_color != 'null' %}style="background-color: {{ background_color }};"{% endif %}>
   {% if items and items.size > 0 %}
@@ -46,9 +75,7 @@
                   <img src="{{ image_src }}" 
                        alt="{{ item.caption | default: item.Caption | default: item.title | default: 'Carousel image' }}" 
                        class="modern-carousel__image"
-                       loading="{% if forloop.first %}eager{% else %}lazy{% endif %}"
-                       {% if image_height %}style="height: {{ image_height }}px;"{% endif %}>
-                  <div class="modern-carousel__overlay"></div>
+                       loading="{% if forloop.first %}eager{% else %}lazy{% endif %}">
                 </div>
               {% endif %}
               
@@ -57,8 +84,29 @@
               {% assign link_text = item.linkText | default: item.LinkText | default: item.link_text | default: item.cta_label %}
               {% assign target_url = item.targetUrl | default: item.TargetUrl | default: item.target_url | default: item.cta_link %}
               
+              {% comment %} Button color and border styling properties per item {% endcomment %}
+              {% assign btn_bg_color = item.ButtonBackgroundColor | default: item.buttonBackgroundColor %}
+              {% assign btn_text_color = item.ButtonTextColor | default: item.buttonTextColor %}
+              {% assign btn_border_color = item.ButtonBorderColor | default: item.buttonBorderColor %}
+              {% assign btn_border_radius = item.ButtonBorderRadius | default: item.buttonBorderRadius %}
+              
+              {% comment %} Build button inline styles {% endcomment %}
+              {% assign btn_style = '' %}
+              {% if btn_bg_color and btn_bg_color != '' and btn_bg_color != 'null' %}
+                {% assign btn_style = btn_style | append: 'background-color: ' | append: btn_bg_color | append: '; ' %}
+              {% endif %}
+              {% if btn_text_color and btn_text_color != '' and btn_text_color != 'null' %}
+                {% assign btn_style = btn_style | append: 'color: ' | append: btn_text_color | append: '; ' %}
+              {% endif %}
+              {% if btn_border_color and btn_border_color != '' and btn_border_color != 'null' %}
+                {% assign btn_style = btn_style | append: 'border: 1px solid ' | append: btn_border_color | append: '; ' %}
+              {% endif %}
+              {% if btn_border_radius and btn_border_radius != '' and btn_border_radius != 'null' %}
+                {% assign btn_style = btn_style | append: 'border-radius: ' | append: btn_border_radius | append: 'px; ' %}
+              {% endif %}
+              
               {% if caption or sub_caption or link_text %}
-                <div class="modern-carousel__content" {% if text_color and text_color != 'null' %}style="color: {{ text_color }};"{% endif %}>
+                <div class="modern-carousel__content modern-carousel__content--{{ caption_horizontal }}-{{ caption_vertical }}" {% if text_color and text_color != 'null' %}style="color: {{ text_color }};"{% endif %}>
                   <div class="modern-carousel__content-inner">
                     {% if caption %}
                       <h2 class="modern-carousel__title animate-fade-up">{{ caption }}</h2>
@@ -67,7 +115,7 @@
                       <p class="modern-carousel__subtitle animate-fade-up animate-delay-1">{{ sub_caption }}</p>
                     {% endif %}
                     {% if link_text and link_text != '' and target_url and target_url != 'null' %}
-                      <a href="{{ target_url }}" class="modern-carousel__cta animate-fade-up animate-delay-2">
+                      <a href="{{ target_url }}" class="modern-carousel__cta animate-fade-up animate-delay-2"{% if btn_style != '' %} style="{{ btn_style }}"{% endif %}>
                         <span>{{ link_text }}</span>
                         <svg class="modern-carousel__cta-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                           <path d="M5 12h14M12 5l7 7-7 7"/>
@@ -82,42 +130,44 @@
         </div>
       </div>
 
-      {% unless hide_arrow == true %}
-        <div class="modern-carousel__controls">
-          <button class="modern-carousel__arrow modern-carousel__arrow--prev" 
-                  data-carousel-prev 
-                  aria-label="Previous slide">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
-              <path d="M15 18l-6-6 6-6"/>
-            </svg>
-          </button>
-          <button class="modern-carousel__arrow modern-carousel__arrow--next" 
-                  data-carousel-next 
-                  aria-label="Next slide">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
-              <path d="M9 18l6-6-6-6"/>
-            </svg>
-          </button>
-        </div>
-      {% endunless %}
-
-      {% unless hide_dot == true %}
-        <div class="modern-carousel__pagination" data-carousel-dots>
-          {% for item in items %}
-            <button class="modern-carousel__dot{% if forloop.first %} is-active{% endif %}" 
-                    data-index="{{ forloop.index0 }}" 
-                    aria-label="Go to slide {{ forloop.index }}">
-              <span class="modern-carousel__dot-inner"></span>
+      {% if has_multiple_items %}
+        {% unless hide_arrow == true %}
+          <div class="modern-carousel__controls">
+            <button class="modern-carousel__arrow modern-carousel__arrow--prev" 
+                    data-carousel-prev 
+                    aria-label="Previous slide">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                <path d="M15 18l-6-6 6-6"/>
+              </svg>
             </button>
-          {% endfor %}
-        </div>
-      {% endunless %}
+            <button class="modern-carousel__arrow modern-carousel__arrow--next" 
+                    data-carousel-next 
+                    aria-label="Next slide">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                <path d="M9 18l6-6-6-6"/>
+              </svg>
+            </button>
+          </div>
+        {% endunless %}
 
-      <!-- Progress Bar -->
-      {% if autoplay %}
-        <div class="modern-carousel__progress">
-          <div class="modern-carousel__progress-bar" data-progress-bar></div>
-        </div>
+        {% unless hide_dot == true %}
+          <div class="modern-carousel__pagination" data-carousel-dots>
+            {% for item in items %}
+              <button class="modern-carousel__dot{% if forloop.first %} is-active{% endif %}" 
+                      data-index="{{ forloop.index0 }}" 
+                      aria-label="Go to slide {{ forloop.index }}">
+                <span class="modern-carousel__dot-inner"></span>
+              </button>
+            {% endfor %}
+          </div>
+        {% endunless %}
+
+        <!-- Progress Bar -->
+        {% if enable_autoplay %}
+          <div class="modern-carousel__progress">
+            <div class="modern-carousel__progress-bar" data-progress-bar></div>
+          </div>
+        {% endif %}
       {% endif %}
     </div>
   {% else %}
@@ -132,19 +182,34 @@
   {% endif %}
 </section>
 
+{% if needs_device_wrapper %}
+</div>
+{% endif %}
+
 <style>
+/* Device visibility wrapper classes */
+.carousel-device-wrapper--mobile-only {
+  display: block;
+}
+.carousel-device-wrapper--desktop-only {
+  display: none;
+}
+@media (min-width: 768px) {
+  .carousel-device-wrapper--mobile-only {
+    display: none;
+  }
+  .carousel-device-wrapper--desktop-only {
+    display: block;
+  }
+}
 /* ============================================
    MODERN CAROUSEL - ROOT VARIABLES
    ============================================ */
 
 :root {
-  --carousel-height-desktop: 600px;
-  --carousel-height-tablet: 500px;
-  --carousel-height-mobile: 400px;
   --carousel-radius: 20px;
   --carousel-padding: 60px;
   --carousel-gap: 24px;
-  --overlay-gradient: linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.7) 100%);
   --transition-smooth: cubic-bezier(0.4, 0, 0.2, 1);
   --color-white: #ffffff;
   --color-black: #000000;
@@ -158,10 +223,11 @@
 .modern-carousel {
   position: relative;
   width: 100%;
-  {% if show_bottom_margin == 'Yes' %}
-    margin-bottom: 60px;
-  {% endif %}
   overflow: hidden;
+}
+
+.modern-carousel--bottom-margin {
+  margin-bottom: var(--carousel-bottom-margin);
 }
 
 .modern-carousel__container {
@@ -185,7 +251,6 @@
   overflow: hidden;
   {% if show_container == 'Yes' %}
     border-radius: var(--carousel-radius);
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
   {% endif %}
 }
 
@@ -203,43 +268,21 @@
   position: relative;
   flex: 0 0 100%;
   min-width: 100%;
-  height: var(--carousel-height-desktop);
   display: flex;
-  align-items: center;
-  justify-content: center;
   overflow: hidden;
   border-radius: var(--border-radius-medium);
 }
 
 .modern-carousel__image-wrapper {
-  position: absolute;
-  top: 0;
-  left: 0;
+  position: relative;
   width: 100%;
-  height: 100%;
   z-index: 1;
 }
 
 .modern-carousel__image {
   width: 100%;
-  height: 100%;
-  {% comment %} object-fit: cover; {% endcomment %}
-  transform: scale(1);
-  transition: transform 8s var(--transition-smooth);
-}
-
-.modern-carousel__slide.is-active .modern-carousel__image {
-  transform: scale(1.08);
-}
-
-.modern-carousel__overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: var(--overlay-gradient);
-  z-index: 2;
+  height: auto;
+  display: block;
 }
 
 /* ============================================
@@ -253,15 +296,75 @@
   width: 100%;
   height: 100%;
   display: flex;
-  align-items: center;
-  justify-content: center;
   z-index: 3;
   padding: var(--carousel-padding);
 }
 
+.modern-carousel__content--left-top {
+  align-items: flex-start;
+  justify-content: flex-start;
+}
+
+.modern-carousel__content--left-center {
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.modern-carousel__content--left-bottom {
+  align-items: flex-end;
+  justify-content: flex-start;
+}
+
+.modern-carousel__content--center-top {
+  align-items: flex-start;
+  justify-content: center;
+}
+
+.modern-carousel__content--center-center {
+  align-items: center;
+  justify-content: center;
+}
+
+.modern-carousel__content--center-bottom {
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.modern-carousel__content--right-top {
+  align-items: flex-start;
+  justify-content: flex-end;
+}
+
+.modern-carousel__content--right-center {
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.modern-carousel__content--right-bottom {
+  align-items: flex-end;
+  justify-content: flex-end;
+}
+
 .modern-carousel__content-inner {
   max-width: 800px;
+}
+
+.modern-carousel__content--left-top .modern-carousel__content-inner,
+.modern-carousel__content--left-center .modern-carousel__content-inner,
+.modern-carousel__content--left-bottom .modern-carousel__content-inner {
+  text-align: left;
+}
+
+.modern-carousel__content--center-top .modern-carousel__content-inner,
+.modern-carousel__content--center-center .modern-carousel__content-inner,
+.modern-carousel__content--center-bottom .modern-carousel__content-inner {
   text-align: center;
+}
+
+.modern-carousel__content--right-top .modern-carousel__content-inner,
+.modern-carousel__content--right-center .modern-carousel__content-inner,
+.modern-carousel__content--right-bottom .modern-carousel__content-inner {
+  text-align: right;
 }
 
 .modern-carousel__title {
@@ -270,7 +373,6 @@
   font-weight: 800;
   line-height: 1.1;
   color: var(--color-white);
-  text-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
   letter-spacing: -0.03em;
 }
 
@@ -279,12 +381,8 @@
   font-size: clamp(1rem, 2vw, 1.5rem);
   font-weight: 400;
   line-height: 1.6;
-  color: var(--color-white);
   opacity: 0.95;
-  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
   max-width: 600px;
-  margin-left: auto;
-  margin-right: auto;
 }
 
 .modern-carousel__cta {
@@ -300,7 +398,6 @@
   letter-spacing: 0.5px;
   border-radius: 50px;
   transition: all 0.4s var(--transition-smooth);
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
   text-transform: uppercase;
   position: relative;
   overflow: hidden;
@@ -320,7 +417,6 @@
 
 .modern-carousel__cta:hover {
   transform: translateY(-4px);
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
   color: var(--color-white);
 }
 
@@ -397,7 +493,6 @@
   cursor: pointer;
   pointer-events: all;
   transition: all 0.3s var(--transition-smooth);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
 }
 
 .modern-carousel__arrow svg {
@@ -410,7 +505,6 @@
 .modern-carousel__arrow:hover {
   background: var(--color-white);
   transform: scale(1.1);
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
 }
 
 .modern-carousel__arrow--prev:hover svg {
@@ -524,10 +618,6 @@
    ============================================ */
 
 @media screen and (max-width: 1024px) and (min-width: 769px) {
-  .modern-carousel__slide {
-    height: var(--carousel-height-tablet);
-  }
-
   .modern-carousel__content {
     padding: 50px 40px;
   }
@@ -563,16 +653,11 @@
 
 @media screen and (max-width: 768px) {
   :root {
-    --carousel-padding: 30px 20px;
     --carousel-radius: 16px;
   }
 
-  .modern-carousel__slide {
-    height: var(--carousel-height-mobile);
-  }
-
   .modern-carousel__content {
-    padding: var(--carousel-padding);
+    padding: var(--carousel-padding-mobile);
   }
 
   .modern-carousel__content-inner {
@@ -640,10 +725,6 @@
    ============================================ */
 
 @media screen and (max-width: 480px) {
-  .modern-carousel__slide {
-    height: 350px;
-  }
-
   .modern-carousel__title {
     font-size: clamp(1.25rem, 7vw, 2rem);
   }
@@ -697,30 +778,42 @@
     const autoplay = carouselEl.dataset.autoplay === 'true';
     const interval = parseInt(carouselEl.dataset.interval || '5000', 10);
 
-    if (!track || dots.length === 0) return;
+    if (!track) return;
+
+    const slides = carouselEl.querySelectorAll('.modern-carousel__slide');
+    const totalSlides = slides.length;
+
+    if (totalSlides === 0) return;
 
     let currentIndex = 0;
-    const totalSlides = dots.length;
     let autoplayTimer = null;
     let progressTimer = null;
     let progressWidth = 0;
 
     // Go to specific slide
     function goToSlide(index) {
-      // Remove active class from all slides and dots
-      const slides = carouselEl.querySelectorAll('.modern-carousel__slide');
+      // Remove active class from all slides
       slides.forEach(slide => slide.classList.remove('is-active'));
-      dots.forEach(dot => dot.classList.remove('is-active'));
+      
+      // Remove active class from dots if they exist
+      if (dots.length > 0) {
+        dots.forEach(dot => dot.classList.remove('is-active'));
+      }
 
       // Set new index
       currentIndex = (index + totalSlides) % totalSlides;
 
-      // Update transform
-      track.style.transform = `translateX(-${currentIndex * 100}%)`;
+      // Update transform only if there are multiple slides
+      if (totalSlides > 1) {
+        track.style.transform = `translateX(-${currentIndex * 100}%)`;
+      }
 
       // Add active class
       slides[currentIndex].classList.add('is-active');
-      dots[currentIndex].classList.add('is-active');
+      
+      if (dots.length > 0 && dots[currentIndex]) {
+        dots[currentIndex].classList.add('is-active');
+      }
 
       // Reset progress
       if (progressBar) {
@@ -729,7 +822,7 @@
       }
 
       // Restart autoplay
-      if (autoplay) {
+      if (autoplay && totalSlides > 1) {
         startAutoplay();
       }
     }
@@ -790,12 +883,14 @@
     }
 
     // Event listeners for dots
-    dots.forEach((dot, index) => {
-      dot.addEventListener('click', () => goToSlide(index));
-    });
+    if (dots.length > 0) {
+      dots.forEach((dot, index) => {
+        dot.addEventListener('click', () => goToSlide(index));
+      });
+    }
 
-    // Pause on hover
-    if (autoplay) {
+    // Pause on hover and start autoplay
+    if (autoplay && totalSlides > 1) {
       carouselEl.addEventListener('mouseenter', stopAutoplay);
       carouselEl.addEventListener('mouseleave', startAutoplay);
       

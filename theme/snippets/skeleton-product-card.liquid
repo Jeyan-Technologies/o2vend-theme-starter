@@ -16,15 +16,101 @@
 </div>
 
 <style>
+:root {
+  --color-primary: {{ settings.color_primary | default: '#000000' }};
+  --color-primary-hover: {{ settings.color_primary_dark | default: '#333333' }};
+  --color-primary-light: {{ settings.color_primary_light | default: '#666666' }};
+  --color-success: {{ settings.color_success | default: '#22c55e' }};
+  --color-success-light: {{ settings.color_success | default: '#22c55e' }};
+  --color-success-dark: {{ settings.color_success | default: '#22c55e' }};
+  --color-danger: {{ settings.color_error | default: '#ef4444' }};
+  --color-danger-light: {{ settings.color_error | default: '#ef4444' }};
+  --color-danger-dark: {{ settings.color_error | default: '#ef4444' }};
+  --color-text: {{ settings.color_text | default: '#000000' }};
+  --color-text-light: {{ settings.color_text_light | default: '#999999' }};
+  --color-text-muted: {{ settings.color_text_muted | default: '#666666' }};
+  --color-background: {{ settings.color_background | default: '#ffffff' }};
+  --color-card-bg: {{ settings.color_surface | default: '#f5f5f5' }};
+  --color-border: {{ settings.color_border | default: '#cccccc' }};
+  --color-border-light: {{ settings.color_surface | default: '#f5f5f5' }};
+  --color-white: #ffffff;
+  --color-black: {{ settings.color_primary_dark | default: '#333333' }};
+  --color-gray-25: {{ settings.color_background | default: '#ffffff' }};
+  --color-gray-50: {{ settings.color_surface | default: '#f5f5f5' }};
+  --color-gray-100: {{ settings.color_surface | default: '#f5f5f5' }};
+  --color-gray-200: {{ settings.color_border | default: '#cccccc' }};
+  --color-gray-300: {{ settings.color_border | default: '#cccccc' }};
+  --color-gray-400: {{ settings.color_text_muted | default: '#666666' }};
+  --color-gray-500: {{ settings.color_text_muted | default: '#666666' }};
+  --color-gray-600: {{ settings.color_text_muted | default: '#666666' }};
+  --color-gray-700: {{ settings.color_text | default: '#000000' }};
+  --color-gray-800: {{ settings.color_text | default: '#000000' }};
+  --color-gray-900: {{ settings.color_text | default: '#000000' }};
+  --shadow-sm: var(--shadow-sm);
+  --shadow-md: var(--shadow-md);
+  --shadow-lg: var(--shadow-lg);
+  --shadow-opacity: {{ settings.shadow_opacity | default: 0.1 }};
+  --shadow-blur: {{ settings.shadow_blur | default: 8 }}px;
+  --radius-sm: var(--radius-md);
+  --radius-md: var(--radius-lg);
+  --radius-lg: var(--radius-xl);
+  --radius-xl: var(--radius-xl);
+  --radius-2xl: var(--radius-2xl);
+  --radius-full: var(--radius-full);
+  --spacing-xs: var(--space-2);
+  --spacing-sm: var(--space-4);
+  --spacing-md: var(--space-6);
+  --spacing-lg: var(--space-8);
+  --spacing-xl: var(--space-12);
+  --space-0: var(--space-0);
+  --space-0-5: var(--space-0-5);
+  --space-1: var(--space-1);
+  --space-1-5: var(--space-1-5);
+  --space-2: var(--space-2);
+  --space-3: var(--space-3);
+  --space-3-5: var(--space-3-5);
+  --space-4: var(--space-4);
+  --space-5: var(--space-5);
+  --space-6: var(--space-6);
+  --text-xs: var(--text-xs);
+  --text-sm: var(--text-sm);
+  --text-base: var(--text-base);
+  --text-lg: var(--text-lg);
+  --text-xl: var(--text-xl);
+  --text-2xl: var(--text-2xl);
+  --transition: var(--transition);
+  --transition-fast: var(--transition-fast);
+  --transition-slow: var(--transition-slow);
+  --duration-150: var(--duration-150);
+  --duration-300: var(--duration-300);
+  --ease-out: var(--ease-out);
+  --ease-in: var(--ease-in);
+  --ease-in-out: var(--ease-in-out);
+  --z-10: var(--z-10);
+  --z-modal: var(--z-modal);
+  --z-dropdown: var(--z-dropdown);
+  --font-primary: {{ settings.font_primary | default: '' }}, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+  --font-heading: {{ settings.font_heading | default: '' }}, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+  --font-display: {{ settings.font_display | default: '' }}, 'Georgia', 'Times New Roman', serif;
+  --font-body: {{ settings.font_body | default: '' }}, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+  --font-weight-bold: {{ settings.font_weight_bold | default: 700 }};
+  --font-weight-medium: {{ settings.font_weight_medium | default: 500 }};
+  --line-height-heading: {{ settings.line_height_heading | default: 1.2 }};
+  --leading-none: var(--leading-none);
+  --leading-normal: var(--leading-normal);
+  --leading-snug: var(--leading-snug);
+  --tracking-wider: var(--tracking-wider);
+}
+
 .skeleton-card {
   pointer-events: none;
 }
 
 .skeleton-image {
-  background: #f0f0f0;
+  background: var(--color-gray-50);
   position: relative;
   overflow: hidden;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   aspect-ratio: 1;
 }
 
@@ -53,12 +139,12 @@
 }
 
 .skeleton-text {
-  height: 16px;
-  background: #f0f0f0;
-  border-radius: 4px;
+  height: var(--space-4);
+  background: var(--color-gray-50);
+  border-radius: var(--radius-sm);
   position: relative;
   overflow: hidden;
-  margin-bottom: 8px;
+  margin-bottom: var(--spacing-xs);
 }
 
 .skeleton-text::after {
@@ -79,30 +165,30 @@
 
 .skeleton-vendor {
   width: 60%;
-  height: 12px;
-  margin-bottom: 6px;
+  height: var(--text-xs);
+  margin-bottom: var(--space-1-5);
 }
 
 .skeleton-title {
   width: 90%;
-  height: 18px;
-  margin-bottom: 8px;
+  height: var(--text-sm);
+  margin-bottom: var(--spacing-xs);
 }
 
 .skeleton-price {
   width: 50%;
-  height: 20px;
-  margin-bottom: 12px;
+  height: var(--space-5);
+  margin-bottom: var(--space-3);
 }
 
 .skeleton-button {
   width: 100%;
-  height: 44px;
-  background: #f0f0f0;
-  border-radius: 8px;
+  height: 2.75rem;
+  background: var(--color-gray-50);
+  border-radius: var(--radius-md);
   position: relative;
   overflow: hidden;
-  margin-top: 8px;
+  margin-top: var(--spacing-xs);
 }
 
 .skeleton-button::after {

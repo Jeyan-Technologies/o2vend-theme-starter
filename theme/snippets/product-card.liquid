@@ -74,7 +74,7 @@
     {% if product_url == blank %}
       {% assign product_url = product.slug | default: product.id | default: '#' %}
     {% endif %}
-    <a href="{{ product_url }}" class="product-card__link">
+    <a href="/{{ product_url }}" class="product-card__link">
       {% if product_image %}
         <img src="{{ product_image }}" 
              alt="{{ product_image_alt }}" 
@@ -122,7 +122,7 @@
   <div class="product-card__content">
     {% hook 'product_card_title_before' %}
     <h3 class="product-card__title">
-      <a href="{{ product_url }}" class="product-card__title-link">
+      <a href="/{{ product_url }}" class="product-card__title-link">
         {{ product.name | default: product.slug | default: product.id }}
       </a>
     </h3>
@@ -187,19 +187,19 @@
 <style>
 /* Product Card Variables */
 :root {
-  --card-bg: #ffffff;
-  --card-border: #e5e7eb;
-  --card-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-  --card-radius: 8px;
-  --card-padding: 16px;
-  --badge-radius: 4px;
-  --btn-radius: 6px;
-  --color-primary: #111827;
-  --color-secondary: #6b7280;
-  --color-sale: #ef4444;
-  --color-new: #10b981;
-  --color-text: #111827;
-  --color-text-muted: #6b7280;
+  --card-bg: {{ settings.color_background | default: '#ffffff' }};
+  --card-border: {{ settings.color_border | default: '#e5e7eb' }};
+  --card-shadow: 0 1px 2px rgba(0, 0, 0, calc({{ settings.shadow_opacity | default: 0.1 }} * 0.5));
+  --card-radius: {{ settings.border_radius_medium | default: 8 }}px;
+  --card-padding: {{ settings.spacing_element | default: 16 }}px;
+  --badge-radius: {{ settings.border_radius_small | default: 4 }}px;
+  --btn-radius: {{ settings.border_radius_small | default: 6 }}px;
+  --color-primary: {{ settings.color_primary | default: '#111827' }};
+  --color-secondary: {{ settings.color_secondary | default: '#6b7280' }};
+  --color-sale: {{ settings.color_error | default: '#ef4444' }};
+  --color-new: {{ settings.color_success | default: '#10b981' }};
+  --color-text: {{ settings.color_text | default: '#111827' }};
+  --color-text-muted: {{ settings.color_text_muted | default: '#6b7280' }};
 }
 
 /* Card Container */
@@ -347,7 +347,7 @@
   font-weight: 500;
   cursor: pointer;
   margin-top: auto;
-  border-radius: var(--border-radius-medium);
+  border-radius: var(--card-radius);
   border: none;
 }
 
@@ -391,10 +391,10 @@
 /* Mobile */
 @media screen and (max-width: 768px) {
   :root {
-    --card-radius: 6px;
-    --card-padding: 10px;
-    --badge-radius: 3px;
-    --btn-radius: 5px;
+    --card-radius: {{ settings.border_radius_small | default: 6 }}px;
+    --card-padding: {{ settings.spacing_small | default: 10 }}px;
+    --badge-radius: {{ settings.border_radius_small | default: 3 }}px;
+    --btn-radius: {{ settings.border_radius_small | default: 5 }}px;
   }
   
   .product-card {
@@ -639,7 +639,7 @@
       }
       
       function fetchCartFromAPI() {
-        fetch('/webstoreapi/cart', {
+        fetch('/webstoreapi/carts/quantity', {
           method: 'GET',
           headers: {
             'Accept': 'application/json',
@@ -648,8 +648,8 @@
         })
           .then(response => response.json())
           .then(data => {
-            if (data.success && data.cart) {
-              const itemCount = data.cart.itemCount || data.cart.cartQuantity || (data.cart.items ? data.cart.items.length : 0) || 0;
+            if (data.success && data.data && data.data.cartQuantity !== undefined) {
+              const itemCount = parseInt(data.data.cartQuantity, 10) || 0;
               updateCartBadge(itemCount);
             } else {
               updateCartBadge(0);

@@ -1,6 +1,4 @@
 ;(function(){
-  console.log('[Cart Drawer] Script loaded')
-  
   function qs(sel, ctx){ return (ctx||document).querySelector(sel) }
   function qsa(sel, ctx){ return Array.from((ctx||document).querySelectorAll(sel)) }
 
@@ -23,7 +21,7 @@
           currency
         }).format(value);
       } catch (error) {
-        console.warn('Failed to format money with locale/currency', locale, currency, error);
+        // Silently handle formatting errors
       }
     }
 
@@ -206,7 +204,7 @@
       try {
         variantImage = localStorage.getItem(imageKey);
       } catch (e) {
-        console.warn('Failed to read variant image from localStorage:', e);
+        // Silently handle localStorage read failures
       }
       
       // Use variant image if available, otherwise use API image

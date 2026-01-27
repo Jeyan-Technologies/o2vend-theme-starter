@@ -3,83 +3,83 @@
 /* Theme Customization Variables - Values sourced from settings_data.json */
 :root {
   /* Color Scheme Overrides */
-  --color-primary: {{ settings.color_primary }};
-  --color-primary-light: {{ settings.color_primary_light }};
-  --color-primary-dark: {{ settings.color_primary_dark }};
-  --color-secondary: {{ settings.color_secondary }};
-  --color-accent: {{ settings.color_accent }};
-  --color-accent-light: {{ settings.color_accent_light }};
-  --color-accent-dark: {{ settings.color_accent_dark }};
-  --color-background: {{ settings.color_background }};
-  --color-surface: {{ settings.color_surface }};
-  --color-border: {{ settings.color_border }};
-  --color-text: {{ settings.color_text }};
-  --color-text-muted: {{ settings.color_text_muted }};
-  --color-text-light: {{ settings.color_text_light }};
-  --color-success: {{ settings.color_success }};
-  --color-error: {{ settings.color_error }};
-  --color-warning: {{ settings.color_warning }};
-  --color-info: {{ settings.color_info }};
+  --color-primary: {{ settings.color_primary | default: '#000000' }};
+  --color-primary-light: {{ settings.color_primary_light | default: '#666666' }};
+  --color-primary-dark: {{ settings.color_primary_dark | default: '#333333' }};
+  --color-secondary: {{ settings.color_secondary | default: '#666666' }};
+  --color-accent: {{ settings.color_accent | default: '#000000' }};
+  --color-accent-light: {{ settings.color_accent_light | default: '#666666' }};
+  --color-accent-dark: {{ settings.color_accent_dark | default: '#333333' }};
+  --color-background: {{ settings.color_background | default: '#ffffff' }};
+  --color-surface: {{ settings.color_surface | default: '#f5f5f5' }};
+  --color-border: {{ settings.color_border | default: '#cccccc' }};
+  --color-text: {{ settings.color_text | default: '#000000' }};
+  --color-text-muted: {{ settings.color_text_muted | default: '#666666' }};
+  --color-text-light: {{ settings.color_text_light | default: '#999999' }};
+  --color-success: {{ settings.color_success | default: '#22c55e' }};
+  --color-error: {{ settings.color_error | default: '#ef4444' }};
+  --color-warning: {{ settings.color_warning | default: '#f59e0b' }};
+  --color-info: {{ settings.color_info | default: '#3b82f6' }};
 
   /* Typography Overrides */
-  --font-primary: {{ settings.font_primary }}, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
-  --font-display: {{ settings.font_display }}, 'Georgia', 'Times New Roman', serif;
-  --font-heading: {{ settings.font_heading }}, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
-  --font-body: {{ settings.font_body }}, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
-  --font-mono: {{ settings.font_mono }}, 'Monaco', 'Inconsolata', 'Roboto Mono', 'Courier New', monospace;
-  --font-size-base: {{ settings.font_size_base }}px;
-  --font-size-heading: {{ settings.font_size_heading }}px;
-  --font-weight-normal: {{ settings.font_weight_normal }};
-  --font-weight-medium: {{ settings.font_weight_medium }};
-  --font-weight-bold: {{ settings.font_weight_bold }};
-  --line-height-base: {{ settings.line_height_base }};
-  --line-height-heading: {{ settings.line_height_heading }};
-  --letter-spacing-heading: {{ settings.letter_spacing_heading }}em;
-  --letter-spacing-uppercase: {{ settings.letter_spacing_uppercase }}em;
+  --font-primary: {{ settings.font_primary | default: '' }}, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+  --font-display: {{ settings.font_display | default: '' }}, 'Georgia', 'Times New Roman', serif;
+  --font-heading: {{ settings.font_heading | default: '' }}, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+  --font-body: {{ settings.font_body | default: '' }}, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+  --font-mono: {{ settings.font_mono | default: '' }}, 'Monaco', 'Inconsolata', 'Roboto Mono', 'Courier New', monospace;
+  --font-size-base: {{ settings.font_size_base | default: 14 }}px;
+  --font-size-heading: {{ settings.font_size_heading | default: 28 }}px;
+  --font-weight-normal: {{ settings.font_weight_normal | default: 400 }};
+  --font-weight-medium: {{ settings.font_weight_medium | default: 500 }};
+  --font-weight-bold: {{ settings.font_weight_bold | default: 700 }};
+  --line-height-base: {{ settings.line_height_base | default: 1.5 }};
+  --line-height-heading: {{ settings.line_height_heading | default: 1.2 }};
+  --letter-spacing-heading: {{ settings.letter_spacing_heading | default: 0 }}em;
+  --letter-spacing-uppercase: {{ settings.letter_spacing_uppercase | default: 0.05 }}em;
 
   /* Layout Overrides */
-  --container-width: {{ settings.container_width }}px;
-  --container-padding: {{ settings.container_padding }}px;
-  --spacing-section: {{ settings.spacing_section }}px;
-  --spacing-large: {{ settings.spacing_large }}px;
-  --spacing-component: {{ settings.spacing_component }}px;
-  --spacing-element: {{ settings.spacing_element }}px;
-  --spacing-small: {{ settings.spacing_small }}px;
-  --spacing-xsmall: {{ settings.spacing_xsmall }}px;
-  --border-radius-small: {{ settings.border_radius_small }}px;
-  --border-radius-medium: {{ settings.border_radius_medium }}px; /* Horizon uses 8px */
-  --border-radius-large: {{ settings.border_radius_large }}px;
+  --container-width: {{ settings.container_width | default: 1200 }}px;
+  --container-padding: {{ settings.container_padding | default: 16 }}px;
+  --spacing-section: {{ settings.spacing_section | default: 64 }}px;
+  --spacing-large: {{ settings.spacing_large | default: 32 }}px;
+  --spacing-component: {{ settings.spacing_component | default: 24 }}px;
+  --spacing-element: {{ settings.spacing_element | default: 16 }}px;
+  --spacing-small: {{ settings.spacing_small | default: 8 }}px;
+  --spacing-xsmall: {{ settings.spacing_xsmall | default: 4 }}px;
+  --border-radius-small: {{ settings.border_radius_small | default: 4 }}px;
+  --border-radius-medium: {{ settings.border_radius_medium | default: 8 }}px; /* Horizon uses 8px */
+  --border-radius-large: {{ settings.border_radius_large | default: 12 }}px;
 
   /* Animation Overrides */
-  --animation-speed: {{ settings.animation_speed }};
-  --enable-animations: {{ settings.enable_animations }};
-  --enable-parallax: {{ settings.enable_parallax }};
-  --enable-hover-effects: {{ settings.enable_hover_effects }};
-  --enable-fade-in: {{ settings.enable_fade_in }};
-  --enable-stagger-animation: {{ settings.enable_stagger_animation }};
+  --animation-speed: {{ settings.animation_speed | default: 'normal' }};
+  --enable-animations: {{ settings.enable_animations | default: true }};
+  --enable-parallax: {{ settings.enable_parallax | default: false }};
+  --enable-hover-effects: {{ settings.enable_hover_effects | default: true }};
+  --enable-fade-in: {{ settings.enable_fade_in | default: true }};
+  --enable-stagger-animation: {{ settings.enable_stagger_animation | default: true }};
 
   /* Shadow Overrides */
-  --shadow-opacity: {{ settings.shadow_opacity }};
-  --shadow-blur: {{ settings.shadow_blur }}px;
-  --shadow-spread: {{ settings.shadow_spread }}px;
-  --depth-level-1: {{ settings.depth_level_1 }}px;
-  --depth-level-2: {{ settings.depth_level_2 }}px;
-  --depth-level-3: {{ settings.depth_level_3 }}px;
+  --shadow-opacity: {{ settings.shadow_opacity | default: 0.1 }};
+  --shadow-blur: {{ settings.shadow_blur | default: 8 }}px;
+  --shadow-spread: {{ settings.shadow_spread | default: 0 }}px;
+  --depth-level-1: {{ settings.depth_level_1 | default: 1 }}px;
+  --depth-level-2: {{ settings.depth_level_2 | default: 4 }}px;
+  --depth-level-3: {{ settings.depth_level_3 | default: 8 }}px;
 
   /* Button Overrides */
-  --button-style: {{ settings.button_style }};
-  --button-padding-vertical: {{ settings.button_padding_vertical }}px;
-  --button-padding-tal: {{ settings.button_padding_tal }}px;
-  --button-hover-lift: {{ settings.button_hover_lift }};
-  --button-ripple-effect: {{ settings.button_ripple_effect }};
-  --button-transition-speed: {{ settings.button_transition_speed }}ms;
+  --button-style: {{ settings.button_style | default: 'modern' }};
+  --button-padding-vertical: {{ settings.button_padding_vertical | default: 12 }}px;
+  --button-padding-tal: {{ settings.button_padding_tal | default: 24 }}px;
+  --button-hover-lift: {{ settings.button_hover_lift | default: true }};
+  --button-ripple-effect: {{ settings.button_ripple_effect | default: false }};
+  --button-transition-speed: {{ settings.button_transition_speed | default: 200 }}ms;
 
   /* Performance Overrides */
-  --lazy-load-images: {{ settings.lazy_load_images }};
-  --preload-critical-css: {{ settings.preload_critical_css }};
-  --optimize-animations: {{ settings.optimize_animations }};
-  --show-loading-skeletons: {{ settings.show_loading_skeletons }};
-  --loading-animation: {{ settings.loading_animation }};
+  --lazy-load-images: {{ settings.lazy_load_images | default: true }};
+  --preload-critical-css: {{ settings.preload_critical_css | default: true }};
+  --optimize-animations: {{ settings.optimize_animations | default: true }};
+  --show-loading-skeletons: {{ settings.show_loading_skeletons | default: true }};
+  --loading-animation: {{ settings.loading_animation | default: 'spinner' }};
 }
 
 /* CSS Custom Properties (CSS Variables)  System */
@@ -88,29 +88,29 @@
      are defined above using values from settings_data.json via Liquid syntax */
   
   /* Semantic Color Variants - Use base colors from settings */
-  --color-success-light: {{ settings.color_success }};
-  --color-success-dark: {{ settings.color_success }};
-  --color-error-light: {{ settings.color_error }};
-  --color-error-dark: {{ settings.color_error }};
-  --color-warning-light: {{ settings.color_warning }};
-  --color-warning-dark: {{ settings.color_warning }};
-  --color-info-light: {{ settings.color_info }};
-  --color-info-dark: {{ settings.color_info }};
+  --color-success-light: {{ settings.color_success | default: '#22c55e' }};
+  --color-success-dark: {{ settings.color_success | default: '#22c55e' }};
+  --color-error-light: {{ settings.color_error | default: '#ef4444' }};
+  --color-error-dark: {{ settings.color_error | default: '#ef4444' }};
+  --color-warning-light: {{ settings.color_warning | default: '#f59e0b' }};
+  --color-warning-dark: {{ settings.color_warning | default: '#f59e0b' }};
+  --color-info-light: {{ settings.color_info | default: '#3b82f6' }};
+  --color-info-dark: {{ settings.color_info | default: '#3b82f6' }};
   
   /*  Neutral Scale - Use settings colors */
-  --color-white: {{ settings.color_background }};
-  --color-gray-25: {{ settings.color_background }};
-  --color-gray-50: {{ settings.color_surface }};
-  --color-gray-100: {{ settings.color_surface }};
-  --color-gray-200: {{ settings.color_border }};
-  --color-gray-300: {{ settings.color_border }};
-  --color-gray-400: {{ settings.color_text_muted }};
-  --color-gray-500: {{ settings.color_text_muted }};
-  --color-gray-600: {{ settings.color_text_muted }};
-  --color-gray-700: {{ settings.color_text }};
-  --color-gray-800: {{ settings.color_text }};
-  --color-gray-900: {{ settings.color_text }};
-  --color-black: {{ settings.color_primary_dark }};
+  --color-white: #ffffff;
+  --color-gray-25: {{ settings.color_background | default: '#ffffff' }};
+  --color-gray-50: {{ settings.color_surface | default: '#f5f5f5' }};
+  --color-gray-100: {{ settings.color_surface | default: '#f5f5f5' }};
+  --color-gray-200: {{ settings.color_border | default: '#cccccc' }};
+  --color-gray-300: {{ settings.color_border | default: '#cccccc' }};
+  --color-gray-400: {{ settings.color_text_muted | default: '#666666' }};
+  --color-gray-500: {{ settings.color_text_muted | default: '#666666' }};
+  --color-gray-600: {{ settings.color_text_muted | default: '#666666' }};
+  --color-gray-700: {{ settings.color_text | default: '#000000' }};
+  --color-gray-800: {{ settings.color_text | default: '#000000' }};
+  --color-gray-900: {{ settings.color_text | default: '#000000' }};
+  --color-black: {{ settings.color_primary_dark | default: '#333333' }};
   
   /* Typography System - Horizon Style */
   /* Note: --font-primary, --font-display, --font-mono are defined above using values from settings_data.json */
@@ -292,8 +292,8 @@
 
 /* Theme Variation Classes */
 .theme-variation-minimal {
-  --color-primary: var(--color-primary-dark, #000000);
-  --color-accent: var(--color-primary-dark, #000000);
+  --color-primary: {{ settings.color_primary | default: '#000000' }};
+  --color-accent: {{ settings.color_accent | default: '#000000' }};
   --border-radius-small: 0px;
   --border-radius-medium: 0px;
   --border-radius-large: 0px;
@@ -311,9 +311,9 @@
 }
 
 .theme-variation-dark {
-  --color-background: var(--color-primary-dark, #0f0f0f);
+  --color-background: {{ settings.color_background | default: '#0f0f0f' }};
   --color-surface: #1a1a1a;
-  --color-text: var(--color-background);
+  --color-text: {{ settings.color_text | default: '#ffffff' }};
   --color-text-muted: #a0a0a0;
   --color-border: #333333;
 }
@@ -3225,12 +3225,6 @@ h3 { font-size: var(--text-7xl); }
 }
 
 /* Will-change optimizations */
-.btn:hover,
-.product-card:hover,
-.collection-card:hover,
-.blog-card:hover {
-  will-change: transform;
-}
 
 [data-parallax] {
   will-change: transform;

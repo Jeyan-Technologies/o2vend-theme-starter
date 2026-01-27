@@ -49,7 +49,6 @@
   async function fetchCheckout() {
     const checkoutToken = getCheckoutToken();
     if (!checkoutToken) {
-      console.warn('[PRICE HANDLER] No checkout token found');
       return null;
     }
 
@@ -243,8 +242,6 @@
         checkForPriceChanges();
       }
     }, POLL_INTERVAL);
-
-    console.log('[PRICE HANDLER] Started polling for price changes');
   }
 
   /**
@@ -254,7 +251,6 @@
     if (pollInterval) {
       clearInterval(pollInterval);
       pollInterval = null;
-      console.log('[PRICE HANDLER] Stopped polling for price changes');
     }
   }
 
@@ -291,9 +287,7 @@
    */
   function requestNotificationPermission() {
     if ('Notification' in window && Notification.permission === 'default') {
-      Notification.requestPermission().then(permission => {
-        console.log('[PRICE HANDLER] Notification permission:', permission);
-      });
+      Notification.requestPermission();
     }
   }
 
@@ -350,8 +344,6 @@
 
     // Stop polling when page is about to unload
     window.addEventListener('beforeunload', stopPolling);
-
-    console.log('[PRICE HANDLER] Initialized');
   }
 
   // Initialize when DOM is ready

@@ -47,11 +47,13 @@ if (Get-Command code -ErrorAction SilentlyContinue) {
 }
 
 # Copy .env.example to .env
-if ((Test-Path .env.example) -and (-not (Test-Path .env))) {
-    Write-Host "📝 Creating .env file from .env.example..." -ForegroundColor Cyan
-    Copy-Item .env.example .env
-    Write-Host "✅ .env file created!" -ForegroundColor Green
-    Write-Host ""
+if (Test-Path .env.example) {
+    if (-not (Test-Path .env)) {
+        Write-Host "📝 Creating .env file from .env.example..." -ForegroundColor Cyan
+        Copy-Item .env.example .env
+        Write-Host "✅ .env file created!" -ForegroundColor Green
+        Write-Host ""
+    }
 }
 
 Write-Host "✨ Setup complete!" -ForegroundColor Green

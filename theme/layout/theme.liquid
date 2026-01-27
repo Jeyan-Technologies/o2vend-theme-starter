@@ -35,7 +35,7 @@
     {{ additional_head }}
   {% endif %}
   
-  <!-- Plugin hooks for theme head -->
+  <!-- App hooks for theme head -->
   {% hook 'theme_head' %}
   
   {%- comment -%}
@@ -64,14 +64,14 @@
   data-shop-currency="{{ shop.currency | default: 'USD' }}"
   data-shop-currency-symbol="{{ shop.settings.currencySymbol | default: shop.currency | default: '$' }}"
   data-shop-locale="{{ shop.locale | default: shop.language | default: 'en-US' }}"
-  style="font-family: var(--font-primary); font-size: {{ settings.font_size_base | default: 16 }}px;"
+  style="font-family: var(--font-primary); font-size: {{ settings.font_size_base | default: 14 }}px;"
 >
   <script>
     window.__SHOP_CURRENCY__ = '{{ shop.currency | default: 'USD' }}';
     window.__SHOP_CURRENCY_SYMBOL__ = '{{ shop.settings.currencySymbol | default: shop.currency | default: '$' }}';
     window.__SHOP_LOCALE__ = '{{ shop.locale | default: shop.language | default: 'en-US' }}';
   </script>
-  <!-- Plugin hooks for body begin -->
+  <!-- app hooks for body begin -->
   {% hook 'theme_body_begin' %}
   <!-- Skip Links for Accessibility -->
   <a href="#main-content" class="skip-link">Skip to main content</a>
@@ -85,7 +85,7 @@
   
   <!-- Main content -->
   <main class="main-content" id="main-content" role="main">
-    <div class="container" style="max-width: {{ settings.container_width | default: 1400 }}px; padding: 0 {{ settings.container_padding | default: 24 }}px;">
+    <div class="container" style="max-width: {{ settings.container_width | default: 1200 }}px; padding: 0 {{ settings.container_padding | default: 16 }}px;">
       {%- comment -%}
         Use Shopify-compatible {{ content_for_layout }} for layout content,
         but keep support for our existing {{ content }} variable as a fallback.
@@ -132,6 +132,22 @@
 
   {% include 'snippets/cart-drawer' %}
   
+  {% if autoOpenCartDrawer %}
+  <script>
+    // Auto-open cart drawer for cart page preview
+    document.addEventListener('DOMContentLoaded', function() {
+      setTimeout(function() {
+        var drawer = document.getElementById('cart-drawer') || 
+                     (window.__previewContainer && window.__previewContainer.querySelector('#cart-drawer'));
+        if (drawer) {
+          drawer.classList.add('active');
+          drawer.setAttribute('aria-hidden', 'false');
+        }
+      }, 500);
+    });
+  </script>
+  {% endif %}
+  
   {% if deliveryZone.enabled %}
     {% include 'snippets/delivery-zone-modal' %}
   {% endif %}
@@ -151,7 +167,7 @@
       </svg>
       <span class="mobile-bottom-nav__label">Home</span>
     </a>
-    <a href="/collections" class="mobile-bottom-nav__item" data-nav-item="categories" aria-label="Categories">
+    <a href="/categories" class="mobile-bottom-nav__item" data-nav-item="categories" aria-label="Categories">
       <svg class="mobile-bottom-nav__icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <rect x="3" y="3" width="7" height="7"></rect>
         <rect x="14" y="3" width="7" height="7"></rect>
@@ -188,7 +204,7 @@
     </button>
   </nav>
   
-  <!-- Plugin hooks for body end -->
+  <!-- app hooks for body end -->
   {% hook 'theme_body_end' %}
 </body>
 </html>

@@ -7,17 +7,25 @@
   
   comment
     HTML content priority order:
-    1. HtmlContent / htmlContent - direct field from widget (highest priority)
-    2. widget.data.htmlContent - normalized HtmlContent
-    3. widget_content.HtmlContent / htmlContent - from content JSON
-    4. widget_content.Html / html - from content JSON
-    5. Other fallbacks for backward compatibility
+    1. htmlData / HtmlData - separate property saved via editor (highest priority)
+    2. HtmlContent / htmlContent - direct field from widget
+    3. widget.data.htmlContent - normalized HtmlContent
+    4. widget.data.htmlData - normalized HtmlData
+    5. widget_content.HtmlContent / htmlContent - from content JSON
+    6. widget_content.Html / html - from content JSON
+    7. Other fallbacks for backward compatibility
   endcomment
   
-  if widget.htmlContent
+  if widget.htmlData
+    assign html_content = widget.htmlData
+  elsif widget.HtmlData
+    assign html_content = widget.HtmlData
+  elsif widget.htmlContent
     assign html_content = widget.htmlContent
   elsif widget.HtmlContent
     assign html_content = widget.HtmlContent
+  elsif widget_data.htmlData
+    assign html_content = widget_data.htmlData
   elsif widget_data.htmlContent
     assign html_content = widget_data.htmlContent
   elsif widget_content.Html
@@ -87,6 +95,21 @@
   </div>
 
   <style>
+    :root {
+      --html-white: var(--color-white);
+      --html-text: var(--color-text);
+      --html-text-muted: var(--color-text-muted);
+      --html-border: var(--color-border);
+      --html-spacing-section: var(--spacing-section);
+      --html-spacing-component: var(--spacing-component);
+      --html-spacing-element: var(--spacing-element);
+      --html-spacing-xsmall: var(--spacing-xsmall);
+      --html-container-padding: var(--container-padding);
+      --html-radius-lg: var(--radius-lg);
+      --html-radius: var(--radius);
+      --html-text-sm: var(--text-sm);
+    }
+    
     .widget-html {
       padding: {{ padding_top | default: '40' }}px 0 {{ padding_bottom | default: '40' }}px;
     }

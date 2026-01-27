@@ -4,6 +4,51 @@
   Inspired by Shopify Horizon Theme
 {% endcomment %}
 
+<style>
+  :root {
+    --color-primary: {{ settings.color_primary | default: '#000000' }};
+    --color-primary-hover: {{ settings.color_primary_dark | default: '#333333' }};
+    --color-primary-light: {{ settings.color_primary_light | default: '#666666' }};
+    --color-success: {{ settings.color_success | default: '#22c55e' }};
+    --color-success-light: {{ settings.color_success | default: '#22c55e' }};
+    --color-danger: {{ settings.color_error | default: '#ef4444' }};
+    --color-danger-light: {{ settings.color_error | default: '#ef4444' }};
+    --color-text: {{ settings.color_text | default: '#000000' }};
+    --color-text-light: {{ settings.color_text_muted | default: '#666666' }};
+    --color-background: {{ settings.color_background | default: '#ffffff' }};
+    --color-card-bg: {{ settings.color_surface | default: '#f5f5f5' }};
+    --color-border: {{ settings.color_border | default: '#cccccc' }};
+    --color-border-light: {{ settings.color_surface | default: '#f5f5f5' }};
+    --shadow-sm: var(--shadow-sm);
+    --shadow-md: var(--shadow-md);
+    --shadow-lg: var(--shadow-lg);
+    --radius-md: var(--radius-md);
+    --radius-lg: var(--radius-lg);
+    --spacing-xs: var(--space-3);
+    --spacing-sm: var(--space-4);
+    --spacing-md: var(--space-6);
+    --spacing-lg: var(--space-8);
+    --spacing-xl: var(--space-12);
+  }
+</style>
+
+<!-- Hero Widgets (if any) -->
+{% assign hero_widgets = widgets.hero %}
+{% if hero_widgets and hero_widgets.size > 0 %}
+  <section class="theme-section theme-section--hero" data-section="hero">
+    {% for widget in hero_widgets %}
+      <div class="theme-widget-wrapper" 
+           data-widget-id="{{ widget.id }}" 
+           data-widget-type="{{ widget.type }}"
+           data-widget-position="{{ widget.Position | default: widget.position | default: forloop.index }}">
+        {% if widget and widget.template_path %}
+          {% render widget.template_path, widget: widget, settings: settings, shop: shop %}
+        {% endif %}
+      </div>
+    {% endfor %}
+  </section>
+{% endif %}
+
 <!-- Product Main Section -->
 {% hook 'product_before' %}
 <section class="product-main horizon-style">
@@ -101,10 +146,39 @@
           </div>
         {% endif %}
       {% endif %}
+
+      <!-- SKU -->
+      {% comment %}Show SKU - Check settings with proper boolean handling{% endcomment %}
+      {% liquid
+        assign sku_val = settings.show_sku
+        if sku_val == blank or sku_val == null
+          assign sku_val = false
+        endif
+        assign show_sku = false
+        if sku_val == true
+          assign show_sku = true
+        endif
+        if sku_val == 'true'
+          assign show_sku = true
+        endif
+        if sku_val == 1
+          assign show_sku = true
+        endif
+      %}
+      
       
       <!-- Product Title -->
       {% hook 'product_title_before' %}
       <h1 class="product-title">{{ product.name | default: product.title }}</h1>
+     {% if show_sku %}
+        {% assign product_sku = product.sku | default: product.skuCode | default: product.SKU %}
+        {% if product_sku and product_sku != blank %}
+          <div class="product-sku">
+            <span class="product-sku__label">SKU:</span>
+            <span class="product-sku__value" id="productSku">{{ product_sku }}</span>
+          </div>
+        {% endif %}
+      {% endif %}
       {% hook 'product_title_after' %}
 
       {% if product.shortDescription and product.shortDescription != blank %}
@@ -453,6 +527,23 @@
   </section>
 {% endif %}
 {% hook 'product_related_after' %}
+
+<!-- Content Widgets (if any) -->
+{% assign content_widgets = widgets.content %}
+{% if content_widgets and content_widgets.size > 0 %}
+  <section class="theme-section theme-section--content" data-section="content">
+    {% for widget in content_widgets %}
+      <div class="theme-widget-wrapper" 
+           data-widget-id="{{ widget.id }}" 
+           data-widget-type="{{ widget.type }}"
+           data-widget-position="{{ widget.Position | default: widget.position | default: forloop.index }}">
+        {% if widget and widget.template_path %}
+          {% render widget.template_path, widget: widget, settings: settings, shop: shop %}
+        {% endif %}
+      </div>
+    {% endfor %}
+  </section>
+{% endif %}
 
 <!-- Full Screen Image Gallery Modal -->
 <div class="gallery-modal" id="galleryModal">
@@ -925,6 +1016,16 @@
     margin-bottom: -{{ settings.spacing_element }}px;
   }
 
+  .product-sku {
+    color: {{ settings.color_text_muted }};
+    font-size: {{ settings.font_size_base | minus: 2 }}px;
+    margin-bottom: -{{ settings.spacing_element }}px;
+  }
+
+  .product-sku__label {
+    font-weight: {{ settings.font_weight_medium }};
+    margin-right: 4px;
+  }
   .product-title {
     font-size: {{ settings.font_size_heading }}px;
     font-weight: {{ settings.font_weight_normal }};
@@ -1052,11 +1153,7 @@
     text-align: center;
     border-radius: var(--border-radius-small);
   }
-
-  .option-value-text:hover:not(.disabled) {
-    border-color: {{ settings.color_text }};
-    background: {{ settings.color_surface }};
-  }
+  
 
   .option-value-text.selected {
     border-color: {{ settings.color_text }};

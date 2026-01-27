@@ -93,7 +93,7 @@
                 </div>
                 <p class="empty-title">No Eligible Orders</p>
                 <p class="empty-description">You don't have any orders eligible for return at the moment.</p>
-                <a href="/collections" class="btn btn-primary">Continue Shopping</a>
+                <a href="/categories" class="btn btn-primary">Continue Shopping</a>
               </div>
             {% endif %}
           </div>
@@ -109,28 +109,29 @@
 
 <style>
 :root {
-  --color-primary: #2563eb;
-  --color-primary-hover: #1d4ed8;
-  --color-primary-light: #dbeafe;
-  --color-success: #10b981;
-  --color-success-light: #d1fae5;
-  --color-success-dark: #065f46;
-  --color-text: #1f2937;
-  --color-text-light: #6b7280;
-  --color-background: #f9fafb;
-  --color-card-bg: #ffffff;
-  --color-border: #e5e7eb;
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-  --radius-sm: 0.375rem;
-  --radius-md: 0.5rem;
-  --radius-lg: 0.75rem;
-  --spacing-xs: 0.5rem;
-  --spacing-sm: 1rem;
-  --spacing-md: 1.5rem;
-  --spacing-lg: 2rem;
-  --spacing-xl: 3rem;
+  --color-primary: {{ settings.color_primary | default: '#000000' }};
+  --color-primary-hover: {{ settings.color_primary_dark | default: '#333333' }};
+  --color-primary-light: {{ settings.color_primary_light | default: '#666666' }};
+  --color-success: {{ settings.color_success | default: '#22c55e' }};
+  --color-success-light: {{ settings.color_success | default: '#22c55e' }};
+  --color-success-dark: {{ settings.color_success | default: '#22c55e' }};
+  --color-text: {{ settings.color_text | default: '#000000' }};
+  --color-text-light: {{ settings.color_text_light | default: '#999999' }};
+  --color-background: {{ settings.color_background | default: '#ffffff' }};
+  --color-card-bg: {{ settings.color_surface | default: '#f5f5f5' }};
+  --color-border: {{ settings.color_border | default: '#cccccc' }};
+  --color-white: #ffffff;
+  --shadow-sm: var(--shadow-sm);
+  --shadow-md: var(--shadow-md);
+  --shadow-lg: var(--shadow-lg);
+  --radius-sm: var(--radius-md);
+  --radius-md: var(--radius-lg);
+  --radius-lg: var(--radius-xl);
+  --spacing-xs: var(--space-2);
+  --spacing-sm: var(--space-4);
+  --spacing-md: var(--space-6);
+  --spacing-lg: var(--space-8);
+  --spacing-xl: var(--space-12);
 }
 
 .account-page {
@@ -209,11 +210,11 @@
 }
 
 .store-credit-balance {
-  background: linear-gradient(135deg, var(--color-success) 0%, #059669 100%);
+  background: linear-gradient(135deg, var(--color-success) 0%, var(--color-success-dark) 100%);
   border-radius: var(--radius-lg);
   padding: var(--spacing-xl);
   text-align: center;
-  color: white;
+  color: var(--color-white);
   box-shadow: var(--shadow-lg);
   position: relative;
   overflow: hidden;
@@ -387,7 +388,7 @@
 
 .btn-primary {
   background: var(--color-primary);
-  color: white;
+  color: var(--color-white);
   border: 2px solid var(--color-primary);
 }
 

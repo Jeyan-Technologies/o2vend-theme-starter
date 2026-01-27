@@ -6,24 +6,55 @@
 
 {% liquid
   assign widget_settings = widget.settings
+  assign widget_content = widget.content
   assign widget_data = widget.data
 
   comment
     Static Widget: Content comes from widget_data.content (header configuration)
     Settings come from widget_settings
   endcomment
-
+  
+  if widget.htmlData
+    assign html_content = widget.htmlData
+  elsif widget.HtmlData
+    assign html_content = widget.HtmlData
+  elsif widget.htmlContent
+    assign html_content = widget.htmlContent
+  elsif widget.HtmlContent
+    assign html_content = widget.HtmlContent
+  elsif widget_data.htmlData
+    assign html_content = widget_data.htmlData
+  elsif widget_data.htmlContent
+    assign html_content = widget_data.htmlContent
+  elsif widget_content.Html
+    assign html_content = widget_content.Html
+  elsif widget_content.html
+    assign html_content = widget_content.html
+  elsif widget_content.HtmlContent
+    assign html_content = widget_content.HtmlContent
+  elsif widget_content.htmlContent
+    assign html_content = widget_content.htmlContent
+  elsif widget_content.Body
+    assign html_content = widget_content.Body
+  elsif widget_content.body
+    assign html_content = widget_content.body
+  elsif widget_content.Content
+    assign html_content = widget_content.Content
+  elsif widget_content.content
+    assign html_content = widget_content.content
+  elsif widget_settings.html
+    assign html_content = widget_settings.html
+  elsif widget_data.html
+    assign html_content = widget_data.html
+  else
+    assign html_content = ''
+  endif
+  
   assign content_data = widget_data.content | default: widget.content
   if content_data.size > 0
     assign header_config = content_data.first
   else
     assign header_config = content_data
-  endif
-
-  assign html_content_raw = header_config.HtmlContent | default: header_config.htmlContent
-  assign html_content = blank
-  if html_content_raw and html_content_raw != blank and html_content_raw != 'null'
-    assign html_content = html_content_raw
   endif
   assign hide_close_button = widget_settings.hideCloseButton
   if hide_close_button == nil and header_config and header_config.HideCloseButton != nil
@@ -38,26 +69,33 @@
     assign text_color = header_config.TextColor
   endif
 %}
-
-{% if html_content and html_content != blank and html_content != 'null' %}
-  <div class="widget-header-announcement" data-widget-id="{{ widget.id }}">
-    <div class="widget-header-announcement__bar"{% if background_color and background_color != 'null' and background_color != blank %} style="background-color: {{ background_color }};"{% endif %}>
-      <div class="widget-header-announcement__content"{% if text_color and text_color != 'null' and text_color != blank %} style="color: {{ text_color }};"{% endif %}>
-        {{ html_content }}
-      </div>
-      {% unless hide_close_button %}
-        <button class="widget-header-announcement__close" aria-label="Close announcement" data-announcement-close>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="18" y1="6" x2="6" y2="18"></line>
-            <line x1="6" y1="6" x2="18" y2="18"></line>
-          </svg>
-        </button>
-      {% endunless %}
+{% if html_content and html_content != blank %}
+<div class="widget-header-announcement" data-widget-id="{{ widget.id }}">
+  <div class="widget-header-announcement__bar"{% if background_color and background_color != 'null' and background_color != blank %} style="background-color: {{ background_color }};"{% endif %}>
+    <div class="widget-header-announcement__content"{% if text_color and text_color != 'null' and text_color != blank %} style="color: {{ text_color }};"{% endif %}>
+      {{ html_content }}
     </div>
+    {% unless hide_close_button %}
+      <button class="widget-header-announcement__close" aria-label="Close announcement" data-announcement-close>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    {% endunless %}
   </div>
+</div>
 {% endif %}
-
 <style>
+  :root {
+    --header-white: var(--color-white);
+    --header-text: var(--color-text);
+    --header-spacing-element: var(--spacing-component);
+    --header-spacing-small: var(--spacing-small);
+    --header-transition-fast: var(--transition-fast);
+    --header-text-sm: var(--text-sm);
+  }
+  
   /* Announcement Bar Styles */
   .widget-header-announcement__bar {
     display: flex;

@@ -4,6 +4,56 @@
   Checkout process with payment and shipping options
 {% endcomment %}
 
+<style>
+  :root {
+    --color-primary: {{ settings.color_primary | default: '#000000' }};
+    --color-primary-hover: {{ settings.color_primary_dark | default: '#333333' }};
+    --color-primary-light: {{ settings.color_primary_light | default: '#666666' }};
+    --color-success: {{ settings.color_success | default: '#22c55e' }};
+    --color-success-light: {{ settings.color_success | default: '#22c55e' }};
+    --color-danger: {{ settings.color_error | default: '#ef4444' }};
+    --color-danger-light: {{ settings.color_error | default: '#ef4444' }};
+    --color-text: {{ settings.color_text | default: '#000000' }};
+    --color-text-light: {{ settings.color_text_muted | default: '#666666' }};
+    --color-background: {{ settings.color_background | default: '#ffffff' }};
+    --color-card-bg: {{ settings.color_surface | default: '#f5f5f5' }};
+    --color-border: {{ settings.color_border | default: '#cccccc' }};
+    --color-border-light: {{ settings.color_surface | default: '#f5f5f5' }};
+    --shadow-sm: var(--shadow-sm);
+    --shadow-md: var(--shadow-md);
+    --shadow-lg: var(--shadow-lg);
+    --radius-md: var(--radius-md);
+    --radius-lg: var(--radius-lg);
+    --spacing-xs: var(--space-3);
+    --spacing-sm: var(--space-4);
+    --spacing-md: var(--space-6);
+    --spacing-lg: var(--space-8);
+    --spacing-xl: var(--space-12);
+  }
+</style>
+
+{%- comment -%}
+  Checkout widgets (pageId = checkout)
+  - widgets.header is already used by the global header section
+  - Here we render checkout-specific hero/content widgets
+{%- endcomment -%}
+
+{%- assign hero_widgets = widgets.hero -%}
+{%- if hero_widgets and hero_widgets.size > 0 -%}
+  <section class="theme-section theme-section--hero" data-section="hero">
+    {%- for widget in hero_widgets -%}
+      <div class="theme-widget-wrapper"
+           data-widget-id="{{ widget.id }}"
+           data-widget-type="{{ widget.type }}"
+           data-widget-position="{{ widget.Position | default: widget.position | default: forloop.index }}">
+        {%- if widget and widget.template_path -%}
+          {%- render widget.template_path, widget: widget, settings: settings, shop: shop -%}
+        {%- endif -%}
+      </div>
+    {%- endfor -%}
+  </section>
+{%- endif -%}
+
 <!-- Checkout Page -->
 {% hook 'checkout_before' %}
 <section class="checkout-page">
@@ -212,7 +262,7 @@
 
           <!-- Shipping Methods Section -->
           {% hook 'checkout_shipping_methods_before' %}
-          <div class="checkout-section" id="shipping-methods-section" style="display: none;">
+          <div class="checkout-section" id="shipping-methods-section">
             <h2 class="checkout-section-title">Shipping Method</h2>
             <div class="checkout-section-content">
               <div id="shipping-methods-container">
@@ -402,7 +452,7 @@
                               {% endif %}
                             </div>
                           </label>
-                          <!-- Payment gateway plugin snippet will be rendered here -->
+                          <!-- Payment gateway app snippet will be rendered here -->
                           {% hook 'payment_gateway_form' paymentMethod.id %}
                         </div>
                       {% endfor %}
@@ -550,12 +600,6 @@
                 <p class="coupons-loading">Loading available coupons...</p>
               </div>
               <div id="coupons-error" class="coupons-error" style="display: none;"></div>
-              <div id="applied-coupon" class="applied-coupon" style="display: none;">
-                <div class="applied-coupon-info">
-                  <span class="applied-coupon-code"></span>
-                  <button type="button" class="btn-remove-coupon" id="remove-coupon-btn">Remove</button>
-                </div>
-              </div>
             </div>
           </div>
           {% hook 'checkout_coupons_after' %}
@@ -608,13 +652,19 @@
                 </span>
               </div>
               
-              <div class="summary-line summary-discount" data-summary-discount-line style="{% unless checkout.pricing and checkout.pricing.discount != null and checkout.pricing.discount > 0 %}display: none;{% endunless %}">
+              {% assign has_discount = false %}
+              {% if checkout.pricing and checkout.pricing.totalDiscounts != null and checkout.pricing.totalDiscounts > 0 %}
+                {% assign has_discount = true %}
+              {% elsif checkout.pricing and checkout.pricing.discount != null and checkout.pricing.discount > 0 %}
+                {% assign has_discount = true %}
+              {% endif %}
+              <div class="summary-line summary-discount" data-summary-discount-line style="{% unless has_discount %}display: none;{% endunless %}">
                 <span class="summary-label">Discount</span>
                 <span class="summary-value" data-summary-discount>
-                  {% if checkout.pricing and checkout.pricing.discount != null and checkout.pricing.discount > 0 %}
-                    -{{ checkout.pricing.discount | money_with_settings: shop.settings }}
-                  {% elsif checkout.pricing and checkout.pricing.totalDiscounts != null and checkout.pricing.totalDiscounts > 0 %}
+                  {% if checkout.pricing and checkout.pricing.totalDiscounts != null and checkout.pricing.totalDiscounts > 0 %}
                     -{{ checkout.pricing.totalDiscounts | money_with_settings: shop.settings }}
+                  {% elsif checkout.pricing and checkout.pricing.discount != null and checkout.pricing.discount > 0 %}
+                    -{{ checkout.pricing.discount | money_with_settings: shop.settings }}
                   {% else %}
                     {{ 0 | money_with_settings: shop.settings }}
                   {% endif %}
@@ -680,7 +730,27 @@
       </div>
     </form>
   </div>
+
 </section>
+
+{%- comment -%}
+  Checkout content widgets (pageId = checkout, section = content)
+{%- endcomment -%}
+{%- assign content_widgets = widgets.content -%}
+{%- if content_widgets and content_widgets.size > 0 -%}
+  <section class="theme-section theme-section--content" data-section="content">
+    {%- for widget in content_widgets -%}
+      <div class="theme-widget-wrapper"
+           data-widget-id="{{ widget.id }}"
+           data-widget-type="{{ widget.type }}"
+           data-widget-position="{{ widget.Position | default: widget.position | default: forloop.index }}">
+        {%- if widget and widget.template_path -%}
+          {%- render widget.template_path, widget: widget, settings: settings, shop: shop -%}
+        {%- endif -%}
+      </div>
+    {%- endfor -%}
+  </section>
+{%- endif -%}
 {% hook 'checkout_after' %}
 
 <script>
@@ -688,7 +758,8 @@
   const CHECKOUT_TOKEN = {% if checkout.token %}{{ checkout.token | json }}{% else %}null{% endif %};
   
   // Debug: Log checkout pricing data
-  console.log('[CHECKOUT] Checkout pricing data:', {% if checkout.pricing %}{{ checkout.pricing | json }}{% else %}null{% endif %});
+  const CHECKOUT_PRICING = {% if checkout.pricing %}{{ checkout.pricing | json }}{% else %}null{% endif %};
+  console.log('[CHECKOUT] Checkout pricing data:', CHECKOUT_PRICING);
   console.log('[CHECKOUT] Cart totals:', {
     total: {{ cart.total | default: 0 }},
     subTotal: {{ cart.subTotal | default: 0 }},
@@ -714,13 +785,7 @@
   
   // Check if shipping methods are required (section exists and has methods)
   function isShippingMethodRequired() {
-    const section = document.getElementById('shipping-methods-section');
     const container = document.getElementById('shipping-methods-container');
-    
-    // If section doesn't exist or is hidden, shipping methods are not required
-    if (!section || section.style.display === 'none') {
-      return false;
-    }
     
     // Check if container has shipping method radio buttons
     if (container) {
@@ -742,6 +807,9 @@
     
     const hasPendingCalls = Object.values(window.checkoutApiStatus).some(status => status === 'pending');
     
+    // Check if shipping address is complete
+    const shippingAddressComplete = isShippingAddressComplete();
+    
     // Check if shipping method is required and not selected
     const shippingMethodRequired = isShippingMethodRequired();
     const shippingMethodNotSelected = shippingMethodRequired && !window.shippingMethodSelected;
@@ -759,12 +827,15 @@
       statusMessage = 'Updating billing address...';
     } else if (window.checkoutApiStatus.orderNote === 'pending') {
       statusMessage = 'Saving order note...';
+    } else if (!shippingAddressComplete) {
+      statusMessage = 'Please complete your shipping address';
     } else if (shippingMethodNotSelected) {
       statusMessage = 'Please select a shipping method';
     }
     
     // Decide if the button should be disabled for this state
-    const shouldDisable = hasPendingCalls || shippingMethodNotSelected;
+    // Disable if: pending calls, incomplete address, or missing shipping method
+    const shouldDisable = hasPendingCalls || !shippingAddressComplete || shippingMethodNotSelected;
     submitBtn.disabled = shouldDisable;
     
     // If we are disabling the button but don't have a specific reason,
@@ -795,7 +866,7 @@
   /**
    * Get checkout token from server context, URL, or cookie
    * This function is used by multiple checkout functions
-   * Exposed globally for plugins to use
+   * Exposed globally for apps to use
    */
   window.getCheckoutToken = function getCheckoutToken() {
     // First, try to use the token from server-side context (most reliable)
@@ -1250,7 +1321,20 @@
         // Use setTimeout to ensure utils script has loaded
         setTimeout(function() {
           iti.setNumber(existingPhone);
+          // Check for shipping methods after phone number is set
+          setTimeout(function() {
+            if (typeof checkAndFetchShippingMethods === 'function') {
+              checkAndFetchShippingMethods();
+            }
+          }, 200);
         }, 100);
+      } else {
+        // Even if no phone number, check for shipping methods after initialization
+        setTimeout(function() {
+          if (typeof checkAndFetchShippingMethods === 'function') {
+            checkAndFetchShippingMethods();
+          }
+        }, 300);
       }
       
       // Update country when shipping country changes (countrySelect already declared above)
@@ -1262,6 +1346,18 @@
           }
         });
       }
+      
+      // Add listeners to update button state when phone changes
+      shippingPhoneInput.addEventListener('input', function() {
+        if (typeof updateCheckoutButtonState === 'function') {
+          updateCheckoutButtonState();
+        }
+      });
+      shippingPhoneInput.addEventListener('blur', function() {
+        if (typeof updateCheckoutButtonState === 'function') {
+          updateCheckoutButtonState();
+        }
+      });
     }
   }
 
@@ -1292,11 +1388,14 @@
     }
     
     // Check if shipping address is already complete and fetch methods
+    // Use a longer delay to ensure states are populated and phone is initialized
+    // States initialization has a setTimeout of 100ms, then another 200ms delay before checking
+    // Phone initialization may also take time, so we wait longer to ensure everything is ready
     setTimeout(function() {
       if (typeof checkAndFetchShippingMethods === 'function') {
         checkAndFetchShippingMethods();
       }
-    }, 500);
+    }, 1500);
   }
   
   // Wait for intl-tel-input to load if needed
@@ -1341,6 +1440,13 @@
       const paymentId = this.getAttribute('data-payment-id') || this.value;
       const gatewayFormsContainer = document.getElementById('payment-gateway-forms');
       
+      // Emit payment method selected event for apps to listen
+      window.checkoutPaymentEvents.emit('payment:method:selected', {
+        paymentMethodId: paymentId,
+        paymentType: paymentType,
+        value: this.value
+      });
+      
       // Hide all gateway forms
       if (gatewayFormsContainer) {
         gatewayFormsContainer.innerHTML = '';
@@ -1349,7 +1455,7 @@
       
       // Show gateway form for PaymentGateway type
       if (paymentType === 'PaymentGateway') {
-        // Load payment gateway plugin form
+        // Load payment gateway app form
         loadPaymentGatewayForm(paymentId, gatewayFormsContainer);
       }
       
@@ -1371,11 +1477,11 @@
     if (!container || !paymentMethodId) return;
     
     try {
-      // Check if there's a plugin snippet for this gateway
+      // Check if there's an app snippet for this gateway
       // This would typically be loaded via hook system, but for now we'll handle it client-side
       const gatewayElement = document.querySelector(`[data-gateway-id="${paymentMethodId}"]`);
       if (gatewayElement) {
-        // Gateway forms are loaded via plugin hooks, so we just show the container
+        // Gateway forms are loaded via app hooks, so we just show the container
         container.style.display = 'block';
       }
     } catch (error) {
@@ -1407,22 +1513,46 @@
       // Re-attach listeners
       newField.addEventListener('blur', function() {
         markShippingAddressPending();
+        updateCheckoutButtonState(); // Update button state immediately on blur
         clearTimeout(shippingAddressTimeout);
-        shippingAddressTimeout = setTimeout(updateShippingAddress, 500);
+        shippingAddressTimeout = setTimeout(async () => {
+          await updateShippingAddress();
+          // Always check for shipping methods after address update attempt completes
+          // This handles both successful updates and early returns
+          if (typeof checkAndFetchShippingMethods === 'function') {
+            checkAndFetchShippingMethods();
+          }
+        }, 500);
       });
       
       // Also listen to change/input events for select dropdowns and input fields
       if (newField.tagName === 'SELECT' || newField.tagName === 'INPUT') {
         newField.addEventListener('change', function() {
           markShippingAddressPending();
+          updateCheckoutButtonState(); // Update button state immediately on change
           clearTimeout(shippingAddressTimeout);
-          shippingAddressTimeout = setTimeout(updateShippingAddress, 500);
+          shippingAddressTimeout = setTimeout(async () => {
+            await updateShippingAddress();
+            // Always check for shipping methods after address update attempt completes
+            // This handles both successful updates and early returns
+            if (typeof checkAndFetchShippingMethods === 'function') {
+              checkAndFetchShippingMethods();
+            }
+          }, 500);
         });
         if (newField.tagName === 'INPUT') {
           newField.addEventListener('input', function() {
             markShippingAddressPending();
+            updateCheckoutButtonState(); // Update button state immediately on input
             clearTimeout(shippingAddressTimeout);
-            shippingAddressTimeout = setTimeout(updateShippingAddress, 500);
+            shippingAddressTimeout = setTimeout(async () => {
+              await updateShippingAddress();
+              // Always check for shipping methods after address update attempt completes
+              // This handles both successful updates and early returns
+              if (typeof checkAndFetchShippingMethods === 'function') {
+                checkAndFetchShippingMethods();
+              }
+            }, 500);
           });
         }
       }
@@ -1475,7 +1605,6 @@
   function isShippingAddressComplete() {
     const requiredFields = [
       'shipping-first-name',
-      'shipping-last-name',
       'shipping-address',
       'shipping-city',
       'shipping-zip',
@@ -1484,6 +1613,7 @@
     
     // State is optional if no states are available for the country
     const stateField = document.getElementById('shipping-state');
+    const stateTextInput = document.getElementById('shipping-state-text');
     const stateRequired = stateField && stateField.tagName === 'SELECT' && stateField.options.length > 1;
     
     const allRequired = requiredFields.every(fieldId => {
@@ -1491,12 +1621,29 @@
       return field && field.value && field.value.trim() !== '';
     });
     
-    // If state is required (dropdown with options), check it too
+    // Check state if required (dropdown with options)
+    let stateValid = true;
     if (stateRequired) {
-      return allRequired && stateField.value && stateField.value.trim() !== '';
+      stateValid = stateField.value && stateField.value.trim() !== '';
+    } else if (stateTextInput && stateTextInput.style.display !== 'none') {
+      // If state is a text input and visible, it's required
+      stateValid = stateTextInput.value && stateTextInput.value.trim() !== '';
     }
     
-    return allRequired;
+    // Check phone number (required)
+    const phoneField = document.getElementById('shipping-phone');
+    let phoneValid = false;
+    if (phoneField) {
+      if (window.shippingPhoneIti) {
+        // Use intl-tel-input validation if available
+        phoneValid = window.shippingPhoneIti.isValidNumber();
+      } else {
+        // Fallback to basic validation
+        phoneValid = phoneField.value && phoneField.value.trim() !== '';
+      }
+    }
+    
+    return allRequired && stateValid && phoneValid;
   }
   
   // Fetch shipping methods when address is complete
@@ -1539,6 +1686,11 @@
       
       // Handle error response - check if address is required
       if (!response.ok) {
+        // Clear previously loaded shipping methods on error
+        window.checkoutShippingMethods = null;
+        window.shippingMethodSelected = false;
+        container.innerHTML = '';
+        
         if (result.requiresAddress || (result.error && result.error.includes('address'))) {
           console.log('[CHECKOUT] Shipping address required before fetching shipping methods');
           container.innerHTML = '<p class="shipping-methods-message">Please complete your shipping address to see available shipping options.</p>';
@@ -1799,6 +1951,12 @@
       updateCheckoutButtonState();
     } catch (error) {
       console.error('[CHECKOUT] Error fetching shipping methods:', error);
+      
+      // Clear previously loaded shipping methods on error
+      window.checkoutShippingMethods = null;
+      window.shippingMethodSelected = false;
+      container.innerHTML = '';
+      
       // Check if error is about missing address
       const errorMessage = error.message || '';
       if (errorMessage.includes('address') || errorMessage.includes('Address')) {
@@ -2039,41 +2197,9 @@
       }
     }
     
-    // Handle discount - add or update discount line
-    const discountEl = document.querySelector('[data-summary-discount]');
-    const hasDiscount = pricing.discount !== undefined && pricing.discount !== null && pricing.discount > 0;
-    
-    if (hasDiscount) {
-      if (!discountEl) {
-        // Insert discount line after subtotal
-        const subtotalLine = totalsContainer.querySelector('.summary-line:first-child');
-        if (subtotalLine) {
-          const discountLine = document.createElement('div');
-          discountLine.className = 'summary-line summary-discount';
-          discountLine.innerHTML = `
-            <span class="summary-label">Discount</span>
-            <span class="summary-value" data-summary-discount>-${formatMoney(pricing.discount)}</span>
-          `;
-          subtotalLine.insertAdjacentElement('afterend', discountLine);
-        }
-      } else {
-        // Update existing discount
-        discountEl.textContent = '-' + formatMoney(pricing.discount);
-        const discountLine = discountEl.closest('.summary-line');
-        if (discountLine) {
-          discountLine.style.display = '';
-        }
-      }
-    } else {
-      // Remove discount line if it exists
-      if (discountEl) {
-        const discountLine = discountEl.closest('.summary-line');
-        if (discountLine) {
-          discountLine.remove();
-        }
-      }
-    }
-    
+    // Discount line is handled centrally by updateCheckoutPricing using pricing.discounts/totalDiscounts
+    // to avoid creating duplicate Discount rows in the order summary.
+        
     // Update shipping
     if (pricing.shipping !== undefined && pricing.shipping !== null) {
       const shippingEl = document.querySelector('[data-summary-shipping]');
@@ -2146,6 +2272,22 @@
       // Debounce the fetch
       clearTimeout(window.shippingMethodsTimeout);
       window.shippingMethodsTimeout = setTimeout(fetchShippingMethods, 500);
+    } else {
+      // Address is incomplete - clear shipping methods
+      const container = document.getElementById('shipping-methods-container');
+      const section = document.getElementById('shipping-methods-section');
+      
+      if (container) {
+        container.innerHTML = '<p class="shipping-methods-message">Please complete your shipping address to see available shipping options.</p>';
+      }
+      if (section) {
+        section.style.display = 'block';
+      }
+      
+      // Reset shipping method state
+      window.checkoutShippingMethods = null;
+      window.shippingMethodSelected = false;
+      updateCheckoutButtonState();
     }
   }
 
@@ -2163,11 +2305,34 @@
       return;
     }
 
+    const formData = new FormData(document.getElementById('checkout-form'));
+
+    // Do not send update if phone number is empty/invalid
+    // This enforces phone as a required shipping detail at the client side.
+    const phoneField = document.getElementById('shipping-phone');
+    let phoneValid = false;
+    if (phoneField) {
+      if (window.shippingPhoneIti) {
+        phoneValid = window.shippingPhoneIti.isValidNumber();
+      } else {
+        phoneValid = phoneField.value && phoneField.value.trim() !== '';
+      }
+    }
+
+    if (!phoneValid) {
+      console.warn('[CHECKOUT] Shipping address update blocked: phone number is missing or invalid');
+      // Reset pending state if it was set earlier
+      if (window.checkoutApiStatus.shippingAddress === 'pending') {
+        window.checkoutApiStatus.shippingAddress = 'idle';
+      }
+      // Ensure button reflects current validation state
+      updateCheckoutButtonState();
+      return;
+    }
+
     // Track status
     window.checkoutApiStatus.shippingAddress = 'pending';
     updateCheckoutButtonState();
-
-    const formData = new FormData(document.getElementById('checkout-form'));
     
     try {
       const isHostedCheckout = window.location.pathname.includes('/checkout/') && 
@@ -2238,6 +2403,20 @@
       if (!response.ok) {
         const result = await response.json();
         console.error('Failed to update shipping address:', result.error);
+        
+        // Clear shipping methods when address update fails (400+ errors)
+        // This prevents using stale shipping methods when address is invalid
+        const container = document.getElementById('shipping-methods-container');
+        const section = document.getElementById('shipping-methods-section');
+        if (container) {
+          container.innerHTML = '<p class="shipping-methods-message">Please complete your shipping address to see available shipping options.</p>';
+        }
+        if (section) {
+          section.style.display = 'block';
+        }
+        window.checkoutShippingMethods = null;
+        window.shippingMethodSelected = false;
+        
         // Mark as completed even on error (to allow retry)
         window.checkoutApiStatus.shippingAddress = 'completed';
         updateCheckoutButtonState();
@@ -2253,6 +2432,19 @@
       }
     } catch (error) {
       console.error('Error updating shipping address:', error);
+      
+      // Clear shipping methods when address update fails
+      const container = document.getElementById('shipping-methods-container');
+      const section = document.getElementById('shipping-methods-section');
+      if (container) {
+        container.innerHTML = '<p class="shipping-methods-message">Please complete your shipping address to see available shipping options.</p>';
+      }
+      if (section) {
+        section.style.display = 'block';
+      }
+      window.checkoutShippingMethods = null;
+      window.shippingMethodSelected = false;
+      
       // Mark as completed even on error (to allow retry)
       window.checkoutApiStatus.shippingAddress = 'completed';
       updateCheckoutButtonState();
@@ -2402,263 +2594,151 @@
     }
   }
 
-  // Wait for Razorpay script to load
-  async function waitForRazorpay(maxWaitTime = 10000) {
-    const startTime = Date.now();
+  // ==================== PAYMENT GATEWAY EVENT SYSTEM ====================
+  
+  /**
+   * Generic Payment Gateway Event System
+   * Allows apps to listen to checkout events and handle payment processing
+   */
+  window.checkoutPaymentEvents = (function() {
+    const events = {};
     
-    console.log('[CHECKOUT] Waiting for Razorpay to load...');
-    console.log('[CHECKOUT] Current Razorpay status:', {
-      typeof: typeof Razorpay,
-      razorpayLoaded: window.razorpayLoaded,
-      razorpayLoadError: window.razorpayLoadError,
-      scriptExists: !!document.querySelector('script[src*="checkout.razorpay.com"]')
-    });
-    
-    // Check if there was a load error
-    if (window.razorpayLoadError) {
-      console.error('[CHECKOUT] Razorpay load error detected');
-      return false;
-    }
-    
-    // If already loaded, return immediately
-    if (typeof Razorpay !== 'undefined') {
-      console.log('[CHECKOUT] Razorpay already available');
-      return true;
-    }
-    
-    // Check if script tag exists, if not try to load it
-    const scriptTag = document.querySelector('script[src*="checkout.razorpay.com"]');
-    if (!scriptTag) {
-      console.warn('[CHECKOUT] Razorpay script tag not found, attempting to load...');
-      return new Promise((resolve) => {
-        const razorpayScript = document.createElement('script');
-        razorpayScript.src = 'https://checkout.razorpay.com/v1/checkout.js';
-        razorpayScript.async = false;
-        razorpayScript.onload = function() {
-          console.log('[CHECKOUT] Razorpay script loaded dynamically');
-          // Wait for Razorpay object to be available
-          setTimeout(function() {
-            if (typeof Razorpay !== 'undefined') {
-              window.razorpayLoaded = true;
-              resolve(true);
-            } else {
-              console.error('[CHECKOUT] Script loaded but Razorpay object not available');
-              window.razorpayLoadError = true;
-              resolve(false);
-            }
-          }, 300);
-        };
-        razorpayScript.onerror = function() {
-          console.error('[CHECKOUT] Failed to load Razorpay script dynamically');
-          window.razorpayLoadError = true;
-          resolve(false);
-        };
-        (document.head || document.getElementsByTagName('head')[0]).appendChild(razorpayScript);
-      });
-    }
-    
-    // Wait for Razorpay to become available (script exists but object not ready)
-    return new Promise((resolve) => {
-      // Listen for ready event if available
-      const readyHandler = function() {
-        console.log('[CHECKOUT] Razorpay ready event received');
-        window.removeEventListener('razorpayReady', readyHandler);
-        resolve(typeof Razorpay !== 'undefined');
-      };
-      window.addEventListener('razorpayReady', readyHandler);
-      
-      // Also poll for Razorpay object
-      let checkCount = 0;
-      const checkInterval = setInterval(function() {
-        checkCount++;
+    return {
+      /**
+       * Emit an event to registered listeners
+       * @param {string} eventName - Name of the event
+       * @param {Object} data - Event data
+       */
+      emit: function(eventName, data) {
+        console.log('[CHECKOUT] Emitting payment event:', eventName, data);
         
-        if (typeof Razorpay !== 'undefined') {
-          console.log('[CHECKOUT] Razorpay object found after', checkCount * 100, 'ms');
-          clearInterval(checkInterval);
-          window.removeEventListener('razorpayReady', readyHandler);
-          window.razorpayLoaded = true;
-          resolve(true);
-        } else if (window.razorpayLoadError) {
-          console.error('[CHECKOUT] Razorpay load error detected during wait');
-          clearInterval(checkInterval);
-          window.removeEventListener('razorpayReady', readyHandler);
-          resolve(false);
-        } else if ((Date.now() - startTime) >= maxWaitTime) {
-          console.error('[CHECKOUT] Timeout waiting for Razorpay after', maxWaitTime, 'ms');
-          clearInterval(checkInterval);
-          window.removeEventListener('razorpayReady', readyHandler);
-          resolve(false);
-        } else if (checkCount % 10 === 0) {
-          console.log('[CHECKOUT] Still waiting for Razorpay...', checkCount * 100, 'ms');
+        if (!events[eventName]) {
+          events[eventName] = [];
         }
-      }, 100);
-    });
-  }
-
-  // Helper function to handle Razorpay payment directly
-  async function handleRazorpayPaymentDirect() {
-      let checkoutToken = getCheckoutToken();
-      console.log('[CHECKOUT] Starting Razorpay payment, checkout token:', checkoutToken ? checkoutToken.substring(0, 10) + '...' : 'not found');
+        
+        // Call all registered handlers
+        events[eventName].forEach(function(handler) {
+          try {
+            handler(data);
+          } catch (error) {
+            console.error('[CHECKOUT] Error in payment event handler:', error);
+          }
+        });
+      },
       
-      if (!checkoutToken) {
-        throw new Error('Checkout session not found. Please refresh the page and try again.');
+      /**
+       * Register an event listener
+       * @param {string} eventName - Name of the event
+       * @param {Function} handler - Event handler function
+       */
+      on: function(eventName, handler) {
+        if (!events[eventName]) {
+          events[eventName] = [];
+        }
+        events[eventName].push(handler);
+        console.log('[CHECKOUT] Registered listener for payment event:', eventName);
+      },
+      
+      /**
+       * Remove an event listener
+       * @param {string} eventName - Name of the event
+       * @param {Function} handler - Event handler function to remove
+       */
+      off: function(eventName, handler) {
+        if (events[eventName]) {
+          const index = events[eventName].indexOf(handler);
+          if (index > -1) {
+            events[eventName].splice(index, 1);
+          }
+        }
       }
+    };
+  })();
+
+  /**
+   * Payment Gateway App Registry
+   * Manages registered payment gateway apps and delegates checkout submission
+   */
+  window.paymentGatewayApps = (function() {
+    const apps = {};
+    
+    return {
+      /**
+       * Register a payment gateway app
+       * @param {string} paymentMethodId - Payment method ID (e.g., 'Razorpay', 'Stripe')
+       * @param {Object} handler - App handler object with handleCheckoutSubmit method
+       */
+      register: function(paymentMethodId, handler) {
+        if (!paymentMethodId || !handler) {
+          console.error('[CHECKOUT] Invalid app registration:', { paymentMethodId, handler });
+          return false;
+        }
+        
+        if (typeof handler.handleCheckoutSubmit !== 'function') {
+          console.error('[CHECKOUT] App handler must implement handleCheckoutSubmit:', paymentMethodId);
+          return false;
+        }
+        
+        apps[paymentMethodId] = handler;
+        console.log('[CHECKOUT] Registered payment gateway app:', paymentMethodId);
+        return true;
+      },
       
-      // Create Razorpay order
-      const isHostedCheckout = window.location.pathname.includes('/checkout/') && 
-                               window.location.pathname.split('/').length > 2;
+      /**
+       * Check if a payment method is handled by an app
+       * @param {string} paymentMethodId - Payment method ID
+       * @returns {boolean} True if app is registered
+       */
+      isGatewayMethod: function(paymentMethodId) {
+        return !!apps[paymentMethodId];
+      },
       
-      const endpoint = isHostedCheckout 
-        ? `/webstoreapi/payment/razorpay/create-order?token=${checkoutToken}`
-        : '/webstoreapi/payment/razorpay/create-order';
-      
-      console.log('[CHECKOUT] Calling Razorpay create-order endpoint:', endpoint);
-      
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          checkoutToken: checkoutToken
-        })
-      });
-      
-      if (!response.ok) {
-        let errorMessage = 'Failed to create Razorpay order';
-        let errorData = null;
+      /**
+       * Handle checkout submission for a gateway payment method
+       * @param {string} paymentMethodId - Payment method ID
+       * @param {string} checkoutToken - Checkout token
+       * @returns {Promise<Object>} Promise resolving to payment result
+       */
+      handleSubmit: async function(paymentMethodId, checkoutToken) {
+        const app = apps[paymentMethodId];
+        
+        if (!app) {
+          return Promise.reject(new Error(`No app registered for payment method: ${paymentMethodId}`));
+        }
+        
+        console.log('[CHECKOUT] Delegating checkout submission to app:', paymentMethodId);
         
         try {
-          errorData = await response.json();
-          errorMessage = errorData.error || errorData.message || errorMessage;
-          console.error('[CHECKOUT] Razorpay API error response:', errorData);
-          
-          if (errorData.details) {
-            console.error('[CHECKOUT] Error details:', errorData.details);
-          }
-          
-          // Provide user-friendly error messages for common scenarios
-          if (errorMessage.includes('cart') || errorMessage.includes('Cart')) {
-            errorMessage = 'Your cart is empty or no longer available. Please add items to your cart and try again.';
-          } else if (errorMessage.includes('Checkout not found') || errorMessage.includes('checkout')) {
-            errorMessage = 'Checkout session expired. Please refresh the page and try again.';
-          } else if (errorMessage.includes('payment method not available')) {
-            errorMessage = 'Razorpay payment method is not available at this time. Please try another payment method.';
-          } else if (errorMessage.includes('minimum')) {
-            errorMessage = errorMessage; // Keep the minimum amount error message as is
-          }
-        } catch (parseError) {
-          console.error('[CHECKOUT] Failed to parse error response:', parseError);
-          errorMessage = `Server error (${response.status}): ${response.statusText}`;
+          return await app.handleCheckoutSubmit(paymentMethodId, checkoutToken);
+        } catch (error) {
+          console.error('[CHECKOUT] App checkout submission error:', error);
+          throw error;
         }
-        
-        throw new Error(errorMessage);
+      },
+      
+      /**
+       * Get all registered app IDs
+       * @returns {Array<string>} Array of registered payment method IDs
+       */
+      getRegisteredApps: function() {
+        return Object.keys(apps);
       }
-      
-      const result = await response.json();
-      console.log('[CHECKOUT] Razorpay order creation response:', result);
-      
-      const orderData = result.data;
-      
-      if (!orderData || !orderData.orderId) {
-        console.error('[CHECKOUT] Invalid order data in response:', result);
-        throw new Error('Failed to create Razorpay order. Please try again.');
-      }
-      
-      // Update checkout token if it was recreated by the backend
-      if (orderData.checkoutToken && orderData.checkoutToken !== checkoutToken) {
-        console.log('[CHECKOUT] Checkout token was recreated by backend, updating...');
-        checkoutToken = orderData.checkoutToken;
-        // Update the global CHECKOUT_TOKEN if it exists
-        if (typeof CHECKOUT_TOKEN !== 'undefined') {
-          CHECKOUT_TOKEN = checkoutToken;
-        }
-      }
-      
-      // Open Razorpay checkout - ensure Razorpay is available
-      if (typeof Razorpay === 'undefined') {
-        console.error('[CHECKOUT] Razorpay not available in handleRazorpayPaymentDirect');
-        // Wait a bit more and check again
-        await new Promise(resolve => setTimeout(resolve, 500));
-        if (typeof Razorpay === 'undefined') {
-          throw new Error('Razorpay payment gateway is not available. Please refresh the page and try again.');
-        }
-      }
-      
-      console.log('[CHECKOUT] Opening Razorpay checkout with order:', orderData.orderId);
-      
-      const razorpay = new Razorpay({
-        key: orderData.keyId,
-        amount: orderData.amount,
-        currency: orderData.currency,
-        name: orderData.name || 'Store',
-        description: orderData.description || 'Order Payment',
-        order_id: orderData.orderId,
-        prefill: orderData.prefill || {},
-        theme: orderData.theme || { color: '#3399cc' },
-        handler: async function(response) {
-          console.log('[CHECKOUT] Razorpay payment completed, verifying payment...');
-          
-          // Use the current checkout token (may have been updated if checkout was recreated)
-          const currentCheckoutToken = checkoutToken || getCheckoutToken();
-          
-          // Verify payment
-          const verifyEndpoint = isHostedCheckout
-            ? `/webstoreapi/payment/razorpay/verify?token=${currentCheckoutToken}`
-            : '/webstoreapi/payment/razorpay/verify';
-          
-          try {
-            const verifyResponse = await fetch(verifyEndpoint, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json'
-              },
-              body: JSON.stringify({
-                checkoutToken: currentCheckoutToken,
-                razorpay_order_id: response.razorpay_order_id,
-                razorpay_payment_id: response.razorpay_payment_id,
-                razorpay_signature: response.razorpay_signature
-              })
-            });
-            
-            const verifyResult = await verifyResponse.json();
-            console.log('[CHECKOUT] Payment verification response:', verifyResult);
-            
-            if (verifyResult.success) {
-              // Handle array of orders from CompleteCheckoutResponse
-              const orders = Array.isArray(verifyResult.data) ? verifyResult.data : [verifyResult.data];
-              const orderIds = orders.map(o => o.orderId || o.orderNumber).filter(Boolean).join(',');
-              console.log('[CHECKOUT] Payment verified successfully, redirecting to order confirmation');
-              
-              if (orderIds) {
-                window.location.href = `/order-confirmation?orderIds=${orderIds}`;
-              } else {
-                window.location.href = '/order-confirmation';
-              }
-            } else {
-              console.error('[CHECKOUT] Payment verification failed:', verifyResult);
-              const errorMsg = verifyResult.error || 'Payment verification failed. Please contact support.';
-              alert(errorMsg);
-            }
-          } catch (verifyError) {
-            console.error('[CHECKOUT] Error during payment verification:', verifyError);
-            alert('An error occurred while verifying your payment. Please contact support with your payment ID: ' + (response.razorpay_payment_id || 'N/A'));
-          }
-        },
-        modal: {
-          ondismiss: function() {
-            console.log('[CHECKOUT] Razorpay popup closed by user');
-            window.checkoutInProgress = false; // Reset flag when popup is closed
-            const submitBtn = document.getElementById('checkout-submit');
-            if (submitBtn) {
-              setButtonLoading(submitBtn, false);
-            }
-          }
-        }
+    };
+  })();
+
+  // Emit ready event when checkout is initialized
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function() {
+      window.checkoutPaymentEvents.emit('payment:checkout:ready', {
+        checkoutToken: typeof CHECKOUT_TOKEN !== 'undefined' ? CHECKOUT_TOKEN : getCheckoutToken()
       });
-      
-      razorpay.open();
-    }
+    });
+  } else {
+    // DOM already loaded
+    window.checkoutPaymentEvents.emit('payment:checkout:ready', {
+      checkoutToken: typeof CHECKOUT_TOKEN !== 'undefined' ? CHECKOUT_TOKEN : getCheckoutToken()
+    });
+  }
 
   // Handle form submission
   document.getElementById('checkout-form')?.addEventListener('submit', async function(e) {
@@ -2674,52 +2754,6 @@
     const submitBtn = document.getElementById('checkout-submit');
     const formData = new FormData(this);
     const paymentMethod = formData.get('paymentMethod');
-    
-    // If Razorpay is selected, let the Razorpay plugin handle the payment
-    if (paymentMethod === 'Razorpay') {
-      console.log('[CHECKOUT] Razorpay payment method selected');
-      
-      // Wait for Razorpay script to load (up to 10 seconds)
-      setButtonLoading(submitBtn, true, 'Loading payment gateway...');
-      
-      const razorpayLoaded = await waitForRazorpay(10000);
-      
-      if (!razorpayLoaded) {
-        console.error('[CHECKOUT] Razorpay failed to load after waiting');
-        window.checkoutInProgress = false; // Reset flag on error
-        alert('Razorpay payment gateway failed to load. Please refresh the page and try again. If the problem persists, please contact support.');
-        setButtonLoading(submitBtn, false);
-        return;
-      }
-      
-      console.log('[CHECKOUT] Razorpay loaded successfully, proceeding with payment');
-      
-      // Proceed directly with Razorpay payment (do not re-call shipping/billing updates here)
-      try {
-        setButtonLoading(submitBtn, true, 'Initializing payment...');
-        await handleRazorpayPaymentDirect();
-        // Note: Don't reset checkoutInProgress here if popup opened successfully
-        // It will be reset in the modal ondismiss handler or after successful payment
-        console.log('[CHECKOUT] Razorpay payment initialized successfully, popup should be open');
-      } catch (error) {
-        console.error('[CHECKOUT] Razorpay payment error:', error);
-        window.checkoutInProgress = false; // Reset flag on error
-        
-        // Provide user-friendly error messages
-        let userMessage = 'Unable to initialize Razorpay payment. ';
-        if (error.message) {
-          userMessage += error.message;
-        } else {
-          userMessage += 'Please try again or contact support.';
-        }
-        
-        alert(userMessage);
-        if (submitBtn) {
-          setButtonLoading(submitBtn, false);
-        }
-      }
-      return;
-    }
     
     setButtonLoading(submitBtn, true, 'Processing...');
     
@@ -2741,7 +2775,42 @@
     // Get the selected payment method's fee from the radio input
     const selectedPaymentInput = document.querySelector(`input[name="paymentMethod"][value="${paymentMethod}"]`);
     const paymentFee = selectedPaymentInput ? parseFloat(selectedPaymentInput.getAttribute('data-payment-fee') || '0') : 0;
+    const paymentType = selectedPaymentInput ? (selectedPaymentInput.getAttribute('data-payment-type') || '') : '';
     
+    // Emit checkout submit event for apps to listen
+    window.checkoutPaymentEvents.emit('payment:checkout:submit', {
+      paymentMethod: paymentMethod,
+      paymentType: paymentType,
+      checkoutToken: checkoutToken,
+      paymentFee: paymentFee
+    });
+    
+    // Check if this is a gateway payment method that should be handled by an app
+    if (paymentType === 'PaymentGateway' && window.paymentGatewayApps.isGatewayMethod(paymentMethod)) {
+      console.log('[CHECKOUT] Gateway payment method detected, delegating to app:', paymentMethod);
+      
+      try {
+        setButtonLoading(submitBtn, true, 'Initializing payment...');
+        
+        // Delegate to app for payment handling
+        await window.paymentGatewayApps.handleSubmit(paymentMethod, checkoutToken);
+        
+        // Note: Don't reset checkoutInProgress here - app will handle payment flow
+        // App should emit payment:app:complete or payment:app:error events
+        console.log('[CHECKOUT] Payment gateway app handling payment, awaiting response...');
+        return;
+      } catch (error) {
+        console.error('[CHECKOUT] Gateway payment app error:', error);
+        window.checkoutInProgress = false; // Reset flag on error
+        
+        const errorMessage = error.message || 'Unable to initialize payment. Please try again or contact support.';
+        alert(errorMessage);
+        setButtonLoading(submitBtn, false);
+        return;
+      }
+    }
+    
+    // For non-gateway payment methods, proceed with standard checkout completion
     // Directly call complete checkout API (do not re-call shipping/billing/shipping method updates here)
     try {
       // Use the payment method value (which is the id/name from API) as paymentMethodHandle
@@ -2787,6 +2856,34 @@
 
   // ==================== COUPON FUNCTIONALITY ====================
   
+  // Global tracking for applied coupon codes to keep UI state in sync
+  window.appliedCouponCodes = [];
+
+  /**
+   * Initialize applied coupon codes from initial checkout pricing data
+   */
+  function initializeAppliedCouponCodesFromPricing() {
+    const applied = [];
+    
+    if (
+      typeof CHECKOUT_PRICING !== 'undefined' &&
+      CHECKOUT_PRICING &&
+      Array.isArray(CHECKOUT_PRICING.discounts)
+    ) {
+      CHECKOUT_PRICING.discounts.forEach(discount => {
+        const code = discount.code || discount.couponCode || discount.discountCode;
+        if (code && !applied.includes(code)) {
+          applied.push(code);
+        }
+      });
+    }
+
+    window.appliedCouponCodes = applied;
+  }
+
+  // Initialize applied coupons on first load
+  initializeAppliedCouponCodesFromPricing();
+
   /**
    * Fetch available discount codes for checkout
    */
@@ -2841,6 +2938,34 @@
   }
 
   /**
+   * Get currently applied coupon codes
+   */
+  function getAppliedCouponCodes() {
+    // Prefer the normalized global list
+    if (Array.isArray(window.appliedCouponCodes) && window.appliedCouponCodes.length > 0) {
+      return [...window.appliedCouponCodes];
+    }
+
+    const appliedCoupons = [];
+
+    // Fallback: derive from CHECKOUT_PRICING if available
+    if (
+      typeof CHECKOUT_PRICING !== 'undefined' &&
+      CHECKOUT_PRICING &&
+      Array.isArray(CHECKOUT_PRICING.discounts)
+    ) {
+      CHECKOUT_PRICING.discounts.forEach(discount => {
+        const code = discount.code || discount.couponCode || discount.discountCode;
+        if (code && !appliedCoupons.includes(code)) {
+          appliedCoupons.push(code);
+        }
+      });
+    }
+
+    return appliedCoupons;
+  }
+
+  /**
    * Display available discount codes
    */
   function displayDiscountCodes(discountCodes) {
@@ -2868,17 +2993,43 @@
     const couponsList = document.createElement('div');
     couponsList.className = 'coupons-list';
 
+    // Get currently applied coupon codes
+    let appliedCodes = getAppliedCouponCodes();
+
+    // Heuristic: if no explicit applied codes are known but there is a discount
+    // on checkout pricing and only one coupon exists, treat that coupon as applied.
+    if (
+      appliedCodes.length === 0 &&
+      typeof CHECKOUT_PRICING !== 'undefined' &&
+      CHECKOUT_PRICING &&
+      (
+        (CHECKOUT_PRICING.totalDiscounts !== undefined && CHECKOUT_PRICING.totalDiscounts > 0) ||
+        (CHECKOUT_PRICING.discount !== undefined && CHECKOUT_PRICING.discount > 0)
+      ) &&
+      codes.length === 1
+    ) {
+      const inferredCode = codes[0].code || codes[0].couponCode || codes[0].discountCode || '';
+      if (inferredCode) {
+        appliedCodes = [inferredCode];
+        // Keep global tracking in sync with the inferred state
+        window.appliedCouponCodes = [inferredCode];
+      }
+    }
+
     codes.forEach((coupon, index) => {
+      const couponCode = coupon.code || coupon.couponCode || '';
+      const isApplied = appliedCodes.includes(couponCode);
+
       const couponItem = document.createElement('div');
       couponItem.className = 'coupon-item';
-      couponItem.dataset.couponCode = coupon.code || coupon.couponCode || '';
+      couponItem.dataset.couponCode = couponCode;
 
       const couponInfo = document.createElement('div');
       couponInfo.className = 'coupon-info';
 
-      const couponCode = document.createElement('div');
-      couponCode.className = 'coupon-code';
-      couponCode.textContent = coupon.code || coupon.couponCode || 'N/A';
+      const couponCodeDiv = document.createElement('div');
+      couponCodeDiv.className = 'coupon-code';
+      couponCodeDiv.textContent = couponCode || 'N/A';
 
       const couponDescription = document.createElement('div');
       couponDescription.className = 'coupon-description';
@@ -2891,20 +3042,28 @@
         couponInfo.appendChild(minAmount);
       }
 
-      couponInfo.appendChild(couponCode);
+      couponInfo.appendChild(couponCodeDiv);
       if (coupon.description) {
         couponInfo.appendChild(couponDescription);
       }
 
-      const applyButton = document.createElement('button');
-      applyButton.type = 'button';
-      applyButton.className = 'btn btn-primary btn-sm apply-coupon-btn';
-      applyButton.textContent = 'Apply';
-      applyButton.dataset.couponCode = coupon.code || coupon.couponCode || '';
-      applyButton.addEventListener('click', () => applyDiscountCode(coupon.code || coupon.couponCode));
+      // Show Remove button if already applied, Apply button otherwise
+      const actionButton = document.createElement('button');
+      actionButton.type = 'button';
+      actionButton.dataset.couponCode = couponCode;
+      
+      if (isApplied) {
+        actionButton.className = 'btn btn-danger btn-sm remove-coupon-btn';
+        actionButton.textContent = 'Remove';
+        actionButton.addEventListener('click', () => removeCoupon(couponCode));
+      } else {
+        actionButton.className = 'btn btn-primary btn-sm apply-coupon-btn';
+        actionButton.textContent = 'Apply';
+        actionButton.addEventListener('click', () => applyDiscountCode(couponCode));
+      }
 
       couponItem.appendChild(couponInfo);
-      couponItem.appendChild(applyButton);
+      couponItem.appendChild(actionButton);
       couponsList.appendChild(couponItem);
     });
 
@@ -2927,11 +3086,23 @@
       return;
     }
 
-    // Disable all apply buttons
+    // Prevent re-applying an already applied coupon
+    const alreadyAppliedCodes = getAppliedCouponCodes().map(code => String(code).toLowerCase());
+    if (alreadyAppliedCodes.includes(String(discountCode).toLowerCase())) {
+      alert('This coupon is already applied to your order.');
+      return;
+    }
+
+    // Find and disable the specific apply button for this coupon
     const applyButtons = document.querySelectorAll('.apply-coupon-btn');
+    const targetButton = Array.from(applyButtons).find(btn => btn.dataset.couponCode === discountCode);
+    
+    // Disable all apply buttons temporarily
     applyButtons.forEach(btn => {
       btn.disabled = true;
-      btn.textContent = 'Applying...';
+      if (btn === targetButton) {
+        btn.textContent = 'Applying...';
+      }
     });
 
     try {
@@ -2956,23 +3127,27 @@
         throw new Error(result.error || 'Failed to apply discount code');
       }
 
-      // Show applied coupon
-      const appliedCouponDiv = document.getElementById('applied-coupon');
-      const appliedCouponCode = appliedCouponDiv?.querySelector('.applied-coupon-code');
-      if (appliedCouponDiv && appliedCouponCode) {
-        appliedCouponCode.textContent = `Applied: ${discountCode}`;
-        appliedCouponDiv.style.display = 'block';
+      // Update applied coupons tracking from response
+      if (result.data && result.data.pricing && result.data.pricing.discounts) {
+        updateAppliedCouponsTracking(result.data.pricing.discounts);
+      } else {
+        updateAppliedCouponsTracking([]);
       }
 
       // Update pricing display
       updateCheckoutPricing(result.data);
 
+      // Refresh available coupons list to update button states
+      fetchDiscountCodes();
+
       // Show success message
       alert(`Coupon "${discountCode}" applied successfully!`);
 
-      // Reload page to show updated pricing (or update DOM directly)
-      // For now, we'll reload to ensure consistency
-      window.location.reload();
+      // Re-enable all apply buttons (allow multiple applications)
+      applyButtons.forEach(btn => {
+        btn.disabled = false;
+        btn.textContent = 'Apply';
+      });
     } catch (error) {
       console.error('[COUPONS] Error applying discount code:', error);
       alert(error.message || 'Failed to apply coupon. Please try again.');
@@ -2999,17 +3174,42 @@
       subtotalEl.textContent = formatMoney(pricing.subtotalPrice);
     }
 
-    // Update discount
+    // Update discount - ensure it's visible and properly formatted
     const discountEl = document.querySelector('[data-summary-discount]');
     const discountLine = document.querySelector('[data-summary-discount-line]');
-    if (pricing.totalDiscounts !== undefined && pricing.totalDiscounts > 0) {
-      if (discountEl) {
-        discountEl.textContent = `-${formatMoney(pricing.totalDiscounts)}`;
-      }
-      if (discountLine) {
+    
+    // Calculate total discounts from discounts array or use totalDiscounts
+    let totalDiscounts = 0;
+    if (pricing.discounts && Array.isArray(pricing.discounts) && pricing.discounts.length > 0) {
+      totalDiscounts = pricing.discounts.reduce((sum, discount) => sum + (discount.amount || discount.value || 0), 0);
+    } else if (pricing.totalDiscounts !== undefined) {
+      totalDiscounts = pricing.totalDiscounts;
+    }
+    
+    if (totalDiscounts > 0) {
+      // Ensure discount line exists and is visible
+      if (!discountLine) {
+        // Create discount line if it doesn't exist
+        const subtotalLine = document.querySelector('[data-summary-subtotal]')?.closest('.summary-line');
+        if (subtotalLine) {
+          const newDiscountLine = document.createElement('div');
+          newDiscountLine.className = 'summary-line summary-discount';
+          newDiscountLine.setAttribute('data-summary-discount-line', '');
+          newDiscountLine.innerHTML = `
+            <span class="summary-label">Discount</span>
+            <span class="summary-value" data-summary-discount>-${formatMoney(totalDiscounts)}</span>
+          `;
+          subtotalLine.insertAdjacentElement('afterend', newDiscountLine);
+        }
+      } else {
+        // Update existing discount line
+        if (discountEl) {
+          discountEl.textContent = `-${formatMoney(totalDiscounts)}`;
+        }
         discountLine.style.display = 'flex';
       }
     } else {
+      // Hide discount line if no discount
       if (discountLine) {
         discountLine.style.display = 'none';
       }
@@ -3048,50 +3248,151 @@
 
   /**
    * Remove applied coupon
+   * @param {string} couponCode - The coupon code to remove
    */
-  async function removeCoupon() {
-    const appliedCouponDiv = document.getElementById('applied-coupon');
-    const appliedCouponCode = appliedCouponDiv?.querySelector('.applied-coupon-code');
-    if (!appliedCouponCode) return;
-
-    const couponCode = appliedCouponCode.textContent.replace('Applied: ', '').trim();
-    if (!couponCode) return;
+  async function removeCoupon(couponCode) {
+    if (!couponCode) {
+      console.error('[COUPONS] No coupon code provided for removal');
+      return;
+    }
 
     const checkoutToken = getCheckoutToken();
-    if (!checkoutToken) return;
+    if (!checkoutToken) {
+      alert('Checkout session not found. Please refresh the page.');
+      return;
+    }
+
+    // Find the remove button for this coupon and disable it
+    const removeButtons = document.querySelectorAll('.remove-coupon-btn');
+    const targetButton = Array.from(removeButtons).find(btn => btn.dataset.couponCode === couponCode);
+    
+    if (targetButton) {
+      targetButton.disabled = true;
+      targetButton.textContent = 'Removing...';
+    }
 
     try {
-      // Note: We would need a remove discount code endpoint
-      // For now, we'll just reload the page after removing from UI
-      appliedCouponDiv.style.display = 'none';
-      window.location.reload();
+      const response = await fetch(`/webstoreapi/checkout/${checkoutToken}/remove-discount`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          discountCode: couponCode
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const result = await response.json();
+      
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to remove discount code');
+      }
+
+      // Update applied coupons tracking from response
+      if (result.data && result.data.pricing && result.data.pricing.discounts) {
+        updateAppliedCouponsTracking(result.data.pricing.discounts);
+      } else {
+        // If no discounts in response, clear the tracking
+        updateAppliedCouponsTracking([]);
+      }
+
+      // Update pricing display
+      updateCheckoutPricing(result.data);
+
+      // Refresh available coupons list to update button states
+      fetchDiscountCodes();
+
+      // Show success message
+      alert(`Coupon "${couponCode}" removed successfully!`);
     } catch (error) {
       console.error('[COUPONS] Error removing coupon:', error);
-      alert('Failed to remove coupon. Please refresh the page.');
+      alert(error.message || 'Failed to remove coupon. Please try again.');
+      
+      // Re-enable the button
+      if (targetButton) {
+        targetButton.disabled = false;
+        targetButton.textContent = 'Remove';
+      }
     }
   }
 
   /**
-   * Show currently applied coupon if any
+   * Update applied coupons tracking from discounts array
+   */
+  function updateAppliedCouponsTracking(discounts) {
+    // Normalize discounts array
+    const normalizedDiscounts = Array.isArray(discounts) ? discounts : [];
+
+    // Update CHECKOUT_PRICING if discounts are provided
+    if (typeof CHECKOUT_PRICING !== 'undefined' && CHECKOUT_PRICING) {
+      CHECKOUT_PRICING.discounts = normalizedDiscounts;
+    }
+
+    // Also keep the global applied coupon list in sync
+    const applied = [];
+    normalizedDiscounts.forEach(discount => {
+      const code = discount.code || discount.couponCode || discount.discountCode;
+      if (code && !applied.includes(code)) {
+        applied.push(code);
+      }
+    });
+    window.appliedCouponCodes = applied;
+  }
+
+  /**
+   * Show currently applied coupons from checkout data
    */
   function showAppliedCoupon() {
-    // Check if there's a discount applied in the checkout pricing
-    const discountValue = document.querySelector('[data-summary-discount]');
-    const discountLine = document.querySelector('[data-summary-discount-line]');
+    // Try to get discounts from checkout pricing data
+    let discounts = null;
     
-    if (discountValue && discountLine && discountLine.style.display !== 'none') {
-      const discountText = discountValue.textContent.trim();
-      // Try to extract coupon code from checkout data if available
-      // For now, we'll just show that a discount is applied
-      const appliedCouponDiv = document.getElementById('applied-coupon');
-      const appliedCouponCode = appliedCouponDiv?.querySelector('.applied-coupon-code');
-      
-      if (appliedCouponDiv && appliedCouponCode && discountText && discountText !== '₹0.00') {
-        // If we have discount info, show it (we don't have the code, so show generic message)
-        appliedCouponCode.textContent = 'Discount Applied';
-        appliedCouponDiv.style.display = 'block';
+    // First, try from global CHECKOUT_PRICING variable
+    if (typeof CHECKOUT_PRICING !== 'undefined' && CHECKOUT_PRICING && CHECKOUT_PRICING.discounts) {
+      discounts = CHECKOUT_PRICING.discounts;
+    }
+    
+    // If not available, try to fetch checkout data
+    if (!discounts) {
+      const checkoutToken = getCheckoutToken();
+      if (checkoutToken) {
+        // Fetch checkout to get current discounts
+        fetch(`/webstoreapi/checkout/${checkoutToken}`)
+          .then(res => res.text())
+          .then(text => {
+            // Some error responses may return HTML instead of JSON.
+            // Try to parse JSON; if it fails, gracefully treat as no discounts.
+            try {
+              return JSON.parse(text);
+            } catch (parseError) {
+              console.warn('[COUPONS] Non-JSON response while fetching checkout for discounts. Treating as no discounts.', {
+                message: parseError.message
+              });
+              return { success: false, data: null };
+            }
+          })
+          .then(result => {
+            if (result.success && result.data && result.data.pricing && result.data.pricing.discounts) {
+              updateAppliedCouponsTracking(result.data.pricing.discounts);
+            } else {
+              updateAppliedCouponsTracking([]);
+            }
+            // Refresh available coupons to update button states
+            fetchDiscountCodes();
+          })
+          .catch(error => {
+            console.error('[COUPONS] Error fetching checkout for discounts:', error);
+            updateAppliedCouponsTracking([]);
+          });
+        return;
       }
     }
+    
+    updateAppliedCouponsTracking(discounts || []);
   }
 
   // Initialize coupon functionality on page load
@@ -3099,14 +3400,8 @@
     // Fetch discount codes when page loads
     fetchDiscountCodes();
     
-    // Show applied coupon if any
+    // Show applied coupons if any
     showAppliedCoupon();
-
-    // Set up remove coupon button
-    const removeCouponBtn = document.getElementById('remove-coupon-btn');
-    if (removeCouponBtn) {
-      removeCouponBtn.addEventListener('click', removeCoupon);
-    }
   });
 </script>
 
@@ -4349,7 +4644,8 @@ h3.checkout-section-title {
   margin-top: 0.4rem;
 }
 
-.apply-coupon-btn {
+.apply-coupon-btn,
+.remove-coupon-btn {
   padding: 0.8rem 1.6rem;
   font-size: 1.4rem;
   font-weight: 500;
@@ -4361,25 +4657,21 @@ h3.checkout-section-title {
   cursor: not-allowed;
 }
 
-.applied-coupon {
-  margin-top: 1rem;
-  padding: 1.2rem;
-  background: #ecfdf5;
-  border: 1px solid #86efac;
-  border-radius: 0.6rem;
+.remove-coupon-btn {
+  background: #dc2626;
+  color: #fff;
+  border: none;
 }
 
-.applied-coupon-info {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+.remove-coupon-btn:hover {
+  background: #b91c1c;
 }
 
-.applied-coupon-code {
-  font-size: 1.4rem;
-  font-weight: 600;
-  color: #065f46;
+.remove-coupon-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
+
 
 .btn-remove-coupon {
   padding: 0.6rem 1.2rem;

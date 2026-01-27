@@ -62,6 +62,99 @@
 </div>
 
 <style>
+:root {
+  --color-primary: {{ settings.color_primary | default: '#000000' }};
+  --color-primary-hover: {{ settings.color_primary_dark | default: '#333333' }};
+  --color-primary-light: {{ settings.color_primary_light | default: '#666666' }};
+  --color-success: {{ settings.color_success | default: '#22c55e' }};
+  --color-success-light: {{ settings.color_success | default: '#22c55e' }};
+  --color-success-dark: {{ settings.color_success | default: '#22c55e' }};
+  --color-danger: {{ settings.color_error | default: '#ef4444' }};
+  --color-danger-light: {{ settings.color_error | default: '#ef4444' }};
+  --color-danger-dark: {{ settings.color_error | default: '#ef4444' }};
+  --color-text: {{ settings.color_text | default: '#000000' }};
+  --color-text-light: {{ settings.color_text_light | default: '#999999' }};
+  --color-text-muted: {{ settings.color_text_muted | default: '#666666' }};
+  --color-background: {{ settings.color_background | default: '#ffffff' }};
+  --color-card-bg: {{ settings.color_surface | default: '#f5f5f5' }};
+  --color-border: {{ settings.color_border | default: '#cccccc' }};
+  --color-border-light: {{ settings.color_surface | default: '#f5f5f5' }};
+  --color-white: #ffffff;
+  --color-black: {{ settings.color_primary_dark | default: '#333333' }};
+  --color-gray-25: {{ settings.color_background | default: '#ffffff' }};
+  --color-gray-50: {{ settings.color_surface | default: '#f5f5f5' }};
+  --color-gray-100: {{ settings.color_surface | default: '#f5f5f5' }};
+  --color-gray-200: {{ settings.color_border | default: '#cccccc' }};
+  --color-gray-300: {{ settings.color_border | default: '#cccccc' }};
+  --color-gray-400: {{ settings.color_text_muted | default: '#666666' }};
+  --color-gray-500: {{ settings.color_text_muted | default: '#666666' }};
+  --color-gray-600: {{ settings.color_text_muted | default: '#666666' }};
+  --color-gray-700: {{ settings.color_text | default: '#000000' }};
+  --color-gray-800: {{ settings.color_text | default: '#000000' }};
+  --color-gray-900: {{ settings.color_text | default: '#000000' }};
+  /* Shadow variables - mapped from settings */
+  --shadow-opacity: {{ settings.shadow_opacity | default: 0.1 }};
+  --shadow-blur: {{ settings.shadow_blur | default: 8 }}px;
+  --shadow-spread: {{ settings.shadow_spread | default: 0 }}px;
+  
+  /* Border radius - mapped from settings */
+  --radius-sm: {{ settings.border_radius_small | default: 6 }}px;
+  --radius-md: {{ settings.border_radius_medium | default: 10 }}px;
+  --radius-lg: {{ settings.border_radius_large | default: 16 }}px;
+  --radius-xl: 24px;
+  --radius-2xl: 32px;
+  --radius-full: 9999px;
+  
+  /* Spacing - mapped from settings */
+  --spacing-xs: {{ settings.spacing_xsmall | default: 4 }}px;
+  --spacing-sm: {{ settings.spacing_small | default: 8 }}px;
+  --spacing-md: {{ settings.spacing_element | default: 16 }}px;
+  --spacing-lg: {{ settings.spacing_component | default: 24 }}px;
+  --spacing-xl: {{ settings.spacing_large | default: 32 }}px;
+  --spacing-component: {{ settings.spacing_component | default: 24 }}px;
+  --spacing-element: {{ settings.spacing_element | default: 16 }}px;
+  
+  /* Typography - mapped from settings */
+  --font-primary: {{ settings.font_primary | default: '' }}, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+  --font-heading: {{ settings.font_heading | default: '' }}, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+  --font-display: {{ settings.font_display | default: '' }}, 'Georgia', 'Times New Roman', serif;
+  --font-body: {{ settings.font_body | default: '' }}, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+  --font-weight-bold: {{ settings.font_weight_bold | default: 700 }};
+  --font-weight-medium: {{ settings.font_weight_medium | default: 500 }};
+  --line-height-heading: {{ settings.line_height_heading | default: 1.2 }};
+  
+  /* Text sizes - based on font_size_base from settings */
+  --text-xs: 12px;
+  --text-sm: {{ settings.font_size_base | default: 14 }}px;
+  --text-base: {{ settings.font_size_base | default: 14 }}px;
+  --text-lg: 16px;
+  --text-xl: 18px;
+  --text-2xl: 21px;
+  
+  /* Transitions - mapped from settings */
+  --transition-fast: 133ms cubic-bezier(0, 0, 0.2, 1);
+  --transition: {{ settings.button_transition_speed | default: 200 }}ms cubic-bezier(0, 0, 0.2, 1);
+  --transition-slow: 300ms cubic-bezier(0, 0, 0.2, 1);
+  --duration-150: 150ms;
+  --duration-300: 300ms;
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  
+  /* Z-index values */
+  --z-10: 10;
+  --z-modal: 1050;
+  --z-dropdown: 1000;
+  
+  /* Line heights - mapped from settings */
+  --leading-none: 1;
+  --leading-normal: {{ settings.line_height_base | default: 1.6 }};
+  --leading-snug: 1.375;
+  
+  /* Letter spacing - mapped from settings */
+  --tracking-wider: {{ settings.letter_spacing_uppercase | default: 0.05 }}em;
+}
+
 .cart-drawer {
   position: fixed;
   inset: 0;

@@ -15,7 +15,7 @@
           <h4>Shop</h4>
           <ul>
             <li><a href="/products">All Products</a></li>
-            <li><a href="/collections">Collections</a></li>
+            <li><a href="/categories">Categories</a></li>
             <li><a href="/search">Search</a></li>
           </ul>
         </div>
@@ -101,12 +101,17 @@
       </div>
     {% endif %}
     <div class="site-footer__bottom">
-      {% assign footer_text_value = settings.footer_text | default: section.settings.footer_text %}
-      {% if footer_text_value and footer_text_value != '' %}
-        <p>{{ footer_text_value }}</p>
-      {% else %}
-        <p>© {{ 'now' | date: '%Y' }} {{ shop.name }}. All rights reserved.</p>
-      {% endif %}
+      <div class="site-footer__bottom-left">
+        {% assign footer_text_value = settings.footer_text | default: section.settings.footer_text %}
+        {% if footer_text_value and footer_text_value != '' %}
+          <p>{{ footer_text_value }}</p>
+        {% else %}
+          <p>© {{ 'now' | date: '%Y' }} {{ shop.name }}. All rights reserved.</p>
+        {% endif %}
+        <p class="footer-powered">
+          Powered by <a href="https://o2vend.com" class="footer-powered-link" target="_blank" rel="noopener noreferrer">O2VEND</a>
+        </p>
+      </div>
       <div class="site-footer__bottom-links">
         <a href="/pages/privacy">Privacy</a>
         <a href="/pages/terms">Terms</a>
@@ -304,9 +309,33 @@
     display: flex;
     flex-wrap: wrap;
     justify-content: space-between;
+    align-items: flex-start;
     gap: 1rem;
     font-size: 0.85rem;
     color: {{ settings.color_text_light }};
+  }
+  .site-footer__bottom-left {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    flex: 1;
+    min-width: 0;
+  }
+  .site-footer__bottom .footer-powered {
+    margin: 0;
+    color: {{ settings.color_text_light }};
+    font-size: 0.85rem;
+    line-height: 1.5;
+    display: block;
+    visibility: visible;
+  }
+  .site-footer__bottom .footer-powered-link {
+    color: {{ settings.color_text_light }};
+    text-decoration: underline;
+    transition: color 0.2s ease;
+  }
+  .site-footer__bottom .footer-powered-link:hover {
+    color: {{ settings.color_primary }};
   }
   .site-footer__bottom-links {
     display: inline-flex;
@@ -322,6 +351,27 @@
   @media (max-width: 768px) {
     .site-footer__fallback-inner {
       grid-template-columns: minmax(0, 1fr);
+    }
+    .site-footer__bottom {
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+    .site-footer__bottom-left {
+      width: 100%;
+      align-items: center;
+      text-align: center;
+    }
+    .site-footer__bottom .footer-powered {
+      display: block !important;
+      visibility: visible !important;
+      text-align: center;
+      margin-top: 0.5rem;
+    }
+    .site-footer__bottom-links {
+      justify-content: center;
+      width: 100%;
+      margin-top: 0.5rem;
     }
   }
 </style>

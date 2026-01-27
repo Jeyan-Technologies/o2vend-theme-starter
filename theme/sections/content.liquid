@@ -15,7 +15,7 @@
            data-widget-type="{{ widget.type }}"
            data-widget-position="{{ widget.Position | default: widget.position | default: forloop.index }}">
         {% if widget and widget.template_path %}
-          {% render widget.template_path, widget: widget, settings: settings %}
+          {% render widget.template_path, widget: widget, settings: settings, shop: shop %}
         {% else %}
           <div class="widget-error" data-widget-error>
             <p>Widget template not found: {{ widget.template_path | default: 'unknown' }}</p>

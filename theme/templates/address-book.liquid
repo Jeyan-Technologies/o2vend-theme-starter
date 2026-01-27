@@ -97,31 +97,41 @@
 </section>
 
 <style>
+/* Use theme-wide variables from assets/theme.css as the source of truth.
+   Map any template-specific variable names to the global theme variables
+   so we avoid hardcoded values here. */
 :root {
-  --color-primary: #2563eb;
-  --color-primary-hover: #1d4ed8;
-  --color-primary-light: #dbeafe;
-  --color-success: #10b981;
-  --color-success-light: #d1fae5;
-  --color-danger: #ef4444;
-  --color-danger-hover: #dc2626;
-  --color-danger-light: #fee2e2;
-  --color-text: #1f2937;
-  --color-text-light: #6b7280;
-  --color-background: #f9fafb;
-  --color-card-bg: #ffffff;
-  --color-border: #e5e7eb;
-  --color-border-light: #f3f4f6;
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-  --radius-md: 0.5rem;
-  --radius-lg: 0.75rem;
-  --spacing-xs: 0.5rem;
-  --spacing-sm: 1rem;
-  --spacing-md: 1.5rem;
-  --spacing-lg: 2rem;
-  --spacing-xl: 3rem;
+  --color-primary: {{ settings.color_primary | default: '#000000' }};
+  --color-primary-hover: {{ settings.color_primary_dark | default: '#333333' }};
+  --color-primary-light: {{ settings.color_primary_light | default: '#666666' }};
+
+  --color-success: {{ settings.color_success | default: '#22c55e' }};
+  --color-success-light: {{ settings.color_success | default: '#22c55e' }};
+
+  --color-danger: {{ settings.color_error | default: '#ef4444' }};
+  --color-danger-hover: {{ settings.color_error | default: '#ef4444' }};
+  --color-danger-light: {{ settings.color_error | default: '#ef4444' }};
+
+  --color-text: {{ settings.color_text | default: '#000000' }};
+  --color-text-light: {{ settings.color_text_muted | default: '#666666' }};
+
+  --color-background: {{ settings.color_background | default: '#ffffff' }};
+  --color-card-bg: {{ settings.color_surface | default: '#f5f5f5' }};
+  --color-border: {{ settings.color_border | default: '#cccccc' }};
+  --color-border-light: {{ settings.color_surface | default: '#f5f5f5' }};
+
+  --shadow-sm: var(--shadow-sm);
+  --shadow-md: var(--shadow-md);
+  --shadow-lg: var(--shadow-lg);
+
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+
+  --spacing-xs: var(--space-3);
+  --spacing-sm: var(--space-4);
+  --spacing-md: var(--space-6);
+  --spacing-lg: var(--space-8);
+  --spacing-xl: var(--space-12);
 }
 /* Page */
 .account-page {
@@ -159,10 +169,10 @@
 
 .account-sidebar,
 .account-content {
-  background: #fff;
+  background: var(--color-white);
   border-radius: 14px;
   padding: 1.75rem;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--color-border);
 }
 
 /* Section header */
@@ -227,10 +237,13 @@
 .default-badge {
   background: #dcfce7;
   color: #166534;
-  font-size: .7rem;
+  font-size: 1rem;
   padding: .3rem .6rem;
-  border-radius: 999px;
+  border-radius: 10px;
   font-weight: 600;
+  display: flex;
+    align-items: center;
+    height: fit-content;
 }
 
 /* Body */
@@ -344,7 +357,7 @@
   width: 90%;
   max-height: 90vh;
   overflow-y: auto;
-  box-shadow: 0 20px 25px rgba(0, 0, 0, 0.15);
+
 }
 
 .address-modal-header {
@@ -465,6 +478,7 @@
   width: 18px;
   height: 18px;
   cursor: pointer;
+   -webkit-appearance: auto !important;
 }
 
 .form-actions {
@@ -486,7 +500,6 @@
   align-items: center;
   gap: 0.5rem;
 }
-
 .btn-spinner {
   width: 14px;
   height: 14px;
@@ -526,7 +539,7 @@
   <div class="address-modal-overlay" data-address-modal-close></div>
   <div class="address-modal-content">
     <div class="address-modal-header">
-      <h3 id="address-modal-title">Add New Address</h3>
+      <h5 id="address-modal-title">Add New Address</h3>
       <button class="address-modal-close" data-address-modal-close aria-label="Close">×</button>
     </div>
     <form class="address-form" id="address-form" action="/webstoreapi/addresses" method="post">
@@ -591,7 +604,7 @@
 
       <div class="form-group">
         <label for="address-phone" class="form-label">Phone</label>
-        <input type="tel" id="address-phone" name="phone" class="form-input">
+        <input type="tel" id="address-phone" pattern="[\d\s()+-]{7,20}"  name="phone" class="form-input">
       </div>
 
       <div class="form-group">

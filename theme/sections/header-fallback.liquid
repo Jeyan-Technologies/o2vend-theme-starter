@@ -216,13 +216,13 @@
 
 <style>
   .site-header__fallback {
-    background: var(--color-background, {{ settings.color_background }});
+    background: var(--color-background, {{ settings.color_background | default: '#ffffff' }});
     border-bottom: 1px solid var(--color-border, rgba(15, 23, 42, 0.08));
     position: relative;
     overflow: visible;
   }
   .site-header__fallback-inner {
-    max-width: var(--container-width, {{ settings.container_width }}px);
+    max-width: var(--container-width, {{ settings.container_width | default: 1200 }}px);
     margin: 0 auto;
     padding: var(--spacing-element, 0.85rem) var(--spacing-component, 1.25rem);
     display: flex;
@@ -241,7 +241,7 @@
   .site-header__actions a,
   .site-header__actions button {
     text-decoration: none;
-    color: var(--color-text, {{ settings.color_text }});
+    color: var(--color-text, {{ settings.color_text | default: '#000000' }});
     font-weight: var(--font-weight-normal, 400);
     background: none;
     border: none;
@@ -276,8 +276,8 @@
     min-width: 18px;
     height: 18px;
     padding: 0 var(--spacing-element, 5px);
-    background: var(--color-text, {{ settings.color_text }});
-    color: var(--color-background, {{ settings.color_background }});
+    background: var(--color-text, {{ settings.color_text | default: '#000000' }});
+    color: var(--color-background, {{ settings.color_background | default: '#ffffff' }});
     border-radius: var(--border-radius-medium, 9px);
     font-size: var(--text-xs, 0.75rem);
     font-weight: var(--font-weight-bold, 600);
@@ -315,7 +315,7 @@
   .site-header__logo-text {
     font-size: var(--text-xl, 1.25rem);
     font-weight: var(--font-weight-bold, 600);
-    color: var(--color-text, {{ settings.color_text }});
+    color: var(--color-text, {{ settings.color_text | default: '#000000' }});
   }
   
   /* Desktop Search Container */
@@ -341,7 +341,7 @@
   .site-header__search-icon {
     position: absolute;
     left: 1rem;
-    color: var(--color-text, {{ settings.color_text }});
+    color: var(--color-text, {{ settings.color_text | default: '#000000' }});
     opacity: 0.5;
     pointer-events: none;
     z-index: 1;
@@ -353,8 +353,8 @@
     border: 1px solid rgba(0, 0, 0, 0.15);
     border-radius: 8px;
     font-size: 1rem;
-    color: var(--color-text, {{ settings.color_text }});
-    background: var(--color-background, {{ settings.color_background }});
+    color: var(--color-text, {{ settings.color_text | default: '#000000' }});
+    background: var(--color-background, {{ settings.color_background | default: '#ffffff' }});
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
     font-family: -apple-system, "system-ui", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   }
@@ -379,7 +379,7 @@
     justify-content: center;
     border: none;
     background: transparent;
-    color: var(--color-text, {{ settings.color_text }});
+    color: var(--color-text, {{ settings.color_text | default: '#000000' }});
     opacity: 0.5;
     cursor: pointer;
     padding: 0;
@@ -430,7 +430,7 @@
     justify-content: center;
     gap: 0.75rem;
     padding: 2rem;
-    color: var(--color-text, {{ settings.color_text }});
+    color: var(--color-text, {{ settings.color_text | default: '#000000' }});
     opacity: 0.6;
   }
 
@@ -457,7 +457,7 @@
     gap: 1rem;
     padding: 0.75rem 1rem;
     text-decoration: none;
-    color: var(--color-text, {{ settings.color_text }});
+    color: var(--color-text, {{ settings.color_text | default: '#000000' }});
     transition: background-color 0.2s ease;
     cursor: pointer;
   }
@@ -484,7 +484,7 @@
     font-weight: 600;
     font-size: 0.9375rem;
     margin: 0 0 0.25rem 0;
-    color: var(--color-text, {{ settings.color_text }});
+    color: var(--color-text, {{ settings.color_text | default: '#000000' }});
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -560,7 +560,7 @@
     gap: var(--spacing-element, 0.375rem);
     padding: var(--spacing-element, 0.75rem) var(--spacing-element, 1rem);
     text-decoration: none;
-    color: var(--color-text, {{ settings.color_text }});
+    color: var(--color-text, {{ settings.color_text | default: '#000000' }});
     font-weight: var(--font-weight-normal, 400);
     font-size: var(--text-xl, 2rem);
     letter-spacing: var(--letter-spacing-heading, 0);
@@ -592,7 +592,7 @@
     
     .mobile-header-wrapper {
       display: block;
-      background: var(--color-background, {{ settings.color_background }});
+      background: var(--color-background, {{ settings.color_background | default: '#ffffff' }});
       border-bottom: 1px solid var(--color-border, rgba(15, 23, 42, 0.08));
     }
     
@@ -614,7 +614,7 @@
       border: none;
       cursor: pointer;
       padding: 0;
-      color: var(--color-text, {{ settings.color_text }});
+      color: var(--color-text, {{ settings.color_text | default: '#000000' }});
       border-radius: var(--border-radius-small, 0);
       transition: background-color var(--transition-fast, 0.2s) var(--ease-out, ease);
       flex-shrink: 0;
@@ -676,7 +676,7 @@
     .mobile-header__logo-text {
       font-size: var(--text-lg, 1.125rem);
       font-weight: var(--font-weight-bold, 600);
-      color: var(--color-text, {{ settings.color_text }});
+      color: var(--color-text, {{ settings.color_text | default: '#000000' }});
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -699,7 +699,7 @@
       border: none;
       cursor: pointer;
       padding: 0;
-      color: var(--color-text, {{ settings.color_text }});
+      color: var(--color-text, {{ settings.color_text | default: '#000000' }});
       border-radius: var(--border-radius-small, 0);
       transition: background-color var(--transition-fast, 0.2s) var(--ease-out, ease);
     }
@@ -723,8 +723,8 @@
       min-width: 18px;
       height: 18px;
       padding: 0 var(--spacing-element, 5px);
-      background: var(--color-text, {{ settings.color_text }});
-      color: var(--color-background, {{ settings.color_background }});
+      background: var(--color-text, {{ settings.color_text | default: '#000000' }});
+      color: var(--color-background, {{ settings.color_background | default: '#ffffff' }});
       border-radius: var(--border-radius-medium, 9px);
       font-size: var(--text-xs, 0.75rem);
       font-weight: var(--font-weight-bold, 600);
@@ -770,8 +770,8 @@
       border-radius: var(--border-radius-medium, 8px);
       font-size: var(--text-base, 0.875rem);
       font-family: var(--font-primary, var(--font-body));
-      color: var(--color-text, {{ settings.color_text }});
-      background-color: var(--color-background, {{ settings.color_background }});
+      color: var(--color-text, {{ settings.color_text | default: '#000000' }});
+      background-color: var(--color-background, {{ settings.color_background | default: '#ffffff' }});
       min-height: 44px;
       transition: border-color var(--transition-fast, 0.2s) var(--ease-out, ease);
     }
@@ -813,7 +813,7 @@
       max-width: 85vw;
       height: 100vh;
       max-height: 100vh;
-      background-color: var(--color-background, {{ settings.color_background }});
+      background-color: var(--color-background, {{ settings.color_background | default: '#ffffff' }});
       padding: var(--spacing-component, 1.5rem);
       overflow-y: auto;
       overflow-x: hidden;
@@ -843,7 +843,7 @@
     .mobile-nav-drawer-title {
       font-size: var(--text-lg, 1.125rem);
       font-weight: var(--font-weight-bold, 600);
-      color: var(--color-text, {{ settings.color_text }});
+      color: var(--color-text, {{ settings.color_text | default: '#000000' }});
       margin: 0;
     }
     
@@ -855,7 +855,7 @@
       height: 40px;
       background: none;
       border: none;
-      color: var(--color-text, {{ settings.color_text }});
+      color: var(--color-text, {{ settings.color_text | default: '#000000' }});
       cursor: pointer;
       border-radius: var(--border-radius-small, 0);
       transition: background-color var(--transition-fast, 0.2s) var(--ease-out, ease);
@@ -885,7 +885,7 @@
     .mobile-nav-drawer-link {
       display: block;
       padding: var(--spacing-component, 1rem) 0;
-      color: var(--color-text, {{ settings.color_text }});
+      color: var(--color-text, {{ settings.color_text | default: '#000000' }});
       text-decoration: none;
       font-weight: var(--font-weight-medium, 500);
       font-size: var(--text-base, 1rem);
@@ -935,7 +935,7 @@
     .mobile-nav-drawer-nav .site-header__menu-link {
       display: block;
       padding: var(--spacing-component, 1rem) 0;
-      color: var(--color-text, {{ settings.color_text }});
+      color: var(--color-text, {{ settings.color_text | default: '#000000' }});
       text-decoration: none;
       font-weight: var(--font-weight-medium, 500);
       font-size: var(--text-base, 1rem);

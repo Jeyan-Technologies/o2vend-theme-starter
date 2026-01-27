@@ -74,6 +74,19 @@
   </div>
 
   <style>
+    :root {
+      --spacebar-white: var(--color-white);
+      --spacebar-text: var(--color-text);
+      --spacebar-spacing-component: var(--spacing-component);
+      --spacebar-spacing-element: var(--spacing-element);
+      --spacebar-spacing-small: var(--spacing-small);
+      --spacebar-container-padding: var(--container-padding);
+      --spacebar-radius-xl: var(--radius-xl);
+      --spacebar-radius-lg: var(--radius-lg);
+      --spacebar-transition: var(--transition);
+      --spacebar-text-sm: var(--text-sm);
+    }
+    
     .widget-spacebar {
       padding: 32px 0;
       width: 100%;
@@ -97,14 +110,13 @@
       align-items: flex-start;
       gap: 16px;
       padding: 20px;
-      border-radius: 12px;
+      border-radius: var(--border-radius-medium);
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       cursor: pointer;
     }
     
     .widget-spacebar .spacebar-item:hover {
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
       transform: translateY(-4px);
     }
     

@@ -19,6 +19,92 @@
 </div>
 
 <style>
+:root {
+  --color-primary: {{ settings.color_primary | default: '#000000' }};
+  --color-primary-hover: {{ settings.color_primary_dark | default: '#333333' }};
+  --color-primary-light: {{ settings.color_primary_light | default: '#666666' }};
+  --color-success: {{ settings.color_success | default: '#22c55e' }};
+  --color-success-light: {{ settings.color_success | default: '#22c55e' }};
+  --color-success-dark: {{ settings.color_success | default: '#22c55e' }};
+  --color-danger: {{ settings.color_error | default: '#ef4444' }};
+  --color-danger-light: {{ settings.color_error | default: '#ef4444' }};
+  --color-danger-dark: {{ settings.color_error | default: '#ef4444' }};
+  --color-text: {{ settings.color_text | default: '#000000' }};
+  --color-text-light: {{ settings.color_text_light | default: '#999999' }};
+  --color-text-muted: {{ settings.color_text_muted | default: '#666666' }};
+  --color-background: {{ settings.color_background | default: '#ffffff' }};
+  --color-card-bg: {{ settings.color_surface | default: '#f5f5f5' }};
+  --color-border: {{ settings.color_border | default: '#cccccc' }};
+  --color-border-light: {{ settings.color_surface | default: '#f5f5f5' }};
+  --color-white: #ffffff;
+  --color-black: {{ settings.color_primary_dark | default: '#333333' }};
+  --color-gray-25: {{ settings.color_background | default: '#ffffff' }};
+  --color-gray-50: {{ settings.color_surface | default: '#f5f5f5' }};
+  --color-gray-100: {{ settings.color_surface | default: '#f5f5f5' }};
+  --color-gray-200: {{ settings.color_border | default: '#cccccc' }};
+  --color-gray-300: {{ settings.color_border | default: '#cccccc' }};
+  --color-gray-400: {{ settings.color_text_muted | default: '#666666' }};
+  --color-gray-500: {{ settings.color_text_muted | default: '#666666' }};
+  --color-gray-600: {{ settings.color_text_muted | default: '#666666' }};
+  --color-gray-700: {{ settings.color_text | default: '#000000' }};
+  --color-gray-800: {{ settings.color_text | default: '#000000' }};
+  --color-gray-900: {{ settings.color_text | default: '#000000' }};
+  --shadow-sm: var(--shadow-sm);
+  --shadow-md: var(--shadow-md);
+  --shadow-lg: var(--shadow-lg);
+  --shadow-opacity: {{ settings.shadow_opacity | default: 0.1 }};
+  --shadow-blur: {{ settings.shadow_blur | default: 8 }}px;
+  --radius-sm: var(--radius-md);
+  --radius-md: var(--radius-lg);
+  --radius-lg: var(--radius-xl);
+  --radius-xl: var(--radius-xl);
+  --radius-2xl: var(--radius-2xl);
+  --radius-full: var(--radius-full);
+  --spacing-xs: var(--space-2);
+  --spacing-sm: var(--space-4);
+  --spacing-md: var(--space-6);
+  --spacing-lg: var(--space-8);
+  --spacing-xl: var(--space-12);
+  --space-0: var(--space-0);
+  --space-0-5: var(--space-0-5);
+  --space-1: var(--space-1);
+  --space-1-5: var(--space-1-5);
+  --space-2: var(--space-2);
+  --space-3: var(--space-3);
+  --space-3-5: var(--space-3-5);
+  --space-4: var(--space-4);
+  --space-5: var(--space-5);
+  --space-6: var(--space-6);
+  --text-xs: var(--text-xs);
+  --text-sm: var(--text-sm);
+  --text-base: var(--text-base);
+  --text-lg: var(--text-lg);
+  --text-xl: var(--text-xl);
+  --text-2xl: var(--text-2xl);
+  --transition: var(--transition);
+  --transition-fast: var(--transition-fast);
+  --transition-slow: var(--transition-slow);
+  --duration-150: var(--duration-150);
+  --duration-300: var(--duration-300);
+  --ease-out: var(--ease-out);
+  --ease-in: var(--ease-in);
+  --ease-in-out: var(--ease-in-out);
+  --z-10: var(--z-10);
+  --z-modal: var(--z-modal);
+  --z-dropdown: var(--z-dropdown);
+  --font-primary: {{ settings.font_primary | default: '' }}, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+  --font-heading: {{ settings.font_heading | default: '' }}, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+  --font-display: {{ settings.font_display | default: '' }}, 'Georgia', 'Times New Roman', serif;
+  --font-body: {{ settings.font_body | default: '' }}, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+  --font-weight-bold: {{ settings.font_weight_bold | default: 700 }};
+  --font-weight-medium: {{ settings.font_weight_medium | default: 500 }};
+  --line-height-heading: {{ settings.line_height_heading | default: 1.2 }};
+  --leading-none: var(--leading-none);
+  --leading-normal: var(--leading-normal);
+  --leading-snug: var(--leading-snug);
+  --tracking-wider: var(--tracking-wider);
+}
+
 .delivery-zone-city-container {
   position: relative;
   width: 100%;
@@ -26,18 +112,18 @@
 
 .delivery-zone-city-select {
   width: 100%;
-  padding: 14px 16px;
+  padding: var(--space-3-5) var(--space-4);
   border: 2px solid #a78bfa;
-  border-radius: 12px;
-  font-size: 16px;
-  background: white;
+  border-radius: var(--radius-lg);
+  font-size: var(--text-lg);
+  background: var(--color-white);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all var(--transition);
   appearance: none;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23666' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
-  background-position: right 16px center;
-  padding-right: 40px;
+  background-position: right var(--space-4) center;
+  padding-right: 2.5rem;
 }
 
 .delivery-zone-city-select:focus {
@@ -49,14 +135,14 @@
 .delivery-zone-loading-cities {
   display: none;
   position: absolute;
-  right: 16px;
+  right: var(--space-4);
   top: 50%;
   transform: translateY(-50%);
   display: none;
   align-items: center;
-  gap: 8px;
-  font-size: 12px;
-  color: #6b7280;
+  gap: var(--spacing-xs);
+  font-size: var(--text-xs);
+  color: var(--color-gray-400);
 }
 
 .delivery-zone-loading-cities.active {
@@ -64,11 +150,11 @@
 }
 
 .spinner-small {
-  width: 16px;
-  height: 16px;
-  border: 2px solid #e5e7eb;
+  width: var(--space-4);
+  height: var(--space-4);
+  border: 2px solid var(--color-gray-200);
   border-top-color: #a78bfa;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   animation: spin 0.8s linear infinite;
 }
 

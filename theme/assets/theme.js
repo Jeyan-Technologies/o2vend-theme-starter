@@ -172,8 +172,6 @@
         const addToCartBtn = e.target.closest('.add-to-cart-btn');
         if (!addToCartBtn) return;
         
-        console.log('[Theme] Add to cart button clicked:', addToCartBtn);
-        
         // Check if this is a product card button (has a product-card ancestor)
         const productCard = addToCartBtn.closest('.product-card');
         if (productCard) {
@@ -188,10 +186,7 @@
             // Show modal
             e.preventDefault();
             e.stopPropagation();
-            console.log('[Theme] Showing modal - productType:', productType, 'variantsCount:', variantsCount);
             this.showAddToCartModal(productCard, addToCartBtn);
-          } else {
-            console.log('[Theme] Skipping modal - productType:', productType, 'variantsCount:', variantsCount);
           }
           // Type == 0 && variants == 0: Don't prevent default - let product-card's own handler work
           // The product-card.liquid script will handle type 0 products with no variants directly
@@ -266,17 +261,13 @@
         
         // Helper function to open login modal with fallbacks
         const openLogin = () => {
-          console.log('[AddToCart] Attempting to open login modal');
           if (this.openLoginModal && typeof this.openLoginModal === 'function') {
-            console.log('[AddToCart] Using this.openLoginModal');
             this.openLoginModal();
             return true;
           } else if (window.Theme && window.Theme.openLoginModal && typeof window.Theme.openLoginModal === 'function') {
-            console.log('[AddToCart] Using window.Theme.openLoginModal');
             window.Theme.openLoginModal();
             return true;
           } else {
-            console.log('[AddToCart] Using fallback: triggering login modal via data attribute');
             // Fallback: trigger login modal via data attribute
             const loginTrigger = document.querySelector('[data-login-modal-trigger]');
             if (loginTrigger) {
@@ -291,9 +282,7 @@
         
         // If response is HTML (error page), treat as authentication required for 404/401
         if (isHtml && !response.ok) {
-          console.log('[AddToCart] HTML error page received, status:', response.status);
           if (response.status === 404 || response.status === 401) {
-            console.log('[AddToCart] HTML error page with 404/401, opening login modal');
             openLogin();
             if (!skipButtonUpdate && btn) {
               btn.innerHTML = 'Add to Cart';
@@ -310,7 +299,6 @@
         } catch (parseError) {
           // If JSON parsing fails and we have a 404/401, treat as auth required
           if (!response.ok && (response.status === 404 || response.status === 401)) {
-            console.log('[AddToCart] JSON parse error with 404/401 status, opening login modal');
             openLogin();
             if (!skipButtonUpdate && btn) {
               btn.innerHTML = 'Add to Cart';
@@ -322,14 +310,8 @@
           throw parseError;
         }
         
-        // Debug logging
-        console.log('[AddToCart] Response status:', response.status, 'Response OK:', response.ok);
-        console.log('[AddToCart] Response data:', data);
-        console.log('[AddToCart] requiresAuth:', data.requiresAuth, 'openLoginModal exists:', !!this.openLoginModal);
-        
         // Check if response indicates authentication is required (check both status and data)
         if ((!response.ok || !data.success) && data.requiresAuth) {
-          console.log('[AddToCart] Authentication required, opening login modal');
           openLogin();
           // Reset button state
           if (!skipButtonUpdate && btn) {
@@ -341,7 +323,6 @@
         
         // Also check for 401 or 404 status code even if requiresAuth flag is not set
         if (!response.ok && (response.status === 401 || response.status === 404)) {
-          console.log('[AddToCart] 401/404 status detected, opening login modal');
           openLogin();
           // Reset button state
           if (!skipButtonUpdate && btn) {
@@ -352,10 +333,26 @@
         }
 
         if (data.success) {
-          // Always fetch full cart data after successful add to ensure instant update
-          // This ensures both cart count and total are updated immediately
+          // Update cart badge immediately using quantity API for instant feedback
+          // Then fetch full cart data for UI updates (total, etc.)
           try {
-            // Fetch full cart data to get updated count, total, and all cart information
+            // First, update badge immediately using CartManager (uses /carts/quantity API)
+            if (window.CartManager && typeof window.CartManager.getCartCount === 'function') {
+              const cartCount = await window.CartManager.getCartCount(true);
+              // Update badge immediately
+              if (window.CartManager.dispatchCartUpdated) {
+                window.CartManager.dispatchCartUpdated({ itemCount: cartCount });
+              }
+              // Store count for later use
+              data.data = data.data || {};
+              data.data.itemCount = cartCount;
+            }
+          } catch (countError) {
+            // Silently handle cart count fetch failure
+          }
+
+          // Then fetch full cart data for UI updates (total, items, etc.)
+          try {
             const cartResponse = await fetch('/webstoreapi/carts', {
               method: 'GET',
               credentials: 'same-origin',
@@ -368,7 +365,7 @@
                 // Use the full cart data from the API response (includes total, itemCount, etc.)
                 data.data = cartData.data;
                 
-                // Update cart count badge instantly using CartManager
+                // Update cart count badge again with full cart data (ensures consistency)
                 if (window.CartManager && typeof window.CartManager.dispatchCartUpdated === 'function') {
                   const cartCount = cartData.data.itemCount || 0;
                   window.CartManager.dispatchCartUpdated({ 
@@ -379,26 +376,14 @@
               }
             }
           } catch (e) {
-            console.warn('Failed to fetch full cart data after add:', e);
-            // Fallback: try to fetch just the count if full cart fetch fails
-            try {
-              if (window.CartManager && typeof window.CartManager.getCartCount === 'function') {
-                const cartCount = await window.CartManager.getCartCount(true);
-                data.data = data.data || {};
-                data.data.itemCount = cartCount;
-                // If we don't have total in response, preserve whatever was in the original response
-                if (!data.data.total && data.data.total !== 0) {
-                  // Keep the existing total from original response or default to 0
-                  data.data.total = data.data.total || 0;
-                }
-              }
-            } catch (countError) {
-              console.warn('Failed to fetch cart count after add:', countError);
-              // Use itemCount from original response if available
-              if (data.data && (data.data.itemCount === undefined || !data.data.items)) {
-                data.data = data.data || {};
-                data.data.itemCount = data.data.itemCount || (data.data.items ? data.data.items.length : 0);
-              }
+            // If full cart fetch fails, we already have the count from quantity API above
+            // Ensure we have at least basic data structure
+            if (!data.data) {
+              data.data = {};
+            }
+            // If we don't have total in response, preserve whatever was in the original response
+            if (!data.data.total && data.data.total !== 0) {
+              data.data.total = data.data.total || 0;
             }
           }
           // Update cart UI with the latest data (includes total and count)
@@ -417,9 +402,7 @@
           }
         } else {
           // Check if authentication is required
-          console.log('[AddToCart] Request failed, checking requiresAuth:', data.requiresAuth);
           if (data.requiresAuth) {
-            console.log('[AddToCart] Authentication required in else block, opening login modal');
             // Helper function to open login modal with fallbacks
             const openLogin = () => {
               if (this.openLoginModal && typeof this.openLoginModal === 'function') {
@@ -475,7 +458,6 @@
           error.message.includes('Please sign in') ||
           error.message.includes('unauthorized')
         )) {
-          console.log('[AddToCart] Authentication required detected in error message');
           openLogin();
           // Reset button state (only if not skipping updates)
           if (!skipButtonUpdate) {
@@ -576,8 +558,6 @@
                 (cart.items && cart.items.length) ||
                 0;
       }
-      
-      console.log('[Theme] updateCartUI called with count:', count, 'cart:', cart);
       
       // Use CartManager as single source of truth for all cart count updates
       // This ensures header badge and drawer badge stay in sync
@@ -1073,8 +1053,6 @@
         return;
       }
       
-      console.log('[AddToCartModal] Opening modal for product card:', productCard);
-      
       // Extract product data from card
       const baseProductId = productCard.dataset.productId;
       // Support both product-card classes and generic product classes
@@ -1100,12 +1078,10 @@
         });
         if (response.ok) {
           const result = await response.json();
-          console.log('[AddToCartModal] Product API response:', result);
           
           // Endpoint returns: { success: true, data: product }
           if (result.success && result.data) {
             fullProductData = result.data;
-            console.log('[AddToCartModal] Full product data retrieved:', fullProductData);
             
             // If product has combinations or subscriptions, redirect to product detail page
             const hasCombinations = fullProductData.combinations && fullProductData.combinations.length > 0;
@@ -1116,8 +1092,6 @@
               window.location.href = `/${productSlug}`;
               return;
             }
-          } else {
-            console.warn('[AddToCartModal] API response missing success or data:', result);
           }
         } else {
           // Response not OK - try to parse error
@@ -1142,7 +1116,6 @@
       // API might return either 'variants' or 'variations' - handle both
       const apiVariants = fullProductData?.variants || fullProductData?.variations || null;
       if (fullProductData && apiVariants && apiVariants.length > 0) {
-        console.log('[AddToCartModal] Using variant data from API response, variant count:', apiVariants.length);
         // Transform API variants to match expected format (same as product-card JSON structure)
         const transformedVariants = apiVariants.map(variant => {
           // Extract image URLs (handle both thumbnailImage1 and images array)
@@ -1189,10 +1162,8 @@
           baseProductImage: baseImage,
           baseProductId: fullProductData.productId || fullProductData.id || baseProductId
         };
-        console.log('[AddToCartModal] Transformed variant data:', variantData);
       } else {
         // Priority 2: Fall back to script tag data
-        console.log('[AddToCartModal] Using variant data from script tag');
         const variantDataScript = productCard.querySelector('.product-card-variant-data[data-product-id="' + baseProductId + '"]');
         if (variantDataScript) {
           try {
@@ -1481,7 +1452,6 @@
         // CRITICAL: Prevent variant selection during active add-to-cart request
         // This fixes the issue where modal closes when selecting second option during request
         if (modal._isAddingToCart) {
-          console.log('[AddToCartModal] Variant selection blocked - add-to-cart in progress');
           return;
         }
         
@@ -1746,13 +1716,10 @@
             this.findModalMatchingVariant(modal, modal._variantData);
             const matchedProductId = modal.dataset.productId;
             if (matchedProductId && matchedProductId !== currentProductId) {
-              console.log('[AddToCartModal] Updated productId from', currentProductId, 'to', matchedProductId, 'based on selected options:', modal._selectedOptions);
               currentProductId = matchedProductId;
             }
           }
         }
-        
-        console.log('[AddToCartModal] Adding to cart - productId:', currentProductId, 'quantity:', quantity, 'selectedOptions:', modal._selectedOptions);
         
         // CRITICAL: Set loading state and flag BEFORE any async operations
         // This prevents modal from closing during the request
@@ -1770,7 +1737,7 @@
           try {
             localStorage.setItem(imageKey, variantImageUrl);
           } catch (e) {
-            console.warn('Failed to store variant image in localStorage:', e);
+            // Silently handle localStorage failures
           }
         }
 
@@ -1832,7 +1799,6 @@
         // CRITICAL: Prevent closing if add-to-cart request is in progress
         // Check both strict equality and truthy check for safety
         if (modal._isAddingToCart === true || modal._isAddingToCart === 'true') {
-          console.log('[AddToCartModal] Close blocked - add-to-cart request in progress');
           e.preventDefault();
           e.stopPropagation();
           e.stopImmediatePropagation();
@@ -1866,7 +1832,6 @@
           // CRITICAL: Prevent closing if add-to-cart request is in progress
           // Check both strict equality and truthy check for safety
           if (modal._isAddingToCart === true || modal._isAddingToCart === 'true') {
-            console.log('[AddToCartModal] Escape key blocked - add-to-cart request in progress');
             e.preventDefault();
             e.stopPropagation();
             e.stopImmediatePropagation();
@@ -1889,7 +1854,6 @@
       // CRITICAL: Prevent closing if add-to-cart request is in progress
       // Check both strict equality and truthy check for safety
       if (modal._isAddingToCart === true || modal._isAddingToCart === 'true') {
-        console.log('[AddToCartModal] Cannot close modal while add-to-cart is in progress');
         return;
       }
       
@@ -2394,8 +2358,12 @@
       const anchorLinks = document.querySelectorAll('a[href^="#"]');
       anchorLinks.forEach(link => {
         link.addEventListener('click', (e) => {
+          const href = link.getAttribute('href');
+          // Skip if href is just '#' without an ID
+          if (!href || href === '#' || href.length <= 1) return;
+          
           e.preventDefault();
-          const target = document.querySelector(link.getAttribute('href'));
+          const target = document.querySelector(href);
           if (target) {
             smoothScroll(target.offsetTop);
           }
@@ -2501,9 +2469,18 @@
         });
         successView.hidden = true;
 
-        // Always start at method selection with no fields visible
-        resetOtpFlows();
-        showView('methods');
+        // Check if only one login method is available
+        const methodButtons = modal.querySelectorAll('[data-login-method]');
+        if (methodButtons.length === 1) {
+          // Auto-select the only available method
+          const method = methodButtons[0].getAttribute('data-login-method');
+          resetOtpFlows();
+          selectMethod(method);
+        } else {
+          // Show method selection
+          resetOtpFlows();
+          showView('methods');
+        }
       };
 
       // Initialize intl-tel-input for login phone
@@ -2516,19 +2493,85 @@
             loginPhoneIti = null;
           }
           
-          loginPhoneIti = intlTelInput(phoneInput, {
+          // Check if we're in development/localhost - skip geoIpLookup to avoid CORS issues
+          const isLocalhost = window.location.hostname === 'localhost' || 
+                              window.location.hostname === '127.0.0.1' ||
+                              window.location.hostname === '';
+          
+          const itiOptions = {
             utilsScript: 'https://cdn.jsdelivr.net/npm/intl-tel-input@23.0.0/build/js/utils.js',
-            initialCountry: 'auto',
-            geoIpLookup: function(callback) {
-              fetch('https://ipapi.co/json/')
-                .then(res => res.json())
-                .then(data => callback(data.country_code ? data.country_code.toLowerCase() : 'us'))
-                .catch(() => callback('us'));
-            },
-            preferredCountries: ['us', 'gb', 'ca', 'au', 'in'],
+            initialCountry: isLocalhost ? 'in' : 'auto',
+            preferredCountries: ['in', 'us', 'gb', 'ca', 'au'],
             separateDialCode: true,
-            nationalMode: false
-          });
+            nationalMode: false,
+            allowDropdown: true,
+            autoHideDialCode: false,
+            dropdownContainer: document.body // Append dropdown to body to escape modal stacking context
+          };
+          
+          // Only add geoIpLookup if not on localhost (to avoid CORS issues)
+          if (!isLocalhost) {
+            itiOptions.geoIpLookup = function(callback) {
+              // Quick timeout to avoid hanging
+              const timeout = setTimeout(() => {
+                callback('in');
+              }, 2000);
+              
+              // Try geolocation API (may fail due to CORS in some environments)
+              fetch('https://ipapi.co/json/')
+                .then(res => {
+                  clearTimeout(timeout);
+                  if (!res.ok) throw new Error('API error');
+                  return res.json();
+                })
+                .then(data => {
+                  const countryCode = data.country_code ? data.country_code.toLowerCase() : 'in';
+                  callback(countryCode);
+                })
+                .catch(() => {
+                  clearTimeout(timeout);
+                  // Default to India if API fails
+                  callback('in');
+                });
+            };
+          }
+          
+          loginPhoneIti = intlTelInput(phoneInput, itiOptions);
+          
+          // Ensure dropdown is enabled and working on mobile
+          if (loginPhoneIti) {
+            // Wait for DOM to be ready, then ensure flag container is clickable
+            setTimeout(() => {
+              const flagContainer = phoneInput.parentElement?.querySelector('.iti__flag-container');
+              const selectedFlag = phoneInput.parentElement?.querySelector('.iti__selected-flag');
+              
+              if (flagContainer) {
+                flagContainer.style.pointerEvents = 'auto';
+                flagContainer.style.cursor = 'pointer';
+                flagContainer.setAttribute('role', 'button');
+                flagContainer.setAttribute('tabindex', '0');
+                
+                // Add explicit click/touch handlers for mobile
+                const handleFlagClick = (e) => {
+                  e.stopPropagation();
+                  // Trigger click on the selected flag element
+                  if (selectedFlag) {
+                    selectedFlag.click();
+                  }
+                };
+                
+                flagContainer.addEventListener('click', handleFlagClick, { passive: true });
+                flagContainer.addEventListener('touchend', handleFlagClick, { passive: true });
+              }
+              
+              if (selectedFlag) {
+                selectedFlag.style.pointerEvents = 'auto';
+                selectedFlag.style.cursor = 'pointer';
+                selectedFlag.setAttribute('role', 'button');
+                selectedFlag.setAttribute('tabindex', '0');
+              }
+            }, 100);
+          }
           
           // Store instance globally for validation
           window.loginPhoneIti = loginPhoneIti;
@@ -2873,6 +2916,120 @@
           }
         });
       }
+
+      // Resend Email OTP handler function
+      async function resendEmailOtp(btn) {
+        if (!emailForOtp) {
+          console.log('Resend Email OTP: No email stored');
+          return;
+        }
+        
+        console.log('Resend Email OTP clicked, email:', emailForOtp);
+        clearError('email-otp-verify');
+        if (btn) {
+          btn.disabled = true;
+          btn.textContent = 'Sending...';
+        }
+
+        try {
+          const response = await fetch('/webstoreapi/auth/email/send-otp', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({ email: emailForOtp })
+          });
+          const data = await response.json();
+          console.log('Resend Email OTP response:', data);
+          if (!response.ok || !data.success) {
+            showError('email-otp-verify', data.error || 'Unable to resend OTP. Please try again.');
+          } else {
+            userGUIDForOtp = data.userGUID || userGUIDForOtp;
+          }
+        } catch (err) {
+          console.error('Resend email OTP error:', err);
+          showError('email-otp-verify', 'Unable to resend OTP. Please try again.');
+        } finally {
+          if (btn) {
+            btn.disabled = false;
+            btn.textContent = 'Resend code';
+          }
+        }
+      }
+
+      // Resend Phone OTP handler function
+      async function resendPhoneOtp(btn) {
+        if (!phoneForOtp) {
+          console.log('Resend Phone OTP: No phone stored');
+          return;
+        }
+        
+        console.log('Resend Phone OTP clicked, phone:', phoneForOtp);
+        clearError('phone-otp-verify');
+        if (btn) {
+          btn.disabled = true;
+          btn.textContent = 'Sending...';
+        }
+
+        try {
+          const response = await fetch('/webstoreapi/auth/phone/send-otp', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({ phoneNumber: phoneForOtp })
+          });
+          const data = await response.json();
+          console.log('Resend Phone OTP response:', data);
+          if (!response.ok || !data.success) {
+            showError('phone-otp-verify', data.error || 'Unable to resend OTP. Please try again.');
+          } else {
+            userGUIDForPhoneOtp = data.userGUID || userGUIDForPhoneOtp;
+          }
+        } catch (err) {
+          console.error('Resend phone OTP error:', err);
+          showError('phone-otp-verify', 'Unable to resend OTP. Please try again.');
+        } finally {
+          if (btn) {
+            btn.disabled = false;
+            btn.textContent = 'Resend code';
+          }
+        }
+      }
+
+      // Attach click handlers using ID
+      const resendEmailBtnById = document.getElementById('resend-email-otp-btn');
+      if (resendEmailBtnById) {
+        resendEmailBtnById.addEventListener('click', (e) => {
+          e.preventDefault();
+          resendEmailOtp(resendEmailBtnById);
+        });
+      }
+
+      const resendPhoneBtnById = document.getElementById('resend-phone-otp-btn');
+      if (resendPhoneBtnById) {
+        resendPhoneBtnById.addEventListener('click', (e) => {
+          e.preventDefault();
+          resendPhoneOtp(resendPhoneBtnById);
+        });
+      }
+
+      // Also use event delegation as fallback
+      modal.addEventListener('click', (e) => {
+        const resendEmailBtn = e.target.closest('[data-login-resend-email-otp]');
+        if (resendEmailBtn && resendEmailBtn.id !== 'resend-email-otp-btn') {
+          e.preventDefault();
+          resendEmailOtp(resendEmailBtn);
+        }
+        
+        const resendPhoneBtn = e.target.closest('[data-login-resend-phone-otp]');
+        if (resendPhoneBtn && resendPhoneBtn.id !== 'resend-phone-otp-btn') {
+          e.preventDefault();
+          resendPhoneOtp(resendPhoneBtn);
+        }
+      });
 
       // ESC to close
       document.addEventListener('keydown', (e) => {
@@ -3338,11 +3495,6 @@ style.textContent = `
     opacity: 1;
   }
 
-  /* Product card animations */
-  /*.product-card {
-    animation: fadeInScale 0.2s var(--ease-out);
-  }
-
   /* Product card hover effects handled by components.css */
 
   /* Staggered animations for product grids */
@@ -3683,18 +3835,18 @@ style.textContent = `
     transform: translateY(0);
     box-shadow: var(--shadow-sm);
   }
-
+{% comment %}   
   /* Card hover effects */
   .collection-card,
   .blog-card {
     transition: all var(--transition-fast);
   }
-
-  .collection-card:hover,
+{% endcomment %}
+{% comment %}  .collection-card:hover,
   .blog-card:hover {
     transform: translateY(-8px) scale(1.02);
     box-shadow: var(--shadow-xl);
-  }
+  } {% endcomment %}
 
   /* Form focus effects */
   .form-group {

@@ -1,176 +1,383 @@
-{% liquid
-  assign widget_settings = widget.settings
-  assign widget_content = widget.content
-  assign widget_data = widget.data
+{% assign widget_settings = widget.settings %}
+{% assign widget_data = widget.data %}
+{% assign coupon = widget_data.coupon %}
 
-  assign heading = widget_settings.title | default: widget_content.title | default: 'Limited time offer'
-  assign subheading = widget_settings.subtitle | default: widget_content.subtitle
-  assign end_time = widget_settings.ends_at | default: widget_content.ends_at | default: widget_data.ends_at
-  assign highlight_text = widget_settings.highlight | default: widget_content.highlight
-  assign background_image = widget_settings.background_image | default: widget_content.background_image
-%}
+{% if widget_data.couponValid == true and coupon != null %}
+  {% assign discount_amount = coupon.discountAmount | default: 0 %}
+  {% assign coupon_code = coupon.couponCode | default: '' %}
+  {% assign description = coupon.description | default: '' %}
+  {% assign end_on = coupon.endOn | default: '' %}
+  {% assign start_on = coupon.startOn | default: '' %}
+  {% assign rule_to_apply = coupon.ruleToApply | default: 'cart_fixed' %}
+  
+  {% comment %}Background image: Use FileName first, fallback to ImageUrl{% endcomment %}
+  {% assign background_image = coupon.fileName | default: coupon.imageUrl | default: '' %}
+  
+  {% comment %}Get currency symbol from shop settings or theme settings{% endcomment %}
+  {% assign currency_symbol = shop.settings.currencySymbol | default: settings.currencySymbol | default: '$' %}
+  
+  {% comment %}Format discount display based on RuleToApply{% endcomment %}
+  {% if rule_to_apply == 'by_percent' %}
+    {% assign discount_display = discount_amount | append: '%' %}
+  {% else %}
+    {% assign discount_display = currency_symbol | append: discount_amount | round: 2 %}
+  {% endif %}
 
-<section class="widget widget-discount-time" data-widget-id="{{ widget.id }}" data-countdown="{{ end_time }}">
-  <div class="widget-discount-time__background" {% if background_image %}style="background-image: url('{{ background_image }}');"{% endif %}></div>
-  <div class="widget-discount-time__overlay"></div>
+<section class="widget widget-discount-time" data-widget-id="{{ widget.id }}" data-countdown="{{ end_on }}">
+  {% if background_image != '' %}
+    <div class="widget-discount-time__background" style="background-image: url('{{ background_image }}');"></div>
+  {% endif %}
   <div class="widget-discount-time__content">
-    <h2>{{ heading }}</h2>
-    {% if subheading %}
-      <p>{{ subheading }}</p>
-    {% endif %}
-    {% if highlight_text %}
-      <span class="widget-discount-time__highlight">{{ highlight_text }}</span>
-    {% endif %}
-    {% if end_time %}
-      <div class="widget-discount-time__countdown" data-countdown-display>
-        <div><strong data-countdown-days>00</strong><span>Days</span></div>
-        <div><strong data-countdown-hours>00</strong><span>Hours</span></div>
-        <div><strong data-countdown-minutes>00</strong><span>Minutes</span></div>
-        <div><strong data-countdown-seconds>00</strong><span>Seconds</span></div>
-      </div>
-    {% endif %}
-    {% if widget_settings.cta_label %}
-      <a href="{{ widget_settings.cta_link | default: '#' }}" class="widget-discount-time__cta">
-        {{ widget_settings.cta_label }}
-      </a>
-    {% endif %}
+    <div class="widget-discount-time__inner">
+      {% if discount_amount > 0 %}
+        <div class="widget-discount-time__discount">
+          <span class="widget-discount-time__discount-amount">{{ discount_display }}</span>
+          <span class="widget-discount-time__discount-label">OFF</span>
+        </div>
+      {% endif %}
+      
+      {% if coupon_code != '' %}
+        <div class="widget-discount-time__code">
+          <span class="widget-discount-time__code-label">Use Code:</span>
+          <span class="widget-discount-time__code-value">{{ coupon_code }}</span>
+        </div>
+      {% endif %}
+      
+      {% if description != '' %}
+        <p class="widget-discount-time__description">{{ description }}</p>
+      {% endif %}
+      
+      {% if end_on != '' %}
+        <div class="widget-discount-time__countdown" data-countdown-display>
+          <div class="widget-discount-time__countdown-item">
+            <strong data-countdown-days>00</strong>
+            <span>Days</span>
+          </div>
+          <div class="widget-discount-time__countdown-item">
+            <strong data-countdown-hours>00</strong>
+            <span>Hours</span>
+          </div>
+          <div class="widget-discount-time__countdown-item">
+            <strong data-countdown-minutes>00</strong>
+            <span>Minutes</span>
+          </div>
+          <div class="widget-discount-time__countdown-item">
+            <strong data-countdown-seconds>00</strong>
+            <span>Seconds</span>
+          </div>
+        </div>
+      {% endif %}
+    </div>
   </div>
 
   <style>
+    :root {
+      --discount-time-white: var(--color-white);
+      --discount-time-spacing-component: var(--spacing-component);
+      --discount-time-spacing-element: var(--spacing-element);
+      --discount-time-radius-full: var(--radius-full);
+    }
+    
     .widget-discount-time {
       position: relative;
-      padding: 4rem 1rem;
-      color: {{ widget_settings.text_color | default: '#ffffff' }};
+      width: 100%;
+      min-height: 400px;
+      padding: 3rem 2rem;
+      color: var(--color-text, {{ settings.color_text | default: '#ffffff' }});
       overflow: hidden;
-      border-radius: var(--border-radius-medium);
-      margin: 2rem auto;
-      max-width: {{ settings.container_width }}px;
+      border-radius: var(--border-radius-medium, 8px);
+      margin: var(--spacing-large, 2rem) 0;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
     }
+    
     .widget-discount-time__background {
       position: absolute;
       inset: 0;
-      background: linear-gradient(135deg, {{ widget_settings.background_from | default: '#1f2937' }}, {{ widget_settings.background_to | default: '#2563eb' }});
       background-size: cover;
       background-position: center;
-      filter: saturate(1.1);
+      background-repeat: no-repeat;
+      z-index: 1;
     }
-    .widget-discount-time__overlay {
-      position: absolute;
-      inset: 0;
-      background: rgba(15, 23, 42, 0.4);
-    }
+    
     .widget-discount-time__content {
       position: relative;
       z-index: 2;
-      text-align: center;
-      max-width: 640px;
+      width: 100%;
+      max-width: 1200px;
       margin: 0 auto;
+      padding: 0;
     }
-    .widget-discount-time h2 {
-      font-size: clamp(2rem, 4vw, 2.8rem);
-      margin: 0 0 1rem;
+    
+    .widget-discount-time__inner {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 1.5rem;
+      max-width: 600px;
     }
-    .widget-discount-time p {
-      margin: 0 0 1.5rem;
-      font-size: 1.1rem;
-      opacity: 0.9;
+    
+    .widget-discount-time__discount {
+      display: flex;
+      align-items: baseline;
+      gap: 0.75rem;
+      margin: 0;
+      line-height: 1;
     }
-    .widget-discount-time__highlight {
+    
+    .widget-discount-time__discount-amount {
+      font-size: clamp(4rem, 8vw, 6.5rem);
+      font-weight: 900;
+      line-height: 1;
+      color: var(--color-primary, {{ settings.color_primary | default: '#1a1a1a' }});
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    
+    .widget-discount-time__discount-label {
+      font-size: clamp(2rem, 4vw, 3rem);
+      font-weight: 700;
+      color: var(--color-text, {{ settings.color_text | default: '#ffffff' }});
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+    
+    .widget-discount-time__code {
       display: inline-flex;
       align-items: center;
-      gap: 0.5rem;
-      padding: 0.5rem 1rem;
-      border-radius: 999px;
-      background: rgba(255, 255, 255, 0.15);
-      font-weight: 600;
-      margin-bottom: 2rem;
+      gap: 0.75rem;
+      padding: 0.875rem 1.75rem;
+      border-radius: 50px;
+      background: rgba(255, 255, 255, 0.2);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     }
+    
+    .widget-discount-time__code-label {
+      font-size: 0.95rem;
+      font-weight: 500;
+      opacity: 0.95;
+      color: var(--color-text, {{ settings.color_text | default: '#ffffff' }});
+    }
+    
+    .widget-discount-time__code-value {
+      font-size: 1.1rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      color: var(--color-text, {{ settings.color_text | default: '#ffffff' }});
+    }
+    
+    .widget-discount-time__description {
+      margin: 0;
+      font-size: clamp(1rem, 2vw, 1.15rem);
+      opacity: 0.95;
+      max-width: 500px;
+      line-height: 1.6;
+      color: var(--color-text, {{ settings.color_text | default: '#ffffff' }});
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    }
+    
     .widget-discount-time__countdown {
-      display: inline-flex;
-      gap: 1rem;
-      margin: 2.5rem 0;
-      padding: 0.5rem 1rem;
-      border-radius: 999px;
-      background: rgba(255, 255, 255, 0.12);
-      backdrop-filter: blur(8px);
+      display: flex;
+      gap: 1.25rem;
+      margin: 0.5rem 0 0;
+      padding: 1.25rem 2rem;
+      border-radius: 50px;
+      background: rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     }
-    .widget-discount-time__countdown div {
+    
+    .widget-discount-time__countdown-item {
       display: flex;
       flex-direction: column;
       align-items: center;
-      min-width: 70px;
+      gap: 0.5rem;
+      min-width: 75px;
     }
-    .widget-discount-time__countdown strong {
-      font-size: 1.75rem;
-      font-weight: 700;
+    
+    .widget-discount-time__countdown-item strong {
+      font-size: 2rem;
+      font-weight: 800;
+      line-height: 1;
+      color: var(--color-primary, {{ settings.color_primary | default: '#1a1a1a' }});
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     }
-    .widget-discount-time__countdown span {
+    
+    .widget-discount-time__countdown-item span {
       font-size: 0.75rem;
+      font-weight: 600;
       text-transform: uppercase;
       letter-spacing: 0.1em;
+      opacity: 0.9;
+      color: var(--color-text, {{ settings.color_text | default: '#ffffff' }});
     }
-    .widget-discount-time__cta {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
-      padding: 0.85rem 1.75rem;
-      border-radius: 999px;
-      background: {{ widget_settings.cta_background | default: '#ffffff' }};
-      color: {{ widget_settings.cta_text | default: '#111827' }};
-      text-decoration: none;
-      font-weight: 600;
+    
+    .widget-discount-time--expired {
+      display: none;
     }
-    @media (max-width: 640px) {
+    
+    @media (max-width: 768px) {
+      .widget-discount-time {
+        min-height: 350px;
+        padding: 2rem 1.5rem;
+        justify-content: center;
+      }
+      
+      .widget-discount-time__inner {
+        align-items: center;
+        text-align: center;
+        max-width: 100%;
+      }
+      
+      .widget-discount-time__discount {
+        flex-direction: column;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      
       .widget-discount-time__countdown {
         flex-wrap: wrap;
         justify-content: center;
-        gap: 0.75rem;
+        gap: 1rem;
+        padding: 1rem 1.5rem;
       }
-      .widget-discount-time__countdown div {
-        min-width: 60px;
+      
+      .widget-discount-time__countdown-item {
+        min-width: 65px;
+      }
+      
+      .widget-discount-time__countdown-item strong {
+        font-size: 1.75rem;
+      }
+    }
+    
+    @media (max-width: 480px) {
+      .widget-discount-time {
+        padding: 1.5rem 1rem;
+      }
+      
+      .widget-discount-time__countdown {
+        gap: 0.75rem;
+        padding: 0.875rem 1.25rem;
+      }
+      
+      .widget-discount-time__countdown-item {
+        min-width: 55px;
+      }
+      
+      .widget-discount-time__countdown-item strong {
+        font-size: 1.5rem;
       }
     }
   </style>
 
-  {% if end_time %}
+  {% if end_on != '' %}
     <script>
-      document.addEventListener('DOMContentLoaded', function() {
-        const widget = document.querySelector('[data-widget-id="{{ widget.id }}"]');
-        if (!widget) return;
-
-        const targetDate = new Date(widget.dataset.countdown);
-        if (!targetDate.getTime()) return;
-
-        const parts = {
-          days: widget.querySelector('[data-countdown-days]'),
-          hours: widget.querySelector('[data-countdown-hours]'),
-          minutes: widget.querySelector('[data-countdown-minutes]'),
-          seconds: widget.querySelector('[data-countdown-seconds]')
-        };
-
-        const tick = () => {
-          const now = new Date();
-          let diff = targetDate - now;
-          if (diff <= 0) {
-            diff = 0;
-            clearInterval(timer);
-            widget.classList.add('widget-discount-time--expired');
+      (function() {
+        function initCountdown() {
+          const widget = document.querySelector('[data-widget-id="{{ widget.id }}"]');
+          if (!widget) {
+            // Retry if DOM not ready
+            if (document.readyState === 'loading') {
+              document.addEventListener('DOMContentLoaded', initCountdown);
+            }
+            return;
           }
-          const seconds = Math.floor((diff / 1000) % 60);
-          const minutes = Math.floor((diff / (1000 * 60)) % 60);
-          const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
-          const days = Math.floor(diff / (1000 * 60 * 60 * 24));
 
-          if (parts.days) parts.days.textContent = String(days).padStart(2, '0');
-          if (parts.hours) parts.hours.textContent = String(hours).padStart(2, '0');
-          if (parts.minutes) parts.minutes.textContent = String(minutes).padStart(2, '0');
-          if (parts.seconds) parts.seconds.textContent = String(seconds).padStart(2, '0');
-        };
+          const countdownDisplay = widget.querySelector('[data-countdown-display]');
+          if (!countdownDisplay) return;
 
-        tick();
-        const timer = setInterval(tick, 1000);
-      });
+          const endOnValue = '{{ end_on }}';
+          if (!endOnValue || endOnValue === '') {
+            console.warn('[DiscountTime] No end date provided');
+            return;
+          }
+
+          // Parse the date - handle ISO format and other formats
+          let targetDate;
+          try {
+            // Try parsing as-is first
+            targetDate = new Date(endOnValue);
+            
+            // If invalid, try adding timezone info if missing
+            if (isNaN(targetDate.getTime())) {
+              // Try appending timezone if it's just a date
+              if (endOnValue.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                targetDate = new Date(endOnValue + 'T23:59:59');
+              } else if (endOnValue.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/)) {
+                // Add timezone if missing
+                targetDate = new Date(endOnValue + 'Z');
+              } else {
+                targetDate = new Date(endOnValue);
+              }
+            }
+          } catch (e) {
+            console.error('[DiscountTime] Error parsing date:', endOnValue, e);
+            return;
+          }
+
+          if (!targetDate.getTime() || isNaN(targetDate.getTime())) {
+            console.warn('[DiscountTime] Invalid end date format:', endOnValue);
+            widget.classList.add('widget-discount-time--expired');
+            widget.style.display = 'none';
+            return;
+          }
+
+          const parts = {
+            days: widget.querySelector('[data-countdown-days]'),
+            hours: widget.querySelector('[data-countdown-hours]'),
+            minutes: widget.querySelector('[data-countdown-minutes]'),
+            seconds: widget.querySelector('[data-countdown-seconds]')
+          };
+
+          // Check if all parts exist
+          if (!parts.days || !parts.hours || !parts.minutes || !parts.seconds) {
+            console.warn('[DiscountTime] Countdown elements not found');
+            return;
+          }
+
+          let timer = null;
+
+          const tick = () => {
+            const now = new Date();
+            let diff = targetDate.getTime() - now.getTime();
+            
+            if (diff <= 0) {
+              diff = 0;
+              if (timer) clearInterval(timer);
+              widget.classList.add('widget-discount-time--expired');
+              widget.style.display = 'none';
+              return;
+            }
+            
+            const seconds = Math.floor((diff / 1000) % 60);
+            const minutes = Math.floor((diff / (1000 * 60)) % 60);
+            const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
+            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+
+            if (parts.days) parts.days.textContent = String(days).padStart(2, '0');
+            if (parts.hours) parts.hours.textContent = String(hours).padStart(2, '0');
+            if (parts.minutes) parts.minutes.textContent = String(minutes).padStart(2, '0');
+            if (parts.seconds) parts.seconds.textContent = String(seconds).padStart(2, '0');
+          };
+
+          // Initial tick
+          tick();
+          
+          // Set up interval
+          timer = setInterval(tick, 1000);
+        }
+
+        // Initialize when DOM is ready
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', initCountdown);
+        } else {
+          initCountdown();
+        }
+      })();
     </script>
   {% endif %}
 </section>
-
+{% endif %}

@@ -1,20 +1,37 @@
 {% layout 'layout/theme' %}
 
+<!-- Hero Widgets (if any) -->
+{% assign hero_widgets = widgets.hero %}
+{% if hero_widgets and hero_widgets.size > 0 %}
+  <section class="theme-section theme-section--hero" data-section="hero">
+    {% for widget in hero_widgets %}
+      <div class="theme-widget-wrapper" 
+           data-widget-id="{{ widget.id }}" 
+           data-widget-type="{{ widget.type }}"
+           data-widget-position="{{ widget.Position | default: widget.position | default: forloop.index }}">
+        {% if widget and widget.template_path %}
+          {% render widget.template_path, widget: widget, settings: settings, shop: shop %}
+        {% endif %}
+      </div>
+    {% endfor %}
+  </section>
+{% endif %}
+
 <div class="collections-page">
   <div class="collections-header">
-    <h1 class="page-title">Our Collections</h1>
-    <p class="page-description">Discover our curated collections of amazing products</p>
+    <h1 class="page-title">Our Categories</h1>
+    <p class="page-description">Discover our curated categories of amazing products</p>
   </div>
   <div class="collections-content">
-    {% if collections.size > 0 %}
+    {% if categories.size > 0 %}
       <div class="collections-grid">
-        {% for collection in collections %}
+        {% for category in categories %}
           <div class="collection-card">
-            <a href="/{{ collection.slug }}" class="collection-link">
+            <a href="/{{ category.slug }}" class="collection-link">
               <div class="collection-image">
-                {% if collection.image %}
-                  <img src="{{ collection.image }}" 
-                       alt="{{ collection.title | default: collection.name }}" 
+                {% if category.image %}
+                  <img src="{{ category.image }}" 
+                       alt="{{ category.title | default: category.name }}" 
                        width="100%"
                        height="200"
                        loading="lazy">
@@ -35,9 +52,9 @@
                 {% endif %}
               </div>
               <div class="collection-info">
-                <h3 class="collection-title">{{ collection.title | default: collection.name }}</h3>
-                {% if collection.description %}
-                  <p class="collection-description">{{ collection.description }}</p>
+                <h3 class="collection-title">{{ category.title | default: category.name }}</h3>
+                {% if category.description %}
+                  <p class="collection-description">{{ category.description }}</p>
                 {% else %}
                   <p class="collection-description">Setup your products and images in Catalog - Category</p>
                 {% endif %}
@@ -47,12 +64,12 @@
         {% endfor %}
       </div>
     {% else %}
-      <!-- No Collections -->
+      <!-- No Categories -->
       <div class="no-collections">
         <div class="no-collections-content">
           <div class="no-collections-icon">📂</div>
-          <h2>No Collections Available</h2>
-          <p>We're working on creating amazing collections for you. Check back soon!</p>
+          <h2>No Categories Available</h2>
+          <p>We're working on creating amazing categories for you. Check back soon!</p>
           <a href="/products" class="btn btn-primary">Browse All Products</a>
         </div>
       </div>
@@ -65,11 +82,55 @@
   </div>
 </div>
 
+<!-- Content Widgets (if any) -->
+{% assign content_widgets = widgets.content %}
+{% if content_widgets and content_widgets.size > 0 %}
+  <section class="theme-section theme-section--content" data-section="content">
+    {% for widget in content_widgets %}
+      <div class="theme-widget-wrapper" 
+           data-widget-id="{{ widget.id }}" 
+           data-widget-type="{{ widget.type }}"
+           data-widget-position="{{ widget.Position | default: widget.position | default: forloop.index }}">
+        {% if widget and widget.template_path %}
+          {% render widget.template_path, widget: widget, settings: settings, shop: shop %}
+        {% endif %}
+      </div>
+    {% endfor %}
+  </section>
+{% endif %}
+
 <style>
+  /* Template-level variable mappings to global theme variables */
+  :root {
+    --color-primary: {{ settings.color_primary | default: '#000000' }};
+    --color-primary-hover: {{ settings.color_primary_dark | default: '#333333' }};
+    --color-primary-light: {{ settings.color_primary_light | default: '#666666' }};
+    --color-success: {{ settings.color_success | default: '#22c55e' }};
+    --color-success-light: {{ settings.color_success | default: '#22c55e' }};
+    --color-danger: {{ settings.color_error | default: '#ef4444' }};
+    --color-danger-light: {{ settings.color_error | default: '#ef4444' }};
+    --color-text: {{ settings.color_text | default: '#000000' }};
+    --color-text-light: {{ settings.color_text_muted | default: '#666666' }};
+    --color-background: {{ settings.color_background | default: '#ffffff' }};
+    --color-card-bg: {{ settings.color_surface | default: '#f5f5f5' }};
+    --color-border: {{ settings.color_border | default: '#cccccc' }};
+    --color-border-light: {{ settings.color_surface | default: '#f5f5f5' }};
+    --shadow-sm: var(--shadow-sm);
+    --shadow-md: var(--shadow-md);
+    --shadow-lg: var(--shadow-lg);
+    --radius-md: var(--radius-md);
+    --radius-lg: var(--radius-lg);
+    --spacing-xs: var(--space-3);
+    --spacing-sm: var(--space-4);
+    --spacing-md: var(--space-6);
+    --spacing-lg: var(--space-8);
+    --spacing-xl: var(--space-12);
+  }
+
 /* Collection Toolbar Styles */
 .collection-toolbar {
-  background-color: #fff;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  background-color: var(--color-white);
+  border-bottom: 1px solid var(--color-border);
   padding: 1.5rem 0;
   margin-bottom: 2rem;
 }
@@ -84,7 +145,7 @@
   padding: 50px 20px;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
-  border-radius: 12px;
+  border-radius: var(--border-radius-medium);
 }
 
 .page-title {
@@ -114,10 +175,8 @@
 
 .collection-card {
   background: white;
-  border-radius: 8px;
-  overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  transition: box-shadow 0.3s ease;
+  border-radius: var(--border-radius-medium);
+  overflow: hidden;  
   position: relative;
   display: flex;
   flex-direction: column;
@@ -125,9 +184,9 @@
   border: 1px solid rgba(0, 0, 0, 0.05);
 }
 
-.collection-card:hover {
+{% comment %} .collection-card:hover {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
+} {% endcomment %}
 
 .collection-link {
   text-decoration: none;
@@ -147,6 +206,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  border-radius: var(--border-radius-medium);
 }
 
 .collection-image img {
@@ -214,7 +274,7 @@
 }
 
 .collection-title {
-  font-size: 1rem;
+  font-size: var(--text-xs);
   margin-bottom: 8px;
   color: #000;
   font-weight: 700;

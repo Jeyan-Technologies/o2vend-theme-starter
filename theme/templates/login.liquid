@@ -61,6 +61,33 @@
 </div>
 
 <style>
+  /* Template-level variable mappings to global theme variables */
+  :root {
+    --color-primary: {{ settings.color_primary | default: '#000000' }};
+    --color-primary-hover: {{ settings.color_primary_dark | default: '#333333' }};
+    --color-primary-light: {{ settings.color_primary_light | default: '#666666' }};
+    --color-success: {{ settings.color_success | default: '#22c55e' }};
+    --color-success-light: {{ settings.color_success | default: '#22c55e' }};
+    --color-danger: {{ settings.color_error | default: '#ef4444' }};
+    --color-danger-light: {{ settings.color_error | default: '#ef4444' }};
+    --color-text: {{ settings.color_text | default: '#000000' }};
+    --color-text-light: {{ settings.color_text_muted | default: '#666666' }};
+    --color-background: {{ settings.color_background | default: '#ffffff' }};
+    --color-card-bg: {{ settings.color_surface | default: '#f5f5f5' }};
+    --color-border: {{ settings.color_border | default: '#cccccc' }};
+    --color-border-light: {{ settings.color_surface | default: '#f5f5f5' }};
+    --shadow-sm: var(--shadow-sm);
+    --shadow-md: var(--shadow-md);
+    --shadow-lg: var(--shadow-lg);
+    --radius-md: var(--radius-md);
+    --radius-lg: var(--radius-lg);
+    --spacing-xs: var(--space-3);
+    --spacing-sm: var(--space-4);
+    --spacing-md: var(--space-6);
+    --spacing-lg: var(--space-8);
+    --spacing-xl: var(--space-12);
+  }
+
   .customer-login {
     min-height: 60vh;
     display: flex;
@@ -117,10 +144,10 @@
     color: {{ settings.color_text }};
   }
 
-  .form-input {
+    .form-input {
     width: 100%;
     padding: 0.75rem 1rem;
-    border: 1px solid #d1d5db;
+    border: 1px solid var(--color-border);
     border-radius: 0.375rem;
     font-size: 1rem;
     transition: border-color 0.2s ease;
@@ -149,15 +176,15 @@
   }
 
   .form-errors {
-    background: #fee2e2;
-    border: 1px solid #fecaca;
+    background: var(--color-danger-light);
+    border: 1px solid var(--color-error);
     border-radius: 0.375rem;
     padding: 1rem;
     margin-bottom: 1.5rem;
   }
 
   .form-error {
-    color: #991b1b;
+    color: var(--color-error);
     margin: 0;
     font-size: 0.875rem;
   }
@@ -170,7 +197,7 @@
     text-align: center;
     margin-top: 1.5rem;
     padding-top: 1.5rem;
-    border-top: 1px solid #e5e7eb;
+    border-top: 1px solid var(--color-border);
   }
 
   .customer-login-footer a {

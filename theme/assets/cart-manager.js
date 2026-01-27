@@ -55,9 +55,6 @@
       cartToggles.forEach(toggle => {
         toggle.setAttribute('aria-label', `Shopping cart with ${numericCount} item${numericCount !== 1 ? 's' : ''}`);
       });
-      
-      // Debug logging (can be removed in production)
-      console.log('[CartManager] Updated cart badge:', numericCount, 'badges:', countElements.length);
     },
 
     /**
@@ -72,14 +69,12 @@
       if (!forceRefresh && this._cartQuantityCache !== null && this._cacheTimestamp) {
         const cacheAge = now - this._cacheTimestamp;
         if (cacheAge < this._cacheTTL) {
-          console.log('[CartManager] Returning cached cart count:', this._cartQuantityCache);
           return this._cartQuantityCache;
         }
       }
 
       // If already loading, return the existing promise to prevent duplicate calls
       if (this._cartQuantityLoading && this._cartQuantityPromise) {
-        console.log('[CartManager] Cart quantity already loading, returning existing promise');
         return this._cartQuantityPromise;
       }
 
@@ -105,7 +100,6 @@
             // Update cache
             this._cartQuantityCache = count;
             this._cacheTimestamp = Date.now();
-            console.log('[CartManager] Fetched and cached cart count:', count);
             return count;
           }
           
@@ -139,8 +133,6 @@
                 0;
       }
       
-      console.log('[CartManager] Dispatching cart:updated event with count:', count, 'cartData:', cartData);
-      
       const event = new CustomEvent('cart:updated', {
         detail: {
           count: count,
@@ -166,29 +158,24 @@
     invalidateCache() {
       this._cartQuantityCache = null;
       this._cacheTimestamp = null;
-      console.log('[CartManager] Cart quantity cache invalidated');
     },
 
     /**
      * Initialize cart manager and set up event listeners
      */
     init() {
-      console.log('[CartManager] Initializing...');
-      
       // Listen for cart:updated events from external sources
       // Note: dispatchCartUpdated() already calls updateCartBadge() directly,
       // so this listener handles events from other components (like cart-drawer fallback)
       // It's safe to call updateCartBadge() multiple times as it's idempotent
       document.addEventListener('cart:updated', (event) => {
         const count = event.detail.count || 0;
-        console.log('[CartManager] Received cart:updated event with count:', count);
         // updateCartBadge is idempotent, so calling it multiple times is safe
         this.updateCartBadge(count);
       });
 
       // Load initial cart count on page load
       const initCart = () => {
-        console.log('[CartManager] DOM ready, loading initial cart count...');
         this.loadInitialCartCount();
       };
 
@@ -207,7 +194,6 @@
       // Small delay to ensure DOM is ready
       setTimeout(async () => {
         const count = await this.getCartCount();
-        console.log('[CartManager] Loaded initial cart count:', count);
         this.updateCartBadge(count);
       }, 100);
     }

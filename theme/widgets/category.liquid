@@ -114,15 +114,27 @@
     </a>
 
     <style>
+      :root {
+        --category-banner-white: var(--color-white);
+        --category-banner-text: var(--color-text);
+        --category-banner-spacing-component: var(--spacing-component);
+        --category-banner-spacing-element: var(--spacing-element);
+        --category-banner-spacing-small: var(--spacing-small);
+        --category-banner-spacing-xsmall: var(--spacing-xsmall);
+        --category-banner-container-padding: var(--container-padding);
+        --category-banner-transition: var(--transition);
+        --category-banner-transition-fast: var(--transition-fast);
+      }
+      
       .widget-category-banner {
         width: 100%;
-        padding: 0 {{ settings.container_padding }}px;
+        padding: 0 {{ settings.container_padding | default: 16 }}px;
         {% if show_bottom_margin == 'Yes' %}
-          margin-bottom: {{ settings.spacing_large }}px;
+          margin-bottom: {{ settings.spacing_large | default: 32 }}px;
         {% elsif show_bottom_margin == 'No' %}
           margin-bottom: 0;
         {% else %}
-          margin-bottom: {{ settings.spacing_component }}px;
+          margin-bottom: {{ settings.spacing_component | default: 24 }}px;
         {% endif %}
       }
       
@@ -131,19 +143,17 @@
         display: block;
         position: relative;
         width: 100%;
-        max-width: {{ settings.container_width }}px;
+        max-width: {{ settings.container_width | default: 1200 }}px;
         margin: 0 auto;
         height: 280px;
         overflow: hidden;
         text-decoration: none;
-        color: {{ settings.color_background }};
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
-        transition: box-shadow 0.3s ease, transform 0.3s ease;
+        color: {{ settings.color_background | default: '#ffffff' }};
+        transition: transform var(--category-banner-transition);
         border-radius: var(--border-radius-medium);
       }
       
       .category-banner:hover {
-        box-shadow: 0 12px 48px rgba(0, 0, 0, 0.18);
         transform: translateY(-2px);
       }
       
@@ -165,7 +175,7 @@
         height: 100%;
         object-fit: cover;
         object-position: center;
-        transition: transform 0.6s ease;
+        transition: transform var(--category-banner-transition);
       }
       
       {% comment %} 
@@ -201,8 +211,7 @@
         margin: 0 0 16px 0;
         line-height: 1.15;
         letter-spacing: -0.025em;
-        text-shadow: 0 2px 12px rgba(0, 0, 0, 0.4);
-        color: #fff;
+        color: var(--category-banner-white);
       }
       
       .category-banner__content--overlay .category-banner__description {
@@ -211,8 +220,7 @@
         margin: 0 0 28px 0;
         opacity: 0.95;
         max-width: 500px;
-        text-shadow: 0 1px 6px rgba(0, 0, 0, 0.3);
-        color: #fff;
+        color: var(--category-banner-white);
       }
       
       .category-banner__cta {
@@ -224,20 +232,19 @@
         text-transform: uppercase;
         letter-spacing: 0.1em;
         padding: 14px 32px;
-        background: {{ settings.color_background }};
-        color: {{ settings.color_text }};
-        transition: all 0.3s ease;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        background: {{ settings.color_background | default: '#ffffff' }};
+        color: {{ settings.color_text | default: '#000000' }};
+        transition: all var(--category-banner-transition);
         border-radius: var(--border-radius-medium);
       }
       
       .category-banner:hover .category-banner__cta {
-        background: {{ settings.color_text }};
-        color: {{ settings.color_background }};
+        background: {{ settings.color_text | default: '#000000' }};
+        color: {{ settings.color_background | default: '#ffffff' }};
       }
       
       .category-banner__cta svg {
-        transition: transform 0.3s ease;
+        transition: transform var(--category-banner-transition);
       }
       
       .category-banner:hover .category-banner__cta svg {
@@ -293,14 +300,13 @@
       
       .category-banner__cta--solid {
         flex-shrink: 0;
-        background: #fff;
+        background: var(--category-banner-white);
         color: #764ba2;
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
       }
       
       .category-banner--no-image:hover .category-banner__cta--solid {
-        background: #111;
-        color: #fff;
+        background: var(--category-banner-text);
+        color: var(--category-banner-white);
       }
       
       /* ===== Tablet ===== */
@@ -460,14 +466,14 @@
   </section>
 {% else %}
   <section class="widget widget-category-banner widget-category-banner--empty" data-widget-id="{{ widget.id }}">
-      <div style="max-width: {{ settings.container_width }}px; margin: 0 auto; padding: 0 {{ settings.container_padding }}px;">
-      <div style="padding: {{ settings.spacing_component | times: 2 }}px; text-align: center;">
-        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="{{ settings.color_text_muted }}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: {{ settings.spacing_element }}px;">
+      <div style="max-width: {{ settings.container_width | default: 1200 }}px; margin: 0 auto; padding: 0 {{ settings.container_padding | default: 16 }}px;">
+      <div style="padding: {{ settings.spacing_component | default: 24 | times: 2 }}px; text-align: center;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="{{ settings.color_text_muted | default: '#666666' }}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: {{ settings.spacing_element | default: 16 }}px;">
           <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
           <line x1="3" y1="6" x2="21" y2="6"></line>
           <path d="M16 10a4 4 0 0 1-8 0"></path>
         </svg>
-        <p style="color: {{ settings.color_text_muted }}; margin: 0; font-size: {{ settings.font_size_base | plus: 1 }}px;">{{ widget_settings.empty_state | default: 'Category not found. Please configure a valid CategoryId.' }}</p>
+        <p style="color: {{ settings.color_text_muted | default: '#666666' }}; margin: 0; font-size: {{ settings.font_size_base | default: 14 | plus: 1 }}px;">{{ widget_settings.empty_state | default: 'Category not found. Please configure a valid CategoryId.' }}</p>
       </div>
     </div>
   </section>

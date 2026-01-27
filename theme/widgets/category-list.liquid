@@ -129,6 +129,24 @@
   </div>
 
   <style>
+    :root {
+      --category-list-white: var(--color-white);
+      --category-list-text: var(--color-text);
+      --category-list-text-muted: var(--color-text-muted);
+      --category-list-spacing-section: var(--spacing-section);
+      --category-list-spacing-large: var(--spacing-large);
+      --category-list-spacing-component: var(--spacing-component);
+      --category-list-spacing-element: var(--spacing-element);
+      --category-list-spacing-small: var(--spacing-small);
+      --category-list-spacing-xsmall: var(--spacing-xsmall);
+      --category-list-container-padding: var(--container-padding);
+      --category-list-radius-xl: var(--radius-xl);
+      --category-list-radius-lg: var(--radius-lg);
+      --category-list-transition: var(--transition);
+      --category-list-text-sm: var(--text-sm);
+      --category-list-text-xs: var(--text-xs);
+    }
+    
     .widget-category-list {
       padding: 48px 0;
       background: transparent;
@@ -178,13 +196,11 @@
       background: #fff;
       border-radius: 12px;
       overflow: hidden;
-      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
-      transition: transform 0.25s ease, box-shadow 0.25s ease;
+      transition: transform 0.25s ease;
     }
     
     .widget-category-list__item:hover {
       transform: translateY(-4px);
-      box-shadow: 0 12px 24px rgba(15, 23, 42, 0.12);
     }
     
     .widget-category-list__link {
@@ -202,8 +218,7 @@
     
     .widget-category-list__media img {
       width: 100%;
-      height: 100%;
-      object-fit: cover;
+      object-fit: contain;
       transition: transform 0.3s ease;
     }
     

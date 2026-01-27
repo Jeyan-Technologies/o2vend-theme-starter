@@ -157,6 +157,27 @@
   </div>
 
   <style>
+    :root {
+      --category-carousel-white: var(--color-white);
+      --category-carousel-text: var(--color-text);
+      --category-carousel-text-muted: var(--color-text-muted);
+      --category-carousel-border: var(--color-border);
+      --category-carousel-spacing-section: var(--spacing-section);
+      --category-carousel-spacing-large: var(--spacing-large);
+      --category-carousel-spacing-component: var(--spacing-component);
+      --category-carousel-spacing-element: var(--spacing-element);
+      --category-carousel-spacing-small: var(--spacing-small);
+      --category-carousel-spacing-xsmall: var(--spacing-xsmall);
+      --category-carousel-container-padding: var(--container-padding);
+      --category-carousel-radius-xl: var(--radius-xl);
+      --category-carousel-radius-lg: var(--radius-lg);
+      --category-carousel-radius: var(--radius);
+      --category-carousel-radius-full: var(--radius-full);
+      --category-carousel-transition-fast: var(--transition-fast);
+      --category-carousel-text-sm: var(--text-sm);
+      --category-carousel-text-xs: var(--text-xs);
+    }
+    
     /* Category Carousel - True Carousel Behavior */
     .widget-category-carousel {
       padding: 48px 0;
@@ -249,7 +270,6 @@
       border-radius: 50%;
       border: none;
       background: #fff;
-      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.12);
       align-items: center;
       justify-content: center;
       cursor: pointer;
@@ -310,15 +330,13 @@
       background: #fff;
       border-radius: 12px;
       overflow: hidden;
-      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
       text-decoration: none;
       color: inherit;
-      transition: transform 0.25s ease, box-shadow 0.25s ease;
+      transition: transform 0.25s ease;
     }
     
     .widget-category-carousel .category-carousel-item:hover {
       transform: translateY(-4px);
-      box-shadow: 0 12px 24px rgba(15, 23, 42, 0.12);
     }
     
     .widget-category-carousel .category-carousel-item__media {
@@ -330,8 +348,7 @@
     
     .widget-category-carousel .category-carousel-item__media img {
       width: 100%;
-      height: 100%;
-      object-fit: cover;
+      object-fit: contain;
       transition: transform 0.3s ease;
     }
     

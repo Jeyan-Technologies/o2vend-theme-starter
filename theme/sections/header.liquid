@@ -63,8 +63,14 @@
   if show_account == nil and header_config and header_config.ShowAccount != nil
     assign show_account = header_config.ShowAccount
   endif
-  if show_account == nil
+  if show_account == nil or show_account == blank
     assign show_account = true
+  endif
+  if show_account == 'true' or show_account == 1 or show_account == '1'
+    assign show_account = true
+  endif
+  if show_account == 'false' or show_account == 0 or show_account == '0'
+    assign show_account = false
   endif
 %}
 
@@ -81,7 +87,7 @@
                data-widget-type="{{ widget.type }}"
                data-widget-position="{{ widget.Position | default: widget.position | default: forloop.index }}">
             {% if widget and widget.template_path %}
-              {% render widget.template_path, widget: widget, settings: settings %}
+              {% render widget.template_path, widget: widget, settings: settings, shop: shop %}
             {% else %}
               <div class="widget-error" data-widget-error>
                 <p>Widget template not found: {{ widget.template_path | default: 'unknown' }}</p>
@@ -152,7 +158,7 @@
       </div>
 
       <div class="site-header__actions">
-        {% if show_account %}
+        {% if show_account == true %}
           {% comment %}Debug: customer={{ customer | json }}{% endcomment %}
           {% if customer and customer.isAuthenticated %}
             <a href="/account" class="site-header__action site-header__action--account" aria-label="Account">
@@ -235,7 +241,7 @@
              data-widget-id="{{ header_menu_widget.id }}" 
              data-widget-type="{{ header_menu_widget.type }}">
           {% if header_menu_widget and header_menu_widget.template_path %}
-            {% render header_menu_widget.template_path, widget: header_menu_widget, settings: settings %}
+            {% render header_menu_widget.template_path, widget: header_menu_widget, settings: settings, shop: shop %}
           {% else %}
             <div class="widget-error">
               <p>Widget template not found</p>

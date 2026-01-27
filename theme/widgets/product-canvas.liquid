@@ -89,6 +89,16 @@
   </section>
 
   <style>
+    :root {
+      --product-canvas-white: var(--color-white);
+      --product-canvas-text: var(--color-text);
+      --product-canvas-spacing-element: var(--spacing-element);
+      --product-canvas-spacing-small: var(--spacing-small);
+      --product-canvas-container-padding: var(--container-padding);
+      --product-canvas-radius-full: var(--radius-full);
+      --product-canvas-transition: var(--transition);
+    }
+    
     /* Product Canvas Widget */
     .widget-product-canvas {
       width: 100%;
@@ -120,13 +130,12 @@
       width: 48px;
       height: 48px;
       background: rgba(255, 255, 255, 0.9);
-      border: 2px solid {{ settings.color_text }};
+      border: 2px solid {{ settings.color_text | default: '#000000' }};
       border-radius: 50%;
-      color: {{ settings.color_text }};
+      color: {{ settings.color_text | default: '#000000' }};
       text-decoration: none;
       transition: all 0.3s ease;
       z-index: 10;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     }
     
     .widget-product-canvas .anchor-icon svg {
@@ -135,10 +144,9 @@
     }
     
     .widget-product-canvas .anchor-icon:hover {
-      background: {{ settings.color_text }};
-      color: {{ settings.color_background }};
+      background: {{ settings.color_text | default: '#000000' }};
+      color: {{ settings.color_background | default: '#ffffff' }};
       transform: scale(1.15);
-      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
     }
     
     /* Pulse Grow on Hover Animation */
@@ -188,9 +196,9 @@
     
     /* Container */
     .widget-product-canvas .container {
-      max-width: {{ settings.container_width }}px;
+      max-width: {{ settings.container_width | default: 1200 }}px;
       margin: 0 auto;
-      padding: 0 {{ settings.container_padding }}px;
+      padding: 0 {{ settings.container_padding | default: 16 }}px;
     }
     
     /* Mobile Responsive */
@@ -206,7 +214,7 @@
       }
       
       .widget-product-canvas .container {
-        padding: 0 {{ settings.spacing_element }}px;
+        padding: 0 {{ settings.spacing_element | default: 16 }}px;
       }
     }
     
@@ -222,14 +230,14 @@
       }
       
       .widget-product-canvas .container {
-        padding: 0 {{ settings.spacing_small }}px;
+        padding: 0 {{ settings.spacing_small | default: 8 }}px;
       }
     }
   </style>
 {% else %}
   <section class="widget widget-product-canvas widget-product-canvas--empty" data-widget-id="{{ widget.id }}">
-    <div class="widget-empty" style="padding: {{ settings.spacing_section }}px {{ settings.container_padding }}px; text-align: center;">
-      <p style="color: {{ settings.color_text_muted }}; margin: 0;">{{ widget_settings.empty_state | default: 'Please configure an image URL for the product canvas.' }}</p>
+    <div class="widget-empty" style="padding: {{ settings.spacing_section | default: 64 }}px {{ settings.container_padding | default: 16 }}px; text-align: center;">
+      <p style="color: {{ settings.color_text_muted | default: '#666666' }}; margin: 0;">{{ widget_settings.empty_state | default: 'Please configure an image URL for the product canvas.' }}</p>
     </div>
   </section>
 {% endif %}

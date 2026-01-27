@@ -1,41 +1,407 @@
 {% comment %}
-  Simple Product Card Snippet (for Search Results)
-  
-  Parameters:
-  - product: Product object (required)
-  
-  Usage:
-  {% include 'snippets/product-card-simple', product: product %}
+  Enhanced Modern Product Card
 {% endcomment %}
+
+<style>
+
+.product-info .product-title {
+      font-size: var(--text-1xl);
+    font-weight: 700;
+    color: var(--color-gray-900);
+    line-height: 1.2;
+    letter-spacing: -0.025em;
+}
+.product-card {
+  background: var(--color-background, #fff);
+  border-radius: 10px
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  max-width: 100%;
+  text-align: center;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--color-border-light, rgba(0,0,0,0.06));
+  position: relative;
+}
+
+.product-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, transparent 0%, rgba(0,0,0,0.02) 100%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.product-card:hover {
+  transform: translateY(-6px);
+  border-color: var(--color-primary, rgba(0,0,0,0.15));
+}
+
+.product-card:hover::before {
+  opacity: 1;
+}
+
+.product-link {
+  color: inherit;
+  text-decoration: none;
+  display: block;
+  flex: 1;
+  position: relative;
+  z-index: 2;
+}
+
+.product-image {
+  width: 100%;
+  height: 0;
+  padding-bottom: 100%; /* 1:1 aspect ratio */
+  background: linear-gradient(135deg, var(--color-card-bg, #f8f9fa) 0%, var(--color-border-light, #f0f1f3) 100%);
+  display: block;
+  position: relative;
+  overflow: hidden;
+}
+
+.product-image::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(to bottom, transparent 60%, rgba(0,0,0,0.03) 100%);
+  pointer-events: none;
+}
+
+.product-image img {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.product-card:hover .product-image img {
+  transform: scale(1.08);
+}
+
+.product-info {
+  padding: clamp(12px, 2vw, 16px);
+  background: var(--color-background, #fff);
+  position: relative;
+  z-index: 2;
+}
+
+.product-title {
+  font-size: clamp(0.8125rem, 1.5vw, 0.875rem);
+  font-weight: 600;
+  color: var(--color-text, #1a1a1a);
+  margin: 0 0 6px 0;
+  line-height: 1.4;
+  height: 2.8em;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  text-overflow: ellipsis;
+  letter-spacing: -0.01em;
+}
+
+.product-description {
+  font-size: clamp(0.6875rem, 1.2vw, 0.75rem);
+  color: var(--color-text-light, #666);
+  margin: 0 0 8px 0;
+  line-height: 1.5;
+  height: 3em;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  text-overflow: ellipsis;
+  letter-spacing: 0;
+}
+
+.product-price {
+  font-size: clamp(0.9375rem, 1.8vw, 1.0625rem);
+  font-weight: 700;
+  color: var(--color-primary, #000);
+  margin-bottom: clamp(10px, 2vw, 14px);
+  letter-spacing: -0.02em;
+}
+
+.btn-add {
+  background: var(--color-primary, #000);
+  color: var(--color-background, #fff);
+  border: none;
+  border-radius: clamp(6px, 1vw, 8px);
+  padding: clamp(10px, 2vw, 12px) clamp(14px, 2.5vw, 18px);
+  font-size: clamp(0.75rem, 1.4vw, 0.8125rem);
+  font-weight: 600;
+  cursor: pointer;
+  width: calc(100% - clamp(16px, 3vw, 24px));
+  margin: 0 clamp(8px, 1.5vw, 12px) clamp(12px, 2vw, 16px);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  position: relative;
+  z-index: 3;
+  overflow: hidden;
+}
+
+.btn-add::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  transform: translate(-50%, -50%);
+  transition: width 0.6s ease, height 0.6s ease;
+}
+
+.btn-add:hover::before {
+  width: 300px;
+  height: 300px;
+}
+
+.btn-add:hover {
+  background: var(--color-primary-hover, #222);
+  transform: translateY(-2px);
+}
+
+.btn-add:active {
+  transform: translateY(0);
+}
+
+/* Grid responsiveness */
+@media (min-width: 1200px) {
+  .product-card {
+    max-width: 280px;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1199px) {
+  .product-card {
+    max-width: 240px;
+  }
+}
+
+@media (min-width: 481px) and (max-width: 767px) {
+  .product-card {
+    max-width: 220px;
+  }
+  
+  .product-image {
+    padding-bottom: 85%;
+  }
+}
+
+@media (max-width: 480px) {
+  .product-card {
+    max-width: 100%;
+    border-radius: 12px;
+  }
+  
+  .product-image {
+    padding-bottom: 90%;
+  }
+  
+  .product-title {
+    font-size: 0.8125rem;
+    height: 2.6em;
+  }
+  
+  .product-description {
+    font-size: 0.6875rem;
+    height: 2.8em;
+  }
+  
+  .product-price {
+    font-size: 0.9375rem;
+    margin-bottom: 10px;
+  }
+  
+  .btn-add {
+    font-size: 0.75rem;
+    padding: 10px 14px;
+    letter-spacing: 0.03em;
+  }
+}
+
+@media (max-width: 360px) {
+  .product-card {
+    border-radius: 10px;
+  }
+  
+  .product-info {
+    padding: 10px;
+  }
+  
+  .product-title {
+    font-size: 0.75rem;
+    margin-bottom: 4px;
+  }
+  
+  .product-description {
+    font-size: 0.625rem;
+    margin-bottom: 6px;
+  }
+  
+  .product-price {
+    font-size: 0.875rem;
+  }
+  
+  .btn-add {
+    font-size: 0.6875rem;
+    padding: 8px 12px;
+    width: calc(100% - 16px);
+    margin: 0 8px 10px;
+  }
+}
+
+/* Loading state */
+.product-card.loading {
+  pointer-events: none;
+  opacity: 0.6;
+}
+
+.product-card.loading .btn-add {
+  position: relative;
+}
+
+.product-card.loading .btn-add::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 14px;
+  height: 14px;
+  margin: -7px 0 0 -7px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Accessibility */
+.btn-add:focus-visible {
+  outline: 2px solid var(--color-primary, #000);
+  outline-offset: 2px;
+}
+
+.product-link:focus-visible {
+  outline: 2px solid var(--color-primary, #000);
+  outline-offset: 2px;
+  border-radius: clamp(12px, 1.5vw, 16px);
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .product-card {
+    background: var(--color-background, #1a1a1a);
+    border-color: var(--color-border-light, rgba(255,255,255,0.08));
+  }
+  
+  .product-title {
+    color: var(--color-text, #f5f5f5);
+  }
+  
+  .product-description {
+    color: var(--color-text-light, #a0a0a0);
+  }
+  
+  .product-image {
+    background: linear-gradient(135deg, var(--color-card-bg, #2a2a2a) 0%, var(--color-border-light, #333) 100%);
+  }
+}
+
+/* Print styles */
+@media print {
+  .product-card {
+    break-inside: avoid;
+    border: 1px solid #ddd;
+  }
+  
+  .btn-add {
+    display: none;
+  }
+  
+  .product-card:hover {
+    transform: none;
+  }
+}
+</style>
 
 <div class="product-card">
   <a href="/{{ product.slug }}" class="product-link">
     <div class="product-image">
-      {% if product.images and product.images[0] %}
-        <img src="{{ product.images[0] }}" 
-             alt="{{ product.title }}" 
-             loading="lazy">
+      {% assign product_image_alt = product.name | default: "Product Image" %}
+      {% if product.thumbnailImage1 and product.thumbnailImage1.url %}
+        {% assign product_image = product.thumbnailImage1.url %}
+        {% assign product_image_alt = product.thumbnailImage1.altText | default: product_image_alt %}
+      {% elsif product.ThumbnailImage1 and product.ThumbnailImage1.Url %}
+        {% assign product_image = product.ThumbnailImage1.Url %}
+        {% assign product_image_alt = product.ThumbnailImage1.AltText | default: product_image_alt %}
+      {% elsif product.images and product.images.size > 0 %}
+        {% assign first_image = product.images | first %}
+        {% if first_image.url %}
+          {% assign product_image = first_image.url %}
+          {% assign product_image_alt = first_image.altText | default: product_image_alt %}
+        {% elsif first_image.Url %}
+          {% assign product_image = first_image.Url %}
+          {% assign product_image_alt = first_image.AltText | default: product_image_alt %}
+        {% endif %}
+      {% elsif product.thumbnailImage and product.thumbnailImage.url %}
+        {% assign product_image = product.thumbnailImage.url %}
+        {% assign product_image_alt = product.thumbnailImage.altText | default: product_image_alt %}
+      {% elsif product.ThumbnailImage and product.ThumbnailImage.Url %}
+        {% assign product_image = product.ThumbnailImage.Url %}
+        {% assign product_image_alt = product.ThumbnailImage.AltText | default: product_image_alt %}
+      {% elsif product.imageUrl %}
+        {% assign product_image = product.imageUrl %}
+      {% elsif product.ImageUrl %}
+        {% assign product_image = product.ImageUrl %}
+      {% endif %}
+
+      {% if product_image %}
+        <img src="{{ product_image }}" alt="{{ product_image_alt }}" loading="lazy">
       {% else %}
-        <img src="/assets/placeholder-product.jpg" 
-             alt="{{ product.title }}" 
-             loading="lazy">
+        <img src="/assets/placeholder-product.jpg" alt="{{ product_image_alt }}" loading="lazy">
       {% endif %}
     </div>
+
     <div class="product-info">
-      <h3 class="product-title">{{ product.title }}</h3>
-      <p class="product-description">{{ product.description | truncate: 100 }}</p>
+      <h3 class="product-title">{{ product.name | default: product.title | default: "Product Name" }}</h3>
       <div class="product-price">
-        <span class="price">{{ product.prices.priceString | default: product.prices.price | money }}</span>
-        <span class="currency">{{ shop.currency }}</span>
+        {% if product.prices and product.prices.priceString %}
+          {{ product.prices.priceString }}
+        {% elsif product.prices and product.prices.price %}
+          {{ product.prices.price | money }}
+        {% elsif product.price %}
+          {{ product.price | money }}
+        {% else %}
+          Price not available
+        {% endif %}
       </div>
     </div>
   </a>
-  <div class="product-actions">
-    <button class="btn btn-secondary add-to-cart" 
-            data-product-id="{{ product.productId }}" 
-            data-variant-id="{{ product.variants[0].id }}">
-      Add to Cart
-    </button>
-  </div>
-</div>
 
+  <button class="btn-add add-to-cart"
+          data-product-id="{{ product.productId | default: product.id | default: '' }}"
+          data-variant-id="{{ product.variants[0].id | default: '' }}">
+    Add to Cart
+  </button>
+</div>

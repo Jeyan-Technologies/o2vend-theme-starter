@@ -95,35 +95,36 @@
    =============================== */
 
 :root {
-  --color-primary: #1f2937;
-  --color-primary-hover: #1d4ed8;
-  --color-primary-light: #dbeafe;
-  --color-success: #10b981;
-  --color-success-light: #d1fae5;
-  --color-success-dark: #065f46;
-  --color-warning: #f59e0b;
-  --color-warning-light: #fef3c7;
-  --color-warning-dark: #92400e;
-  --color-danger: #ef4444;
-  --color-danger-light: #fee2e2;
-  --color-danger-dark: #991b1b;
-  --color-info: #3b82f6;
-  --color-info-light: #dbeafe;
-  --color-info-dark: #1e40af;
-  --color-text: #1f2937;
-  --color-text-light: #6b7280;
-  --color-background: #f9fafb;
-  --color-card-bg: #ffffff;
-  --color-border: #e5e7eb;
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-  --radius-md: 0.5rem;
-  --radius-lg: 0.75rem;
-  --spacing-sm: 1rem;
-  --spacing-md: 1.5rem;
-  --spacing-lg: 2rem;
-  --spacing-xl: 3rem;
+  --color-primary: {{ settings.color_primary | default: '#000000' }};
+  --color-primary-hover: {{ settings.color_primary_dark | default: '#333333' }};
+  --color-primary-light: {{ settings.color_primary_light | default: '#666666' }};
+  --color-success: {{ settings.color_success | default: '#22c55e' }};
+  --color-success-light: {{ settings.color_success | default: '#22c55e' }};
+  --color-success-dark: {{ settings.color_success | default: '#22c55e' }};
+  --color-warning: {{ settings.color_warning | default: '#f59e0b' }};
+  --color-warning-light: {{ settings.color_warning | default: '#f59e0b' }};
+  --color-warning-dark: {{ settings.color_warning | default: '#f59e0b' }};
+  --color-danger: {{ settings.color_error | default: '#ef4444' }};
+  --color-danger-light: {{ settings.color_error | default: '#ef4444' }};
+  --color-danger-dark: {{ settings.color_error | default: '#ef4444' }};
+  --color-info: {{ settings.color_info | default: '#3b82f6' }};
+  --color-info-light: {{ settings.color_info | default: '#3b82f6' }};
+  --color-info-dark: {{ settings.color_info | default: '#3b82f6' }};
+  --color-text: {{ settings.color_text | default: '#000000' }};
+  --color-text-light: {{ settings.color_text_light | default: '#999999' }};
+  --color-background: {{ settings.color_background | default: '#ffffff' }};
+  --color-card-bg: {{ settings.color_surface | default: '#f5f5f5' }};
+  --color-border: {{ settings.color_border | default: '#cccccc' }};
+  --color-white: #ffffff;
+  --shadow-sm: var(--shadow-sm);
+  --shadow-md: var(--shadow-md);
+  --shadow-lg: var(--shadow-lg);
+  --radius-md: var(--radius-lg);
+  --radius-lg: var(--radius-xl);
+  --spacing-sm: var(--space-4);
+  --spacing-md: var(--space-6);
+  --spacing-lg: var(--space-8);
+  --spacing-xl: var(--space-12);
 }
 
 .account-page {
@@ -223,7 +224,7 @@
   align-items: center;
   padding: 1.25rem 1.5rem;
   border-radius: 12px;
-  border: 1px solid rgba(0, 0, 0, 0.08);
+  border: 1px solid var(--color-border);
   box-sizing: border-box;
 }
 

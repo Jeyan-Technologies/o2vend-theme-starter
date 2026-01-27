@@ -203,8 +203,22 @@
 
               <!-- Quantity (optional) -->
               <div class="product-quantity">
-                <label for="singleProductQuantity">Quantity:</label>
-                <input type="number" id="singleProductQuantity" name="quantity" value="1" min="1" class="quantity-input">
+                <label for="singleProductQuantity" class="quantity-label">Quantity</label>
+                <div class="quantity-wrapper">
+                  <button type="button" class="quantity-btn quantity-decrease" aria-label="Decrease quantity">−</button>
+                  <input 
+                    type="number" 
+                    id="singleProductQuantity" 
+                    name="quantity" 
+                    value="1" 
+                    min="1" 
+                    max="{{ product.stockQuantity | default: 99 }}" 
+                    class="quantity-input"
+                    aria-label="Quantity"
+                    readonly
+                  >
+                  <button type="button" class="quantity-btn quantity-increase" aria-label="Increase quantity">+</button>
+                </div>
               </div>
 
               <!-- Add to Cart Button -->
@@ -234,6 +248,19 @@
   </div>
 
   <style>
+    :root {
+      --single-product-white: var(--color-white);
+      --single-product-text: var(--color-text);
+      --single-product-text-muted: var(--color-text-muted);
+      --single-product-border: var(--color-border);
+      --single-product-spacing-component: var(--spacing-component);
+      --single-product-spacing-element: var(--spacing-element);
+      --single-product-spacing-small: var(--spacing-small);
+      --single-product-container-padding: var(--container-padding);
+      --single-product-radius-lg: var(--radius-lg);
+      --single-product-transition-fast: var(--transition-fast);
+    }
+    
     .widget-single-product {
       padding: 40px 0;
     }
@@ -428,27 +455,76 @@
     .variation-select:focus {
       outline: none;
       border-color: #111;
-      box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.05);
     }
 
     .product-quantity {
       display: flex;
       flex-direction: column;
       gap: 8px;
+      width: fit-content;
     }
 
-    .product-quantity label {
+    .quantity-label {
       font-size: 14px;
       font-weight: 600;
       color: #111;
     }
 
-    .quantity-input {
-      width: 120px;
-      padding: 12px 16px;
-      font-size: 16px;
+    .quantity-wrapper {
+      display: flex;
+      align-items: center;
       border: 1px solid #e0e0e0;
       border-radius: 8px;
+      width: fit-content;
+      overflow: hidden;
+      background: #fff;
+    }
+
+    .quantity-btn {
+      width: 44px;
+      height: 44px;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s ease;
+      color: #111;
+      font-size: 20px;
+      font-weight: 300;
+      line-height: 1;
+      padding: 0;
+    }
+
+    .quantity-btn:hover:not(:disabled) {
+      background: #f5f5f5;
+    }
+
+    .quantity-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    .quantity-input {
+      width: 60px;
+      height: 44px;
+      border: none;
+      border-left: 1px solid #e0e0e0;
+      border-right: 1px solid #e0e0e0;
+      text-align: center;
+      font-weight: 400;
+      font-size: 16px;
+      background: #fff;
+      color: #111;
+      -moz-appearance: textfield;
+      padding: 0;
+    }
+
+    .quantity-input::-webkit-inner-spin-button,
+    .quantity-input::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
     }
 
     .btn-add-to-cart {
@@ -555,6 +631,55 @@
       const variantSelect = document.getElementById('singleProductVariant');
       const priceElement = document.getElementById('singleProductPrice');
       const addToCartBtn = form.querySelector('.btn-add-to-cart');
+      const quantityInput = document.getElementById('singleProductQuantity');
+      const decreaseBtn = form.querySelector('.quantity-decrease');
+      const increaseBtn = form.querySelector('.quantity-increase');
+
+      // Handle gallery thumbnail clicks
+      const galleryContainer = form.closest('.widget-single-product') || form.closest('section');
+      const thumbnails = galleryContainer?.querySelectorAll('.gallery-thumbnail');
+      const mainImages = galleryContainer?.querySelectorAll('.gallery-main-image');
+
+      if (thumbnails && thumbnails.length > 0 && mainImages && mainImages.length > 0) {
+        thumbnails.forEach(function(thumb) {
+          thumb.addEventListener('click', function() {
+            const index = parseInt(this.dataset.index) || 0;
+            
+            // Update active thumbnail
+            thumbnails.forEach(function(t) { t.classList.remove('active'); });
+            this.classList.add('active');
+            
+            // Update active main image
+            mainImages.forEach(function(img, i) {
+              if (i === index) {
+                img.classList.add('active');
+              } else {
+                img.classList.remove('active');
+              }
+            });
+          });
+        });
+      }
+
+      // Handle quantity controls
+      if (decreaseBtn && quantityInput) {
+        decreaseBtn.addEventListener('click', function() {
+          const val = parseInt(quantityInput.value) || 1;
+          if (val > 1) {
+            quantityInput.value = val - 1;
+          }
+        });
+      }
+
+      if (increaseBtn && quantityInput) {
+        increaseBtn.addEventListener('click', function() {
+          const val = parseInt(quantityInput.value) || 1;
+          const max = parseInt(quantityInput.max) || 99;
+          if (val < max) {
+            quantityInput.value = val + 1;
+          }
+        });
+      }
 
       // Handle variant selection
       if (variantSelect) {

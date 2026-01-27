@@ -100,7 +100,10 @@
 </section>
 
 <style>
-/* Account wishlist page uses theme.css variables - no local :root needed */
+:root {
+  --color-white: #ffffff;
+  --color-danger: {{ settings.color_error | default: '#ef4444' }};
+}
 
 .account-page {
   padding: var(--spacing-section) var(--spacing-small);
@@ -248,7 +251,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: white;
+  background: var(--color-white);
   border: none;
   border-radius: 50%;
   cursor: pointer;
@@ -259,7 +262,7 @@
 
 .remove-wishlist-btn:hover {
   background: var(--color-danger);
-  color: white;
+  color: var(--color-white);
   transform: scale(1.1);
 }
 
@@ -333,7 +336,7 @@
 
 .btn-primary {
   background: var(--color-primary);
-  color: white;
+  color: var(--color-white);
   border: 2px solid var(--color-primary);
 }
 

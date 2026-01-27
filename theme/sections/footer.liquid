@@ -67,7 +67,7 @@
            data-widget-id="{{ footer_menu_widget.id }}"
            data-widget-type="FooterMenu"
            data-footer-menu-wrapper="true">
-        {% render footer_menu_widget.template_path | default: 'widgets/footer-menu', widget: footer_menu_widget, settings: settings %}
+        {% render footer_menu_widget.template_path | default: 'widgets/footer-menu', widget: footer_menu_widget, settings: settings, shop: shop %}
       </div>
       <script>
         console.log('[FooterSection] FooterMenu widget rendered with ID: {{ footer_menu_widget.id }}');
@@ -77,7 +77,7 @@
       <div class="theme-widget-wrapper"
            data-widget-type="FooterMenu"
            data-footer-menu-wrapper="true">
-        {% render 'widgets/footer-menu', widget: nil, settings: settings %}
+        {% render 'widgets/footer-menu', widget: nil, settings: settings, shop: shop %}
       </div>
       <script>
         console.warn('[FooterSection] FooterMenu widget not found in widgets, but footer menu container is rendered to auto-fetch menus');
@@ -97,7 +97,7 @@
                data-widget-type="{{ widget.type }}"
                data-widget-position="{{ widget.Position | default: widget.position | default: forloop.index }}">
             {% if widget and widget.template_path %}
-              {% render widget.template_path, widget: widget, settings: settings %}
+              {% render widget.template_path, widget: widget, settings: settings, shop: shop %}
             {% else %}
               <div class="widget-error" data-widget-error>
                 <p>Widget template not found</p>
@@ -115,13 +115,18 @@
 <div class="theme-section theme-section--below-footer">
   <div class="below-footer-container">
     <div class="below-footer-content">
-      <p class="below-footer-text">
-        {% if section.settings.footer_text and section.settings.footer_text != '' %}
-          {{ section.settings.footer_text }}
-        {% else %}
-          © {{ 'now' | date: '%Y' }} {{ shop.domain }}. All rights reserved.
-        {% endif %}
-      </p>
+      <div class="below-footer-left">
+        <p class="below-footer-text">
+          {% if section.settings.footer_text and section.settings.footer_text != '' %}
+            {{ section.settings.footer_text }}
+          {% else %}
+            © {{ 'now' | date: '%Y' }} {{ shop.domain }}. All rights reserved.
+          {% endif %}
+        </p>
+        <p class="footer-powered">
+          Powered by <a href="https://o2vend.com" class="footer-powered-link" target="_blank" rel="noopener noreferrer">O2VEND</a>
+        </p>
+      </div>
       
       {% if section.settings.show_social_links %}
         <div class="below-footer-social">
@@ -183,13 +188,41 @@
   .below-footer-content {
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items: flex-start;
     gap: 2rem;
+    overflow: visible;
+  }
+  
+  .below-footer-left {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    flex: 1;
+    min-width: 0;
   }
   
   .below-footer-text {
     margin: 0;
     color: #9ca3af;
+  }
+  
+  .footer-powered {
+    margin: 0;
+    color: #9ca3af;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    display: block;
+    visibility: visible;
+  }
+  
+  .footer-powered-link {
+    color: #9ca3af;
+    text-decoration: underline;
+    transition: color 0.2s ease;
+  }
+  
+  .footer-powered-link:hover {
+    color: #ffffff;
   }
   
   .below-footer-social {
@@ -240,6 +273,24 @@
       flex-direction: column;
       text-align: center;
       gap: 1rem;
+      align-items: center;
+    }
+    
+    .below-footer-left {
+      align-items: center;
+      text-align: center;
+      width: 100%;
+    }
+    
+    .below-footer-text {
+      text-align: center;
+    }
+    
+    .footer-powered {
+      display: block !important;
+      visibility: visible !important;
+      text-align: center;
+      margin-top: 0.5rem;
     }
     
     .below-footer-social {

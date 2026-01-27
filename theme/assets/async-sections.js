@@ -18,17 +18,13 @@
      */
     init(sectionsConfig) {
       this.config = sectionsConfig || {};
-      console.log('[AsyncSectionLoader] Initializing with config:', this.config);
       
       // Find all async sections in the page
       const asyncSections = document.querySelectorAll('[data-async-section]');
       
       if (asyncSections.length === 0) {
-        console.log('[AsyncSectionLoader] No async sections found');
         return;
       }
-
-      console.log(`[AsyncSectionLoader] Found ${asyncSections.length} async sections`);
       
       // Load each section
       asyncSections.forEach(section => {
@@ -45,11 +41,8 @@
       const sectionConfig = this.config[sectionName];
 
       if (!sectionConfig) {
-        console.warn(`[AsyncSectionLoader] No config found for section: ${sectionName}`);
         return;
       }
-
-      console.log(`[AsyncSectionLoader] Loading section: ${sectionName}`);
 
       try {
         // Get data from API
@@ -84,12 +77,10 @@
 
       // Check cache first
       if (this.cache.has(url)) {
-        console.log(`[AsyncSectionLoader] Using cached data for: ${url}`);
         return this.cache.get(url);
       }
 
       try {
-        console.log(`[AsyncSectionLoader] Fetching: ${url} (attempt ${attempt})`);
         
         const response = await fetch(url, {
           method: 'GET',
@@ -113,7 +104,6 @@
       } catch (error) {
         // Retry logic
         if (attempt < this.retryAttempts) {
-          console.warn(`[AsyncSectionLoader] Retry ${attempt}/${this.retryAttempts} for ${url}`);
           await this.delay(this.retryDelay * attempt);
           return this.fetchSectionData(endpoint, params, attempt + 1);
         }
@@ -129,8 +119,6 @@
      * @param {string} sectionName - Section name
      */
     renderSection(sectionElement, data, sectionName) {
-      console.log(`[AsyncSectionLoader] Rendering section: ${sectionName}`, data);
-
       // Different rendering strategies based on section type
       switch (sectionName) {
         case 'products':
@@ -145,7 +133,6 @@
           this.renderRelatedProducts(sectionElement, data);
           break;
         default:
-          console.warn(`[AsyncSectionLoader] Unknown section type: ${sectionName}`);
           this.renderGenericSection(sectionElement, data);
       }
 
@@ -321,12 +308,12 @@
           <div class="collection-image-container">
             <img src="${imageUrl}" alt="${this.escapeHtml(collection.title || collection.name)}" loading="lazy">
             <div class="collection-overlay">
-              <a href="/collections/${slug}" class="collection-link">View Collection</a>
+              <a href="/categories/${slug}" class="collection-link">View Collection</a>
             </div>
           </div>
           <div class="collection-content">
             <h3 class="collection-title">
-              <a href="/collections/${slug}">${this.escapeHtml(collection.title || collection.name)}</a>
+              <a href="/categories/${slug}">${this.escapeHtml(collection.title || collection.name)}</a>
             </h3>
             ${collection.description ? `<p class="collection-description">${this.truncate(collection.description, 120)}</p>` : ''}
             <div class="collection-meta">
@@ -341,7 +328,6 @@
      * Render generic section (fallback)
      */
     renderGenericSection(sectionElement, data) {
-      console.log('[AsyncSectionLoader] Using generic renderer for:', data);
       sectionElement.innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
     },
 
@@ -394,7 +380,6 @@
         bubbles: true
       });
       sectionElement.dispatchEvent(event);
-      console.log(`[AsyncSectionLoader] Triggered event for: ${sectionName}`);
     },
 
     /**
@@ -439,8 +424,6 @@
 
   // Make available globally
   window.AsyncSectionLoader = AsyncSectionLoader;
-
-  console.log('[AsyncSectionLoader] Module loaded');
 
 })();
 

@@ -147,6 +147,23 @@
   </div>
 
   <style>
+    :root {
+      --spacebar-carousel-white: var(--color-white);
+      --spacebar-carousel-text: var(--color-text);
+      --spacebar-carousel-text-muted: var(--color-text-muted);
+      --spacebar-carousel-border: var(--color-border);
+      --spacebar-carousel-spacing-component: var(--spacing-component);
+      --spacebar-carousel-spacing-element: var(--spacing-element);
+      --spacebar-carousel-spacing-small: var(--spacing-small);
+      --spacebar-carousel-spacing-xsmall: var(--spacing-xsmall);
+      --spacebar-carousel-container-padding: var(--container-padding);
+      --spacebar-carousel-radius-full: var(--radius-full);
+      --spacebar-carousel-radius: var(--radius);
+      --spacebar-carousel-transition-fast: var(--transition-fast);
+      --spacebar-carousel-transition: var(--transition);
+      --spacebar-carousel-text-sm: var(--text-sm);
+    }
+    
     /* Spacebar Carousel - True Carousel Behavior */
     .widget-spacebar-carousel {
       padding: 32px 0;
@@ -240,7 +257,6 @@
       border-radius: 50%;
       border: none;
       background: #fff;
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
       align-items: center;
       justify-content: center;
       cursor: pointer;
@@ -302,14 +318,12 @@
       padding: 16px 20px;
       border-radius: var(--border-radius-medium);
       background: #fff;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      transition: transform 0.3s ease;
       height: 100%;
     }
     
     .widget-spacebar-carousel .spacebar-carousel-item:hover {
       transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
     }
     
     .widget-spacebar-carousel .spacebar-carousel-item__icon {
