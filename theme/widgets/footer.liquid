@@ -17,6 +17,23 @@
   endif
 
   assign social_links = widget_settings.social_links | default: widget_content.social_links | default: widget_data.social_links
+  assign heading = widget_settings.title | default: widget_content.title | default: widget.Title | default: widget.title
+  assign subtitle = widget_settings.subtitle | default: widget_content.subtitle | default: widget.Subtitle | default: widget.subtitle
+  assign show_widget_title_raw = widget_settings.showWidgetTitle | default: widget_settings.ShowWidgetTitle | default: widget_content.showWidgetTitle | default: widget_content.ShowWidgetTitle | default: true
+  if show_widget_title_raw == null or show_widget_title_raw == blank or show_widget_title_raw == 'null'
+    assign show_widget_title = true
+  else
+    if show_widget_title_raw == 'Yes' or show_widget_title_raw == true or show_widget_title_raw == 'true' or show_widget_title_raw == 1 or show_widget_title_raw == '1'
+      assign show_widget_title = true
+    else
+      assign show_widget_title = false
+    endif
+  endif
+  assign widget_title_alignment_raw = widget_settings.widgetTitleAlignment | default: widget_settings.WidgetTitleAlignment | default: widget_content.widgetTitleAlignment | default: widget_content.WidgetTitleAlignment | default: 'left'
+  assign widget_title_alignment = widget_title_alignment_raw | downcase
+  if widget_title_alignment != 'left' and widget_title_alignment != 'right' and widget_title_alignment != 'center'
+    assign widget_title_alignment = 'left'
+  endif
 
   comment
     HTML content for footer widget:
@@ -31,9 +48,21 @@
 %}
 
 <footer class="widget widget-footer" data-widget-id="{{ widget.id }}">
+  {% if show_widget_title %}
+    {% if heading or subtitle %}
+      <header class="widget-header" style="text-align: {{ widget_title_alignment }};">
+        {% if heading and heading != blank %}
+          <h2 class="widget-title">{{ heading }}</h2>
+        {% endif %}
+        {% if subtitle and subtitle != blank %}
+          <p class="widget-subtitle">{{ subtitle }}</p>
+        {% endif %}
+      </header>
+    {% endif %}
+  {% endif %}
+
   <div class="widget-footer__inner">
     <div class="widget-footer__brand">
-      <h3>{{ widget_settings.title | default: widget_content.title | default: shop.name }}</h3>
       <p>{{ widget_settings.description | default: widget_content.description | default: shop.description }}</p>
     </div>
 
@@ -109,6 +138,25 @@
       color: {{ widget_settings.text_color | default: settings.color_text }};
       padding: 3rem 1rem;
       border-top: 1px solid rgba(0,0,0,0.08);
+    }
+    .widget-footer .widget-header {
+      max-width: {{ settings.container_width | default: 1200 }}px;
+      margin: 0 auto 1.25rem;
+      padding: 0;
+    }
+    .widget-footer .widget-title {
+      margin: 0 0 0.35rem 0;
+      font-size: 1.4rem;
+      font-weight: 500;
+      line-height: 1.3;
+      color: inherit;
+    }
+    .widget-footer .widget-subtitle {
+      margin: 0;
+      font-size: 0.95rem;
+      line-height: 1.5;
+      opacity: 0.85;
+      color: inherit;
     }
     .widget-footer__inner {
       max-width: {{ settings.container_width | default: 1200 }}px;

@@ -69,8 +69,8 @@
                 </div>
 
                 <div class="address-card-actions">
-                  <button class="btn btn-outline btn-sm edit-address" data-address-id="{{ address.id }}">Edit</button>
-                  <button class="btn btn-outline-danger btn-sm delete-address" data-address-id="{{ address.id }}">
+                  <button type="button" class="btn btn-outline btn-sm edit-address" data-address-id="{{ address.id }}">Edit</button>
+                  <button type="button" class="btn btn-outline-danger btn-sm delete-address" data-address-id="{{ address.id }}">
                     <span class="btn-text">Delete</span>
                     <span class="btn-loading" style="display: none;">
                       <span class="btn-spinner"></span>
@@ -425,12 +425,16 @@
 }
 
 .iti__flag-container {
-  z-index: 1;
+  z-index: 2;
+  position: relative;
+  pointer-events: auto;
 }
 
 .iti__selected-flag {
   padding: 0 0.75rem 0 0.5rem;
   border-right: 1px solid #d1d5db;
+  cursor: pointer;
+  pointer-events: auto;
 }
 
 .iti__selected-flag:hover {
@@ -539,7 +543,7 @@
   <div class="address-modal-overlay" data-address-modal-close></div>
   <div class="address-modal-content">
     <div class="address-modal-header">
-      <h5 id="address-modal-title">Add New Address</h3>
+      <h5 id="address-modal-title">Add New Address</h5>
       <button class="address-modal-close" data-address-modal-close aria-label="Close">×</button>
     </div>
     <form class="address-form" id="address-form" action="/webstoreapi/addresses" method="post">
@@ -656,7 +660,7 @@
     }
   }
 
-  document.addEventListener('DOMContentLoaded', function() {
+  document.addEventListener('DOMContentLoaded', () => {
     const modal = document.getElementById('address-modal');
     const openButtons = document.querySelectorAll('#add-address-btn, #add-first-address-btn, .edit-address');
     const closeButtons = document.querySelectorAll('[data-address-modal-close]');
@@ -664,6 +668,36 @@
     const addresses = {% if addresses %}{{ addresses | json }}{% else %}[]{% endif %};
     const COUNTRIES_DATA = {% if countries %}{{ countries | json }}{% else %}[]{% endif %};
     let addressPhoneIti = null;
+    let intlTelInputLoadPromise = null;
+
+    function ensureIntlTelInputLoaded() {
+      if (typeof window.intlTelInput !== 'undefined') {
+        return Promise.resolve(true);
+      }
+
+      if (intlTelInputLoadPromise) {
+        return intlTelInputLoadPromise;
+      }
+
+      intlTelInputLoadPromise = new Promise((resolve) => {
+        const existingScript = document.querySelector('script[data-intl-tel-input-loader="address-book"]');
+        if (existingScript) {
+          existingScript.addEventListener('load', () => resolve(typeof window.intlTelInput !== 'undefined'), { once: true });
+          existingScript.addEventListener('error', () => resolve(false), { once: true });
+          return;
+        }
+
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/intl-tel-input@23.0.0/build/js/intlTelInput.min.js';
+        script.defer = true;
+        script.setAttribute('data-intl-tel-input-loader', 'address-book');
+        script.onload = () => resolve(typeof window.intlTelInput !== 'undefined');
+        script.onerror = () => resolve(false);
+        document.head.appendChild(script);
+      });
+
+      return intlTelInputLoadPromise;
+    }
 
     // Helper function to get states for a country
     function getStatesForCountry(countryIdentifier) {
@@ -763,8 +797,24 @@
       stateSelect.style.display = 'block';
       stateSelect.required = true;
       
+      // De-duplicate states to avoid repeated options when upstream data contains duplicates.
+      const seenStateKeys = new Set();
+      const uniqueStates = [];
+      countryStates.forEach((state) => {
+        const stateCode = state && (state.code || state.abbreviation || state.isoCode || '');
+        const stateName = state && (state.name || state.label || '');
+        const normalizedCode = String(stateCode).trim().toLowerCase();
+        const normalizedName = String(stateName).trim().toLowerCase().replace(/\s+/g, ' ');
+        const key = normalizedCode ? `code:${normalizedCode}` : `name:${normalizedName}`;
+
+        if (!seenStateKeys.has(key)) {
+          seenStateKeys.add(key);
+          uniqueStates.push(state);
+        }
+      });
+
       // Populate the dropdown
-      countryStates.forEach(state => {
+      uniqueStates.forEach(state => {
         const option = document.createElement('option');
         const stateId = state.id || state.stateOrProvinceId || state.stateId;
         const stateName = state.name || state.label || '';
@@ -803,7 +853,15 @@
     // Initialize intl-tel-input for address phone
     function initializeAddressPhoneInput() {
       const phoneInput = document.getElementById('address-phone');
-      if (phoneInput && typeof intlTelInput !== 'undefined') {
+      if (!phoneInput) {
+        return;
+      }
+
+      ensureIntlTelInputLoaded().then((isLoaded) => {
+        if (!isLoaded || typeof window.intlTelInput === 'undefined') {
+          return;
+        }
+
         // Destroy existing instance if any
         if (addressPhoneIti) {
           addressPhoneIti.destroy();
@@ -812,30 +870,38 @@
         
         // Get country code from country select
         const countrySelect = document.getElementById('address-country');
-        let initialCountry = 'auto';
+        let initialCountry = 'us';
         
         if (countrySelect && countrySelect.value) {
-          const countryCode = countrySelect.options[countrySelect.selectedIndex]?.getAttribute('data-country-code2') || 
-                             countrySelect.value.toLowerCase();
-          initialCountry = countryCode.toLowerCase();
+          const selectedCountryCode = (countrySelect.options[countrySelect.selectedIndex]?.getAttribute('data-country-code2') || '').trim().toLowerCase();
+          if (/^[a-z]{2}$/.test(selectedCountryCode)) {
+            initialCountry = selectedCountryCode;
+          }
         }
         
         // Initialize intl-tel-input
-        addressPhoneIti = intlTelInput(phoneInput, {
-          utilsScript: 'https://cdn.jsdelivr.net/npm/intl-tel-input@23.0.0/build/js/utils.js',
-          initialCountry: initialCountry,
-          preferredCountries: ['us', 'gb', 'ca', 'au', 'in'],
-          separateDialCode: true,
-          nationalMode: false
-        });
+        try {
+          addressPhoneIti = window.intlTelInput(phoneInput, {
+            utilsScript: 'https://cdn.jsdelivr.net/npm/intl-tel-input@23.0.0/build/js/utils.js',
+            initialCountry: initialCountry,
+            preferredCountries: ['us', 'gb', 'ca', 'au', 'in'],
+            separateDialCode: true,
+            nationalMode: false,
+            dropdownContainer: document.body
+          });
+        } catch (error) {
+          console.error('[ADDRESS BOOK] Failed to initialize phone country selector', error);
+          return;
+        }
+        window.addressPhoneIti = addressPhoneIti;
         
         // Update country when address country changes
-        if (countrySelect) {
-          countrySelect.addEventListener('change', function() {
-            const countryCode = this.options[this.selectedIndex]?.getAttribute('data-country-code2') || 
-                               this.value.toLowerCase();
-            if (addressPhoneIti && countryCode) {
-              addressPhoneIti.setCountry(countryCode.toLowerCase());
+        if (countrySelect && !countrySelect.dataset.phoneCountrySyncBound) {
+          countrySelect.dataset.phoneCountrySyncBound = '1';
+          countrySelect.addEventListener('change', () => {
+            const countryCode = (countrySelect.options[countrySelect.selectedIndex]?.getAttribute('data-country-code2') || '').trim().toLowerCase();
+            if (addressPhoneIti && /^[a-z]{2}$/.test(countryCode)) {
+              addressPhoneIti.setCountry(countryCode);
             }
             
             // Populate states when country changes
@@ -845,7 +911,7 @@
             }
           });
         }
-      }
+      });
     }
 
     function openModal(addressId = null) {
@@ -915,11 +981,11 @@
       document.body.style.overflow = 'hidden';
       
       // Initialize phone input after modal is shown
-      setTimeout(function() {
+      setTimeout(() => {
         initializeAddressPhoneInput();
         // Set phone number if editing (after initialization completes)
         if (addressId) {
-          setTimeout(function() {
+          setTimeout(() => {
             const address = addresses.find(a => a.id == addressId);
             if (address && address.phone && addressPhoneIti) {
               addressPhoneIti.setNumber(address.phone);
@@ -938,11 +1004,13 @@
         addressPhoneIti.destroy();
         addressPhoneIti = null;
       }
+      window.addressPhoneIti = null;
     }
 
     openButtons.forEach(btn => {
-      btn.addEventListener('click', function() {
-        const addressId = this.dataset.addressId || null;
+      btn.addEventListener('click', (event) => {
+        const targetButton = event.currentTarget || btn;
+        const addressId = targetButton.dataset.addressId || null;
         openModal(addressId);
       });
     });
@@ -952,7 +1020,7 @@
     });
 
     // Handle form submission
-    form.addEventListener('submit', async function(e) {
+    form.addEventListener('submit', async (e) => {
       e.preventDefault();
       
       const submitBtn = document.getElementById('save-address-btn');
@@ -1073,30 +1141,46 @@
 
     // Handle delete
     document.querySelectorAll('.delete-address').forEach(btn => {
-      btn.addEventListener('click', async function() {
+      btn.addEventListener('click', async (event) => {
+        event.preventDefault();
         if (confirm('Are you sure you want to delete this address?')) {
-          const addressId = this.dataset.addressId;
-          setButtonLoading(this, true, 'Deleting...');
+          const targetButton = event.currentTarget || btn;
+          const addressId = targetButton.dataset.addressId;
+          if (!addressId) {
+            alert('Invalid address. Please refresh and try again.');
+            return;
+          }
+          setButtonLoading(targetButton, true, 'Deleting...');
           
           try {
+           
+
             const response = await fetch(`/webstoreapi/addresses/${addressId}`, {
+
               method: 'DELETE',
               headers: {
+                
                 'X-Requested-With': 'XMLHttpRequest'
               }
             });
+           
 
             if (response.ok) {
               window.location.reload();
             } else {
-              const error = await response.json();
-              setButtonLoading(this, false);
+                            const error = await response.json();
+
+              setButtonLoading(targetButton, false, 'Delete');
               alert('Error deleting address: ' + (error.error || error.message || 'Unknown error'));
             }
           } catch (error) {
             console.error('Error deleting address:', error);
-            setButtonLoading(this, false);
-            alert('Error deleting address. Please try again.');
+            setButtonLoading(targetButton, false, 'Delete');
+            if (error.name === 'AbortError') {
+              alert('Delete request timed out. Please try again.');
+            } else {
+              alert('Error deleting address. Please try again.');
+            }
           }
         }
       });

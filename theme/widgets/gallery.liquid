@@ -36,6 +36,10 @@
   assign show_container = widget_settings.showContainer
   assign gap = widget_settings.gap | default: 16
 %}
+{% assign is_hero_priority_widget = false %}
+{% if is_hero_first == true or is_hero_first == 'true' or is_hero_first == 1 or is_hero_first == '1' %}
+  {% assign is_hero_priority_widget = true %}
+{% endif %}
 
 <section class="widget widget-gallery" data-widget-id="{{ widget.id }}"{% if background_color and background_color != blank and background_color != 'null' %} style="background-color: {{ background_color }};"{% endif %}>
   <div class="widget-gallery__inner{% if show_container == 'No' %} widget-gallery__inner--full{% endif %}">
@@ -67,7 +71,10 @@
           {% if item_link and item_link != blank and item_link != 'null' %}
             <a href="{{ item_link }}" class="widget-gallery__item widget-gallery__item--link">
               {% if image_url and image_url != blank and image_url != 'null' %}
-                <img src="{{ image_src }}" alt="{{ image_alt }}" width="400" height="400" loading="lazy">
+                {% if forloop.first and is_hero_priority_widget %}
+                  <link rel="preload" as="image" href="{{ image_src }}" fetchpriority="high">
+                {% endif %}
+                <img src="{{ image_src }}" alt="{{ image_alt }}" width="400" height="400" loading="{% if forloop.first %}eager{% else %}lazy{% endif %}" {% if forloop.first and is_hero_priority_widget %}fetchpriority="high"{% endif %}>
                 {% if item_caption and item_caption != blank %}
                   <div class="widget-gallery__caption">{{ item_caption }}</div>
                 {% endif %}
@@ -76,7 +83,10 @@
           {% else %}
             <figure class="widget-gallery__item">
               {% if image_url and image_url != blank and image_url != 'null' %}
-                <img src="{{ image_src }}" alt="{{ image_alt }}" width="400" height="400" loading="lazy">
+                {% if forloop.first and is_hero_priority_widget %}
+                  <link rel="preload" as="image" href="{{ image_src }}" fetchpriority="high">
+                {% endif %}
+                <img src="{{ image_src }}" alt="{{ image_alt }}" width="400" height="400" loading="{% if forloop.first %}eager{% else %}lazy{% endif %}" {% if forloop.first and is_hero_priority_widget %}fetchpriority="high"{% endif %}>
                 {% if item_caption and item_caption != blank %}
                   <figcaption class="widget-gallery__caption">{{ item_caption }}</figcaption>
                 {% endif %}

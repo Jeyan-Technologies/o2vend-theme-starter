@@ -1267,7 +1267,7 @@
 </div>
 
 <script>
-  document.addEventListener('DOMContentLoaded', function() {
+  document.addEventListener('DOMContentLoaded', () => {
     const menuToggle = document.querySelector('[data-mobile-menu-toggle]');
     const menuClose = document.querySelector('[data-mobile-menu-close]');
     const drawer = document.getElementById('mobile-nav-drawer');
@@ -1294,7 +1294,7 @@
     }
     
     if (menuToggle) {
-      menuToggle.addEventListener('click', function(e) {
+      menuToggle.addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();
         if (drawer && drawer.classList.contains('active')) {
@@ -1306,7 +1306,7 @@
     }
     
     if (menuClose) {
-      menuClose.addEventListener('click', function(e) {
+      menuClose.addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();
         closeMenu();
@@ -1314,13 +1314,13 @@
     }
     
     if (drawer) {
-      drawer.addEventListener('click', function(e) {
+      drawer.addEventListener('click', (e) => {
         if (e.target === drawer) {
           closeMenu();
         }
       });
       
-      document.addEventListener('keydown', function(e) {
+      document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape' && drawer.classList.contains('active')) {
           closeMenu();
         }
@@ -1481,21 +1481,21 @@
     }
     
     if (searchToggle) {
-      searchToggle.addEventListener('click', function(e) {
+      searchToggle.addEventListener('click', (e) => {
         e.preventDefault();
         openSearch();
       });
     }
     
     if (searchClose) {
-      searchClose.addEventListener('click', function(e) {
+      searchClose.addEventListener('click', (e) => {
         e.preventDefault();
         closeSearch();
       });
     }
     
     if (searchOverlay) {
-      searchOverlay.addEventListener('click', function(e) {
+      searchOverlay.addEventListener('click', (e) => {
         if (e.target === searchOverlay) {
           closeSearch();
         }
@@ -1503,7 +1503,7 @@
     }
     
     if (searchInput) {
-      searchInput.addEventListener('input', function(e) {
+      searchInput.addEventListener('input', (e) => {
         const query = e.target.value.trim();
         clearTimeout(searchTimeout);
         searchTimeout = setTimeout(() => {
@@ -1511,7 +1511,7 @@
         }, 300);
       });
       
-      searchInput.addEventListener('keydown', function(e) {
+      searchInput.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
           closeSearch();
         }
@@ -1519,7 +1519,7 @@
     }
     
     if (mobileSearchInput) {
-      mobileSearchInput.addEventListener('input', function(e) {
+      mobileSearchInput.addEventListener('input', (e) => {
         const query = e.target.value.trim();
         if (query.length > 0 && searchOverlay && !searchOverlay.classList.contains('active')) {
           openSearch();
@@ -1540,7 +1540,7 @@
     
     if (searchForms && searchForms.length > 0) {
       searchForms.forEach(form => {
-        form.addEventListener('submit', function(e) {
+        form.addEventListener('submit', (e) => {
           e.preventDefault();
           const input = form.querySelector('[data-search-input], input[type="search"], input[name="q"]');
           if (input && input.value.trim()) {
@@ -1554,7 +1554,7 @@
       });
     }
     
-    document.addEventListener('keydown', function(e) {
+    document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape' && searchOverlay && searchOverlay.classList.contains('active')) {
         closeSearch();
       }
@@ -1577,7 +1577,7 @@
 
       // Debounce function
       function debounce(func, wait) {
-        return function(...args) {
+        return (...args) => {
           clearTimeout(searchTimeout);
           searchTimeout = setTimeout(() => func.apply(this, args), wait);
         };

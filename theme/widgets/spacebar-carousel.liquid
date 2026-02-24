@@ -36,14 +36,26 @@
       assign show_widget_title = false
     endif
   endif
-  assign widget_title_alignment_raw = widget_settings.widgetTitleAlignment | default: 'center'
+  assign widget_title_alignment_raw = widget_settings.widgetTitleAlignment | default: 'left'
   assign widget_title_alignment = widget_title_alignment_raw | downcase
   if widget_title_alignment != 'left' and widget_title_alignment != 'right' and widget_title_alignment != 'center'
-    assign widget_title_alignment = 'center'
+    assign widget_title_alignment = 'left'
   endif
   assign hide_dots = widget_settings.hideDot | default: false
   assign hide_arrows = widget_settings.hideArrow | default: false
+  assign priority_count_raw = widget_settings.priorityCount | default: widget_settings.prioritizeCount | default: widget_settings.priority
+  assign priority_count = priority_count_raw | default: 1
+  if priority_count > 12
+    assign priority_count = 12
+  endif
+  if priority_count < 0
+    assign priority_count = 0
+  endif
 %}
+{% assign is_hero_priority_widget = false %}
+{% if is_hero_first == true or is_hero_first == 'true' or is_hero_first == 1 or is_hero_first == '1' %}
+  {% assign is_hero_priority_widget = true %}
+{% endif %}
 
 <section class="widget widget-spacebar-carousel" data-widget-id="{{ widget.id }}" data-spacebar-carousel{% if background_color and background_color != blank and background_color != 'null' %} style="background-color: {{ background_color }};"{% endif %}>
   <div class="spacebar-carousel-container">
@@ -95,8 +107,8 @@
               {% assign item_image = item.ImageUrl | default: item.imageUrl | default: item.Image | default: item.image %}
               {% assign item_bg = item.BackgroundColor | default: item.backgroundColor %}
               {% assign item_text = item.TextColor | default: item.textColor %}
-              
-              <div class="spacebar-carousel-slide" data-slide-index="{{ forloop.index0 }}">
+              {% assign item_link = item.Link | default: item.link | default: item.TargetUrl | default: item.targetUrl %}
+              <div class="spacebar-carousel-slide{% if forloop.index0 < priority_count %} spacebar-carousel-slide--priority{% endif %}" data-slide-index="{{ forloop.index0 }}" {% if forloop.index0 < priority_count %}data-priority="high"{% endif %}>
                 <div class="spacebar-carousel-item"{% if item_bg and item_bg != blank %} style="background-color: {{ item_bg }};"{% endif %}>
                   {% if item_image and item_image != blank %}
                     {% if item_image contains 'http://' or item_image contains 'https://' %}
@@ -104,8 +116,11 @@
                     {% else %}
                       {% assign item_image_src = item_image | asset_url %}
                     {% endif %}
+                    {% if forloop.index0 < priority_count and is_hero_priority_widget %}
+                      <link rel="preload" as="image" href="{{ item_image_src }}" fetchpriority="high">
+                    {% endif %}
                     <div class="spacebar-carousel-item__icon spacebar-carousel-item__icon--image">
-                      <img src="{{ item_image_src }}" alt="{{ item_title }}" width="72" height="72" loading="lazy">
+                      <img src="{{ item_image_src }}" alt="{{ item_title }}" width="72" height="72" loading="{% if forloop.index0 < priority_count %}eager{% else %}lazy{% endif %}" {% if forloop.index0 < priority_count and is_hero_priority_widget %}fetchpriority="high"{% endif %}>
                     </div>
                   {% elsif item_icon and item_icon != blank %}
                     <div class="spacebar-carousel-item__icon spacebar-carousel-item__icon--html">
@@ -541,7 +556,7 @@
   </style>
 
   <script>
-  (function() {
+  (() => {
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', initSpacebarCarousel);
     } else {

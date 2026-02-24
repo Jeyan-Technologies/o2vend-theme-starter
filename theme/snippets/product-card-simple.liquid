@@ -1,6 +1,11 @@
 {% comment %}
   Enhanced Modern Product Card
 {% endcomment %}
+{% assign call_for_pricing_raw = product.showCallForPricing | default: product.ShowCallForPricing | default: product.isCallForPricing | default: product.IsCallForPricing | default: false %}
+{% assign show_call_for_pricing = false %}
+{% if call_for_pricing_raw == true or call_for_pricing_raw == 'true' or call_for_pricing_raw == 1 or call_for_pricing_raw == '1' %}
+  {% assign show_call_for_pricing = true %}
+{% endif %}
 
 <style>
 
@@ -385,8 +390,10 @@
 
     <div class="product-info">
       <h3 class="product-title">{{ product.name | default: product.title | default: "Product Name" }}</h3>
-      <div class="product-price">
-        {% if product.prices and product.prices.priceString %}
+      <div class="product-price" data-price="{{ product.prices.price | default: product.price | default: 0 }}" data-show-call-for-pricing="{% if show_call_for_pricing %}true{% else %}false{% endif %}">
+        {% if show_call_for_pricing %}
+          Call for pricing
+        {% elsif product.prices and product.prices.priceString %}
           {{ product.prices.priceString }}
         {% elsif product.prices and product.prices.price %}
           {{ product.prices.price | money }}
@@ -399,9 +406,132 @@
     </div>
   </a>
 
-  <button class="btn-add add-to-cart"
+  <button class="btn-add add-to-cart-button"
           data-product-id="{{ product.productId | default: product.id | default: '' }}"
           data-variant-id="{{ product.variants[0].id | default: '' }}">
     Add to Cart
   </button>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  // Format prices using Theme.formatMoneyProductCard (reads shop currency symbol) when available
+  document.querySelectorAll('.product-price[data-price]').forEach((el) => {
+    try {
+      var showCallForPricing = el.getAttribute('data-show-call-for-pricing');
+      if (showCallForPricing === 'true' || showCallForPricing === '1') {
+        el.textContent = 'Call for pricing';
+        return;
+      }
+      var priceRaw = el.getAttribute('data-price');
+      if (!priceRaw) return;
+      var num = parseFloat(priceRaw);
+      if (isNaN(num)) return;
+      if (window.Theme && typeof window.Theme.formatMoneyProductCard === 'function') {
+        el.textContent = window.Theme.formatMoneyProductCard(num);
+      } else if (window.__SHOP_CURRENCY_SYMBOL__) {
+        el.textContent = window.__SHOP_CURRENCY_SYMBOL__ + num.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+      }
+    } catch (e) {
+      // ignore formatting errors and leave server-rendered value
+      console.warn('[product-card-simple] price format error', e);
+    }
+  });
+
+  document.querySelectorAll('.btn-add.add-to-cart-button').forEach((btn) => {
+    if (btn.dataset.simpleBound === '1') return;
+    btn.dataset.simpleBound = '1';
+
+    btn.addEventListener('click', async (e) => {
+      e.preventDefault();
+      const productId = btn.getAttribute('data-product-id') || '';
+      const variantId = btn.getAttribute('data-variant-id') || '';
+      const idToUse = variantId || productId;
+      if (!idToUse) return;
+
+      const originalText = btn.textContent.trim();
+      btn.disabled = true;
+      btn.textContent = 'Adding...';
+
+      try {
+        // Prefer central Theme.addToCart when available (keeps behavior consistent)
+        if (window.Theme && typeof window.Theme.addToCart === 'function') {
+          await window.Theme.addToCart(idToUse, 1);
+        } else {
+          // Fallback: direct API call (keeps behavior similar to product-card)
+          const response = await fetch('/webstoreapi/carts/add', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+            body: JSON.stringify({ productId: idToUse, quantity: 1 })
+          });
+          const data = await response.json();
+
+          if (!data.success) {
+            // If backend indicates authentication is required, open login instead of showing a generic error
+            if (data.requiresAuth) {
+              if (window.Theme && typeof window.Theme.openLoginModal === 'function') {
+                window.Theme.openLoginModal();
+              } else if (window.CartManager && typeof window.CartManager.openLoginModal === 'function') {
+                window.CartManager.openLoginModal();
+              } else {
+                const loginTrigger = document.querySelector('[data-login-modal-trigger]');
+                if (loginTrigger) loginTrigger.click();
+              }
+              // Reset button state and exit gracefully
+              btn.textContent = originalText;
+              btn.disabled = false;
+              return;
+            }
+
+            throw new Error(data.error || data.message || 'Failed to add product to cart');
+          }
+
+          // Try to update badge via CartManager
+          if (window.CartManager && typeof window.CartManager.getCartCount === 'function') {
+            const cartCount = await window.CartManager.getCartCount(true);
+            if (window.CartManager.dispatchCartUpdated) {
+              window.CartManager.dispatchCartUpdated({ itemCount: cartCount, cart: data.data });
+            }
+          }
+        }
+
+        // If we used Theme.addToCart above, it is responsible for notifications; only show success toast when using the fallback API path
+        if (!(window.Theme && typeof window.Theme.addToCart === 'function')) {
+          if (window.Theme && typeof window.Theme.showNotification === 'function') {
+            window.Theme.showNotification('Product added to cart!', 'success');
+          }
+        }
+
+        btn.textContent = '✓ Added';
+        setTimeout(() => {
+          btn.textContent = originalText;
+          btn.disabled = false;
+        }, 2000);
+      } catch (err) {
+        console.error('product-card-simple addToCart failed', err);
+
+        // If this is an authentication-related error, open login popup and do not show a generic error toast
+        if (err && err.message && (
+          err.message.includes('Authentication required') ||
+          err.message.includes('Please sign in') ||
+          err.message.toLowerCase().includes('unauthorized')
+        )) {
+          if (window.Theme && typeof window.Theme.openLoginModal === 'function') {
+            window.Theme.openLoginModal();
+          } else if (window.CartManager && typeof window.CartManager.openLoginModal === 'function') {
+            window.CartManager.openLoginModal();
+          } else {
+            const loginTrigger = document.querySelector('[data-login-modal-trigger]');
+            if (loginTrigger) loginTrigger.click();
+          }
+        } else if (window.Theme && typeof window.Theme.showNotification === 'function') {
+          window.Theme.showNotification('Failed to add product to cart. Please sign in or try again.', 'error');
+        }
+
+        btn.textContent = originalText;
+        btn.disabled = false;
+      }
+    });
+  });
+});
+</script>

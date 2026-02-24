@@ -30,6 +30,10 @@
   assign background_color = widget_settings.backgroundColor
   assign text_color = widget_settings.textColor
 %}
+{% assign is_hero_priority_widget = false %}
+{% if is_hero_first == true or is_hero_first == 'true' or is_hero_first == 1 or is_hero_first == '1' %}
+  {% assign is_hero_priority_widget = true %}
+{% endif %}
 
 <section class="widget widget-category-carousel" data-widget-id="{{ widget.id }}" data-category-carousel{% if background_color and background_color != blank and background_color != 'null' %} style="background-color: {{ background_color }};"{% endif %}>
   <div class="category-carousel-container">
@@ -114,7 +118,10 @@
                 <a href="{{ cat_url }}" class="category-carousel-item">
                   <div class="category-carousel-item__media">
                     {% if cat_image != blank and cat_image != nil and cat_image != 'null' %}
-                      <img src="{{ cat_image }}" alt="{{ cat_name }}" width="300" height="300" loading="lazy" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                      {% if forloop.first and is_hero_priority_widget %}
+                        <link rel="preload" as="image" href="{{ cat_image }}" fetchpriority="high">
+                      {% endif %}
+                      <img src="{{ cat_image }}" alt="{{ cat_name }}" width="300" height="300" loading="{% if forloop.first %}eager{% else %}lazy{% endif %}" {% if forloop.first and is_hero_priority_widget %}fetchpriority="high"{% endif %} data-img-fallback="next" data-img-fallback-display="flex">
                       <span class="category-carousel-item__placeholder category-carousel-item__placeholder--fallback" style="display: none;">
                         <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                           <path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z"/>
@@ -521,7 +528,7 @@
   </style>
 
   <script>
-  (function() {
+  (() => {
     // Wait for DOM
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', initCategoryCarousel);

@@ -152,7 +152,7 @@
 
   .header-menu-nav__submenu {
     position: absolute;
-    top: calc(100% + var(--space-2, 0.5rem));
+    top: 100%;
     left: 0;
     display: none;
     flex-direction: column;
@@ -364,7 +364,7 @@
 </style>
 
   <script>
-  document.addEventListener('DOMContentLoaded', function() {
+  document.addEventListener('DOMContentLoaded', () => {
     const menuNav = document.querySelector('[data-widget-id="{{ widget.id }}"][data-header-menu-nav]');
     if (!menuNav) return;
 
@@ -389,9 +389,9 @@
     
     // Re-setup on window resize
     let resizeTimeout;
-    window.addEventListener('resize', function() {
+    window.addEventListener('resize', () => {
       clearTimeout(resizeTimeout);
-      resizeTimeout = setTimeout(function() {
+      resizeTimeout = setTimeout(() => {
         if (window.innerWidth <= 768) {
           setupHamburgerMenu();
         }
@@ -510,7 +510,7 @@
 
           // Close on Escape key (only add once)
           if (!window.__headerMenuWidgetEscapeHandler) {
-            window.__headerMenuWidgetEscapeHandler = function(e) {
+            window.__headerMenuWidgetEscapeHandler = (e) => {
               if (e.key === 'Escape' && window.innerWidth <= 768) {
                 const currentDrawer = document.getElementById(drawerId);
                 if (currentDrawer && currentDrawer.classList.contains('active')) {
@@ -524,7 +524,7 @@
 
           // Close on outside click (only add once)
           if (!window.__headerMenuWidgetOverlayHandler) {
-            window.__headerMenuWidgetOverlayHandler = function(e) {
+            window.__headerMenuWidgetOverlayHandler = (e) => {
               if (window.innerWidth > 768) return;
               const currentDrawer = document.getElementById(drawerId);
               if (currentDrawer && currentDrawer.classList.contains('active')) {

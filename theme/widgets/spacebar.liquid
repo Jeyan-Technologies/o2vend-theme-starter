@@ -20,12 +20,46 @@
   else
     assign items = content_data
   endif
-  assign background_color = content_data.backgroundColor | default: content_data.BackgroundColor | default: widget_settings.backgroundColor | default: '#ffffff'
-  assign text_color = content_data.textColor | default: content_data.TextColor | default: widget_settings.textColor | default: '#000000'
+  assign heading = widget_settings.title | default: widget.Title | default: widget.title
+  assign subtitle = widget_settings.subtitle
+  assign background_color = widget_settings.backgroundColor | default: '#f8f9fa'
+  assign text_color = widget_settings.textColor | default: '#111'
+  assign show_widget_title_raw = widget_settings.showWidgetTitle | default: 'Yes'
+  if show_widget_title_raw == null or show_widget_title_raw == blank or show_widget_title_raw == 'null'
+    assign show_widget_title = true
+  else
+    if show_widget_title_raw == 'Yes'
+      assign show_widget_title = true
+    elsif show_widget_title_raw == true
+      assign show_widget_title = true
+    else
+      assign show_widget_title = false
+    endif
+  endif
+  assign widget_title_alignment_raw = widget_settings.widgetTitleAlignment | default: 'left'
+  assign widget_title_alignment = widget_title_alignment_raw | downcase
+  if widget_title_alignment != 'left' and widget_title_alignment != 'right' and widget_title_alignment != 'center'
+    assign widget_title_alignment = 'left'
+  endif
 %}
 
-<section class="widget widget-spacebar" data-widget-id="{{ widget.id }}" style="background-color: {{ background_color }};">
+<section class="widget widget-spacebar" data-widget-id="{{ widget.id }}"{% if background_color and background_color != blank and background_color != 'null' %} style="background-color: {{ background_color }};"{% endif %}>
   <div class="spacebar-inner">
+    {% if show_widget_title %}
+      {% if heading or subtitle %}
+        <header class="spacebar-header">
+          <div class="spacebar-header__text" style="text-align: {{ widget_title_alignment }};">
+            {% if heading %}
+              <h2 class="spacebar-title"{% if text_color and text_color != 'null' %} style="color: {{ text_color }};"{% endif %}>{{ heading }}</h2>
+            {% endif %}
+            {% if subtitle %}
+              <p class="spacebar-subtitle"{% if text_color and text_color != 'null' %} style="color: {{ text_color }};"{% endif %}>{{ subtitle }}</p>
+            {% endif %}
+          </div>
+        </header>
+      {% endif %}
+    {% endif %}
+
     {% if items and items.size > 0 %}
       <div class="spacebar-grid">
         {% for item in items %}
@@ -96,6 +130,27 @@
       max-width: 1400px;
       margin: 0 auto;
       padding: 0 24px;
+    }
+
+    .widget-spacebar .spacebar-header {
+      margin-bottom: 24px;
+      position: static;
+      z-index: auto;
+    }
+
+    .widget-spacebar .spacebar-title {
+      font-size: 1.4rem;
+      font-weight: 500;
+      line-height: 1.3;
+      color: #111;
+      margin: 0 0 4px 0;
+      letter-spacing: -0.01em;
+    }
+
+    .widget-spacebar .spacebar-subtitle {
+      font-size: 14px;
+      color: #6b7280;
+      margin: 0;
     }
     
     .widget-spacebar .spacebar-grid {
@@ -215,6 +270,10 @@
       .widget-spacebar .spacebar-grid {
         grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
         gap: 16px;
+      }
+
+      .widget-spacebar .spacebar-title {
+        font-size: 1.3rem;
       }
       
       .widget-spacebar .spacebar-item {

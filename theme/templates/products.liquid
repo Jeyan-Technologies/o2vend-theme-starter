@@ -43,7 +43,7 @@
            data-widget-type="{{ widget.type }}"
            data-widget-position="{{ widget.Position | default: widget.position | default: forloop.index }}">
         {% if widget and widget.template_path %}
-          {% render widget.template_path, widget: widget, settings: settings, shop: shop %}
+          {% render widget.template_path, widget: widget, settings: settings, shop: shop, is_hero_first: forloop.first %}
         {% endif %}
       </div>
     {% endfor %}
@@ -200,7 +200,7 @@
 
 <script>
 // Collection page specific JavaScript - Server-side filtering & sorting
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', () => {
   // Parse URL parameters
   const urlParams = new URLSearchParams(window.location.search);
   
@@ -440,7 +440,7 @@ document.addEventListener('DOMContentLoaded', function() {
   
   // Toggle filter dropdown
   if (filterToggle && filterDropdown) {
-    filterToggle.addEventListener('click', function() {
+    filterToggle.addEventListener('click', () => {
       const isOpening = !filterDropdown.classList.contains('active');
       filterDropdown.classList.toggle('active');
       
@@ -454,14 +454,14 @@ document.addEventListener('DOMContentLoaded', function() {
   
   // Close filter dropdown
   if (filterClose) {
-    filterClose.addEventListener('click', function() {
+    filterClose.addEventListener('click', () => {
       filterDropdown.classList.remove('active');
       closeFilter();
     });
   }
   
   // Close filter dropdown when clicking outside
-  document.addEventListener('click', function(e) {
+  document.addEventListener('click', (e) => {
     if (filterDropdown && filterDropdown.classList.contains('active') && 
         !filterDropdown.contains(e.target) && 
         !filterToggle.contains(e.target)) {
@@ -499,7 +499,7 @@ document.addEventListener('DOMContentLoaded', function() {
   
   // Apply filters - Submit to server
   if (applyFiltersBtn) {
-    applyFiltersBtn.addEventListener('click', function() {
+    applyFiltersBtn.addEventListener('click', () => {
       applyFiltersToURL();
     });
   }
@@ -530,16 +530,16 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   if (sortToggle && sortMenu) {
-    sortToggle.addEventListener('click', function() {
+    sortToggle.addEventListener('click', () => {
       sortDropdown.classList.toggle('open');
       const expanded = sortToggle.getAttribute('aria-expanded') === 'true';
       sortToggle.setAttribute('aria-expanded', (!expanded).toString());
     });
 
     sortMenu.querySelectorAll('.sort-option').forEach(option => {
-      option.addEventListener('click', function() {
-        const value = this.getAttribute('data-value');
-        const label = this.getAttribute('data-label') || this.textContent;
+      option.addEventListener('click', () => {
+        const value = option.getAttribute('data-value');
+        const label = option.getAttribute('data-label') || option.textContent;
         
         // Update sort toggle label
         if (sortLabel) {
@@ -557,8 +557,8 @@ document.addEventListener('DOMContentLoaded', function() {
           opt.classList.remove('active', 'selected');
           opt.setAttribute('aria-selected', 'false');
         });
-        this.classList.add('active', 'selected');
-        this.setAttribute('aria-selected', 'true');
+        option.classList.add('active', 'selected');
+        option.setAttribute('aria-selected', 'true');
         
         sortDropdown.classList.remove('open');
         applySort(value);
@@ -566,7 +566,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Close on outside click
-    document.addEventListener('click', function(e) {
+    document.addEventListener('click', (e) => {
       if (!sortDropdown.contains(e.target)) {
         sortDropdown.classList.remove('open');
         sortToggle.setAttribute('aria-expanded', 'false');
@@ -579,12 +579,12 @@ document.addEventListener('DOMContentLoaded', function() {
   const productsGrid = document.getElementById('products-grid');
   
   viewBtns.forEach(btn => {
-    btn.addEventListener('click', function() {
-      const view = this.dataset.view;
+    btn.addEventListener('click', () => {
+      const view = btn.dataset.view;
       
       // Update active button
       viewBtns.forEach(b => b.classList.remove('active'));
-      this.classList.add('active');
+      btn.classList.add('active');
       
       // Update grid class
       if (productsGrid) {
@@ -616,26 +616,26 @@ document.addEventListener('DOMContentLoaded', function() {
   const priceRangeMax = document.getElementById('price-range-max');
   
   if (priceMin && priceRangeMin) {
-    priceMin.addEventListener('input', function() {
-      priceRangeMin.value = this.value;
+    priceMin.addEventListener('input', () => {
+      priceRangeMin.value = priceMin.value;
     });
   }
   
   if (priceMax && priceRangeMax) {
-    priceMax.addEventListener('input', function() {
-      priceRangeMax.value = this.value;
+    priceMax.addEventListener('input', () => {
+      priceRangeMax.value = priceMax.value;
     });
   }
   
   if (priceRangeMin && priceMin) {
-    priceRangeMin.addEventListener('input', function() {
-      priceMin.value = this.value;
+    priceRangeMin.addEventListener('input', () => {
+      priceMin.value = priceRangeMin.value;
     });
   }
   
   if (priceRangeMax && priceMax) {
-    priceRangeMax.addEventListener('input', function() {
-      priceMax.value = this.value;
+    priceRangeMax.addEventListener('input', () => {
+      priceMax.value = priceRangeMax.value;
     });
   }
 });

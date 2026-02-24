@@ -29,8 +29,8 @@
               {% for item in wishlist.items %}
                 <article class="product-card">
                   <div class="product-card-image">
-                    {% if item.product.image %}
-                      <img src="{{ item.product.image }}" alt="{{ item.product.name | default: item.product.title }}" loading="lazy">
+                    {% if item.productImageUrl  %}
+                      <img src="{{ item.productImageUrl  }}" alt="{{ item.productName  | default: item.title }}" loading="lazy">
                     {% else %}
                       <div class="product-placeholder">
                         <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -40,7 +40,7 @@
                         </svg>
                       </div>
                     {% endif %}
-                    <button class="remove-wishlist-btn" data-item-id="{{ item.id }}" title="Remove from wishlist">
+                    <button class="remove-wishlist-btn" data-item-id="{{ item.productId }}" title="Remove from wishlist">
                       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <line x1="18" y1="6" x2="6" y2="18"></line>
                         <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -49,23 +49,23 @@
                   </div>
                   
                   <div class="product-card-content">
-                    <a href="{{ item.product.url | default: '#' }}" class="product-card-link">
-                      <h3 class="product-card-title">{{ item.product.name | default: item.product.title }}</h3>
+                    <a href="{{ item.url | default: '#' }}" class="product-card-link">
+                      <h3 class="product-card-title">{{ item.productName  | default: item.title }}</h3>
                     </a>
                     
-                    {% if item.product.price %}
+                    {% if item.price %}
                       <div class="product-card-price">
-                        {% if item.product.compareAtPrice and item.product.compareAtPrice > item.product.price %}
-                          <span class="price-compare">{{ item.product.compareAtPrice | money_with_settings: shop.settings }}</span>
-                          <span class="price-current sale">{{ item.product.price | money_with_settings: shop.settings }}</span>
+                        {% if item.compareAtPrice and item.compareAtPrice > item.price %}
+                          <span class="price-compare">{{ item.compareAtPrice | money_with_settings: shop.settings }}</span>
+                          <span class="price-current sale">{{ item.price | money_with_settings: shop.settings }}</span>
                         {% else %}
-                          <span class="price-current">{{ item.product.price | money_with_settings: shop.settings }}</span>
+                          <span class="price-current">{{ item.price | money_with_settings: shop.settings }}</span>
                         {% endif %}
                       </div>
                     {% endif %}
                     
-                    {% if item.product.available %}
-                      <button class="btn btn-primary btn-block add-to-cart" data-product-id="{{ item.product.id }}">
+                    {% if item.isInStock  %}
+                      <button class="btn btn-primary btn-block add-to-cart add-to-cart-btn" data-product-id="{{ item.productId }}">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                           <circle cx="9" cy="21" r="1"></circle>
                           <circle cx="20" cy="21" r="1"></circle>
@@ -95,8 +95,74 @@
         </div>
         {% hook 'account_wishlist_after' %}
       </div>
+           <!-- Pagination -->
+    {% include 'snippets/pagination', pagination: pagination %}
     </div>
   </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('.remove-wishlist-btn').forEach((btn) => {
+    if (btn.dataset.wishlistBound === '1') return;
+    btn.dataset.wishlistBound = '1';
+
+    btn.addEventListener('click', async (e) => {
+      e.preventDefault();
+      const productId = btn.getAttribute('data-item-id');
+      if (!productId) return;
+
+      btn.disabled = true;
+      const article = btn.closest('article');
+
+      try {
+        // Use dedicated remove behavior on account wishlist page.
+        // Calling Theme.toggleWishlist here can show the wrong toast because this button
+        // does not carry `.in-wishlist` state used by the shared toggle handler.
+        const res = await fetch('/webstoreapi/wishlist/toggle', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+          body: JSON.stringify({ productId: productId })
+        });
+        const data = await res.json();
+        if (!data.success) throw new Error(data.error || data.message || 'Failed to remove from wishlist');
+        if (window.Theme && typeof window.Theme.showNotification === 'function') {
+          window.Theme.showNotification('Removed from wishlist', 'success');
+        }
+
+        // Remove item from DOM with a small transition
+        if (article) {
+          article.style.transition = 'opacity 200ms ease';
+          article.style.opacity = '0';
+          setTimeout(() => {
+            if (article && article.parentNode) article.remove();
+
+            // Update items count
+            const countEl = document.querySelector('.items-count');
+            if (countEl) {
+              const m = countEl.textContent.match(/(\d+)/);
+              if (m) {
+                let count = Math.max(0, parseInt(m[1], 10) - 1);
+                if (count === 0) {
+                  // reload to show empty state
+                  window.location.reload();
+                } else {
+                  countEl.textContent = count + ' item' + (count !== 1 ? 's' : '');
+                }
+              }
+            }
+          }, 220);
+        }
+      } catch (err) {
+        console.error('[wishlist] remove failed', err);
+        if (window.Theme && typeof window.Theme.showNotification === 'function') {
+          window.Theme.showNotification('Failed to remove item from wishlist. Please try again.', 'error');
+        }
+        btn.disabled = false;
+      }
+    });
+  });
+});
+</script>
 </section>
 
 <style>
@@ -279,7 +345,7 @@
 }
 
 .product-card-title {
-  font-size: 1rem;
+  font-size: 2rem;
   font-weight: 600;
   color: var(--color-text);
   margin: 0;
@@ -324,7 +390,7 @@
   justify-content: center;
   gap: 0.5rem;
   padding: 0.625rem 1.5rem;
-  font-size: 1.2rem;
+  font-size: 1.6rem;
   font-weight: 500;
   text-decoration: none;
   border-radius: var(--radius-md);

@@ -1,6 +1,6 @@
-;(function(){
-  function qs(sel, ctx){ return (ctx||document).querySelector(sel) }
-  function qsa(sel, ctx){ return Array.from((ctx||document).querySelectorAll(sel)) }
+;(() => {
+  const qs = (sel, ctx) => (ctx||document).querySelector(sel);
+  const qsa = (sel, ctx) => Array.from((ctx||document).querySelectorAll(sel));
 
   const bodyEl = () => document.body;
   const shopCurrency = () => (bodyEl() && bodyEl().dataset.shopCurrency) || window.__SHOP_CURRENCY__ || 'USD';
@@ -8,7 +8,7 @@
   const shopLocale = () => (bodyEl() && bodyEl().dataset.shopLocale) || window.__SHOP_LOCALE__ || 'en-US';
 
   // Format money helper
-  function formatMoney(amount, currency = shopCurrency()) {
+  const formatMoney = (amount, currency = shopCurrency()) => {
     const locale = shopLocale();
     const value = typeof amount === 'number' ? amount : Number(amount) || 0;
     const currencySymbol = shopCurrencySymbol();
@@ -34,7 +34,7 @@
     return currencySymbol ? `${currencySymbol}${formattedNumber}` : formattedNumber;
   }
 
-  function resetCheckoutButton() {
+  const resetCheckoutButton = () => {
     const checkoutBtn = qs('#cart-drawer-checkout-btn')
     if (checkoutBtn) {
       checkoutBtn.classList.remove('loading')
@@ -57,7 +57,7 @@
     loadCartData()
   }
 
-  function closeDrawer(){
+  const closeDrawer = () => {
     const drawer = qs('#cart-drawer')
     if(!drawer) return
     drawer.classList.remove('active')
@@ -137,7 +137,7 @@
     }
   }
 
-  async function loadCartData(){
+  const loadCartData = async () => {
     const loading = qs('[data-cart-loading]')
     const empty = qs('[data-cart-empty]')
     const itemsList = qs('[data-cart-items-list]')
@@ -238,7 +238,7 @@
     }).join('')
   }
 
-  function updateCartFooter(cart) {
+  const updateCartFooter = (cart) => {
     const total = qs('[data-cart-total]')
     if (total) {
       total.textContent = formatMoney(cart.total)
@@ -251,7 +251,7 @@
     await syncQuantity(input)
   }
 
-  async function syncQuantity(input){
+  const syncQuantity = async (input) => {
     const productId = input.dataset.productId
     const variantId = input.dataset.variantId
     const quantity = parseInt(input.value, 10)
@@ -293,7 +293,7 @@
   // Flag to prevent multiple simultaneous API calls
   // Use CartManager instead of making direct API calls
   // This prevents duplicate API calls since CartManager handles caching and deduplication
-  function initCartQuantity() {
+  const initCartQuantity = () => {
     // Wait for CartManager to be available
     const checkCartManager = () => {
       if (window.CartManager && typeof window.CartManager.getCartCount === 'function') {
@@ -340,15 +340,15 @@
     runCartQuantityInit()
   }
 
-  document.addEventListener('DOMContentLoaded', function(){
+  document.addEventListener('DOMContentLoaded', () => {
     const toggle = qsa('[data-cart-toggle]')
-    toggle.forEach(t => t.addEventListener('click', function(e){ 
+    toggle.forEach(t => t.addEventListener('click', (e) => { 
       e.preventDefault()
       e.stopPropagation()
       openDrawer() 
     }))
 
-    document.body.addEventListener('click', function(e){
+    document.body.addEventListener('click', (e) => {
       const closeBtn = e.target.closest('[data-cart-close]')
       const overlay = e.target.closest('[data-cart-overlay]')
       if (closeBtn || overlay) {
@@ -357,7 +357,7 @@
       }
     })
 
-    document.body.addEventListener('click', function(e){
+    document.body.addEventListener('click', (e) => {
       const dec = e.target.closest('.qty-btn[data-action="decrease"]')
       const inc = e.target.closest('.qty-btn[data-action="increase"]')
       const removeBtn = e.target.closest('[data-remove-item]')
@@ -375,7 +375,7 @@
       }
     })
 
-    document.body.addEventListener('change', function(e){
+    document.body.addEventListener('change', (e) => {
       const input = e.target.closest('.qty-input')
       if (input) syncQuantity(input)
     })
@@ -388,7 +388,7 @@
         checkoutBtn.dataset.originalText = checkoutBtn.textContent.trim() || 'Check out'
       }
       
-      checkoutBtn.addEventListener('click', function(e) {
+      checkoutBtn.addEventListener('click', (e) => {
         // Prevent multiple clicks
         if (checkoutBtn.classList.contains('loading') || checkoutBtn.disabled) {
           e.preventDefault()
@@ -426,7 +426,7 @@
     // Discount toggle
     const discountToggle = qs('[data-discount-toggle]')
     if (discountToggle) {
-      discountToggle.addEventListener('click', function() {
+      discountToggle.addEventListener('click', () => {
         const content = qs('[data-discount-content]')
         const isExpanded = discountToggle.getAttribute('aria-expanded') === 'true'
         discountToggle.setAttribute('aria-expanded', !isExpanded)
@@ -437,7 +437,7 @@
     }
 
     // Close on Escape key
-    document.addEventListener('keydown', function(e) {
+    document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
         const drawer = qs('#cart-drawer')
         if (drawer && drawer.classList.contains('active')) {

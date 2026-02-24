@@ -12,16 +12,19 @@
   <!-- Favicon -->
   <link rel="icon" href="{{ shop.favicon }}">
   
-  <!-- Resource hints for fonts -->
+  <!-- Resource hints for fonts and CDN (intl-tel-input) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
   
-  <!-- CSS -->
+  <!-- Critical CSS (required for above-the-fold) -->
   <link rel="stylesheet" href="/assets/theme.min.css">
   <link rel="stylesheet" href="/assets/components.min.css">
-  <link rel="stylesheet" href="/assets/delivery-zone.min.css">
-  <!-- intl-tel-input CSS -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intl-tel-input@23.0.0/build/css/intlTelInput.min.css">
+  <!-- Non-critical CSS: load async to avoid blocking LCP (delivery zone modal, intl-tel-input used on checkout/account) -->
+  <link rel="stylesheet" href="/assets/delivery-zone.min.css" media="print" onload="this.media='all'">
+  <noscript><link rel="stylesheet" href="/assets/delivery-zone.min.css"></noscript>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intl-tel-input@23.0.0/build/css/intlTelInput.min.css" media="print" onload="this.media='all'">
+  <noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intl-tel-input@23.0.0/build/css/intlTelInput.min.css"></noscript>
   
   <!-- Font Loading - Non-render-blocking -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
@@ -34,6 +37,42 @@
   {% if additional_head %}
     {{ additional_head }}
   {% endif %}
+
+  <style>
+    @media (max-width: 768px) {
+      body {
+        padding-bottom: calc(76px + env(safe-area-inset-bottom));
+      }
+
+      .main-content {
+        padding-bottom: calc(84px + env(safe-area-inset-bottom)) !important;
+      }
+    }
+
+    .wishlist-btn,
+    .action-btn.wishlist-btn {
+      color: #111827;
+      background: rgba(255, 255, 255, 0.92);
+    }
+
+    .wishlist-btn svg,
+    .action-btn.wishlist-btn svg {
+      fill: none;
+      stroke: currentColor;
+    }
+
+    .wishlist-btn.in-wishlist,
+    .action-btn.wishlist-btn.in-wishlist {
+      background: rgba(239, 68, 68, 0.95) !important;
+      color: #ffffff !important;
+    }
+
+    .wishlist-btn.in-wishlist svg,
+    .action-btn.wishlist-btn.in-wishlist svg {
+      fill: #ffffff;
+      stroke: #ffffff;
+    }
+  </style>
   
   <!-- App hooks for theme head -->
   {% hook 'theme_head' %}
@@ -105,21 +144,41 @@
   </footer>
   {% hook 'footer_after' %}
   
+  <!-- Image error fallback (replaces inline onerror for CSP/security) -->
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      document.querySelectorAll('img[data-img-fallback]').forEach((img) => {
+        img.addEventListener('error', () => {
+          img.style.display = 'none';
+          const action = img.getAttribute('data-img-fallback');
+          if (action === 'next' && img.nextElementSibling) {
+            img.nextElementSibling.style.display = img.getAttribute('data-img-fallback-display') || 'flex';
+          } else if (action === 'parent-next' && img.parentElement && img.parentElement.nextElementSibling) {
+            img.parentElement.nextElementSibling.style.display = 'flex';
+          } else if (action && action.startsWith('query:') && img.parentNode) {
+            const sel = action.slice(6);
+            const el = img.parentNode.querySelector(sel);
+            if (el) el.style.display = 'flex';
+          }
+        });
+      });
+    });
+  </script>
   <!-- JavaScript -->
   <script src="/assets/cart-manager.min.js" defer></script>
-  <script src="/assets/theme.min.js" defer></script>
+  <script src="/assets/theme.js" defer></script>
   <script src="/assets/cart-drawer.min.js" defer></script>
   <script src="/assets/delivery-zone.min.js" defer></script>
-  <!-- intl-tel-input JS -->
-  <script src="https://cdn.jsdelivr.net/npm/intl-tel-input@23.0.0/build/js/intlTelInput.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/intl-tel-input@23.0.0/build/js/utils.js"></script>
+  <!-- intl-tel-input JS (defer: not needed for initial paint; used on checkout/account/login) -->
+  <!-- Note: utils.js is loaded automatically by intlTelInput via utilsScript option, don't load separately -->
+  <script src="https://cdn.jsdelivr.net/npm/intl-tel-input@23.0.0/build/js/intlTelInput.min.js" defer></script>
   
   <!-- Async Section Loader -->
   <script src="/assets/async-sections.min.js" defer></script>
   <script>
     // Initialize async section loader if sections are defined
     if (window.asyncSections && window.AsyncSectionLoader) {
-      document.addEventListener('DOMContentLoaded', function() {
+      document.addEventListener('DOMContentLoaded', () => {
         AsyncSectionLoader.init(window.asyncSections);
       });
     }
@@ -135,8 +194,8 @@
   {% if autoOpenCartDrawer %}
   <script>
     // Auto-open cart drawer for cart page preview
-    document.addEventListener('DOMContentLoaded', function() {
-      setTimeout(function() {
+    document.addEventListener('DOMContentLoaded', () => {
+      setTimeout(() => {
         var drawer = document.getElementById('cart-drawer') || 
                      (window.__previewContainer && window.__previewContainer.querySelector('#cart-drawer'));
         if (drawer) {
@@ -208,4 +267,3 @@
   {% hook 'theme_body_end' %}
 </body>
 </html>
-

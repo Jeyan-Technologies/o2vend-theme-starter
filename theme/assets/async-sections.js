@@ -3,7 +3,7 @@
  * Loads non-critical page sections asynchronously to improve initial page load time
  */
 
-(function() {
+(() => {
   'use strict';
 
   const AsyncSectionLoader = {
@@ -228,17 +228,42 @@
     renderProductCard(product, variant = 'default') {
       const imageUrl = product.images?.[0] || product.thumbnailImage || product.image || '/assets/default/placeholder-product.png';
       const price = this.formatPrice(product.prices?.priceString || product.prices?.price || product.price);
+      const priceString = product.prices?.priceString || price;
+      const showCallForPricing = (
+        product.showCallForPricing === true || product.showCallForPricing === 'true' || product.showCallForPricing === 1 || product.showCallForPricing === '1' ||
+        product.ShowCallForPricing === true || product.ShowCallForPricing === 'true' || product.ShowCallForPricing === 1 || product.ShowCallForPricing === '1' ||
+        product.isCallForPricing === true || product.isCallForPricing === 'true' || product.isCallForPricing === 1 || product.isCallForPricing === '1' ||
+        product.IsCallForPricing === true || product.IsCallForPricing === 'true' || product.IsCallForPricing === 1 || product.IsCallForPricing === '1'
+      );
       const comparePrice = product.prices?.mrp && product.prices.mrp > product.prices.price 
         ? this.formatPrice(product.prices.mrpString || product.prices.mrp) 
         : null;
       const slug = product.slug || product.handle || product.id;
+      const productUrl = product.url || product.productUrl || slug;
       const available = product.stockQuantity > 0 || product.inStock || product.available !== false;
-      const showSaleBadge = product.prices?.mrp && product.prices.mrp > product.prices.price;
+      const productTypeRaw = product.productType ?? product.type ?? 0;
+      const productType = Number.isNaN(Number(productTypeRaw)) ? 0 : Number(productTypeRaw);
+      const variants = Array.isArray(product.variations)
+        ? product.variations
+        : (Array.isArray(product.variants) ? product.variants : []);
+      const variantsCountRaw = product.variantsCount ?? product.variationCount ?? variants.length ?? 0;
+      const variantsCount = Number.isNaN(Number(variantsCountRaw)) ? 0 : Number(variantsCountRaw);
+      const baseProductId = product.baseProductId || product.productId || product.id;
+      const showSaleBadge = !showCallForPricing && product.prices?.mrp && product.prices.mrp > product.prices.price;
 
       return `
         <div class="product-card" 
-             data-price="${product.prices?.price || product.price}" 
+             data-product-id="${product.productId || product.id}"
+             data-base-product-id="${baseProductId}"
+             data-price="${product.prices?.price ?? product.price ?? 0}" 
+             data-price-string="${this.escapeHtml(priceString)}"
              data-name="${this.escapeHtml((product.name || product.title || '').toLowerCase())}"
+             data-title="${this.escapeHtml(product.name || product.title || '')}"
+             data-product-url="${this.escapeHtml(String(productUrl))}"
+             data-image="${this.escapeHtml(String(imageUrl))}"
+             data-show-call-for-pricing="${showCallForPricing ? 'true' : 'false'}"
+             data-product-type="${productType}"
+             data-variants-count="${variantsCount}"
              data-availability="${available ? 'in-stock' : 'out-of-stock'}"
              data-brand="${this.escapeHtml((product.brandName || product.vendor || '').toLowerCase())}">
           
@@ -279,8 +304,8 @@
             </h3>
             
             <div class="product-price">
-              <span class="product-price-current">${price}</span>
-              ${comparePrice ? `<span class="product-price-original">${comparePrice}</span>` : ''}
+              <span class="product-price-current">${showCallForPricing ? 'Call for pricing' : price}</span>
+              ${(!showCallForPricing && comparePrice) ? `<span class="product-price-original">${comparePrice}</span>` : ''}
             </div>
             
             ${product.shortDescription ? `<p class="product-description">${this.truncate(product.shortDescription, 80)}</p>` : ''}

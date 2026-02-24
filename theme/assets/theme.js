@@ -3,8 +3,72 @@
  * Modern, interactive functionality theme
  */
 
-(function() {
+(() => {
   'use strict';
+
+  // Initialize payment gateway event system globally (for payment gateway apps)
+  // This must be initialized before payment gateway apps try to use it
+  if (!window.checkoutPaymentEvents) {
+    window.checkoutPaymentEvents = (() => {
+      const events = {};
+      return {
+        emit: (eventName, data) => {
+          if (!events[eventName]) {
+            events[eventName] = [];
+          }
+          events[eventName].forEach((handler) => {
+            try {
+              handler(data);
+            } catch (error) {
+              console.error('[CHECKOUT] Error in payment event handler:', error);
+            }
+          });
+        },
+        on: (eventName, handler) => {
+          if (!events[eventName]) {
+            events[eventName] = [];
+          }
+          events[eventName].push(handler);
+        },
+        off: (eventName, handler) => {
+          if (events[eventName]) {
+            events[eventName] = events[eventName].filter(h => h !== handler);
+          }
+        }
+      };
+    })();
+  }
+
+  // Initialize payment gateway apps registry globally (for payment gateway apps)
+  if (!window.paymentGatewayApps) {
+    window.paymentGatewayApps = (() => {
+      const apps = {};
+      return {
+        register: (appId, handlers) => {
+          if (!appId || !handlers || !handlers.handleCheckoutSubmit) {
+            console.error('[PAYMENT-GATEWAY] Invalid app registration:', appId);
+            return false;
+          }
+          apps[appId] = handlers;
+          return true;
+        },
+        isGatewayMethod: (methodId) => {
+          return Object.keys(apps).some(appId => 
+            methodId === appId || methodId.toLowerCase() === appId.toLowerCase()
+          );
+        },
+        handleSubmit: async (methodId, checkoutToken) => {
+          const appId = Object.keys(apps).find(id => 
+            methodId === id || methodId.toLowerCase() === id.toLowerCase()
+          );
+          if (appId && apps[appId].handleCheckoutSubmit) {
+            return await apps[appId].handleCheckoutSubmit(methodId, checkoutToken);
+          }
+          throw new Error(`No payment gateway app found for method: ${methodId}`);
+        }
+      };
+    })();
+  }
 
   // Theme object to hold all functionality
   const Theme = {
@@ -171,6 +235,12 @@
       document.addEventListener('click', (e) => {
         const addToCartBtn = e.target.closest('.add-to-cart-btn');
         if (!addToCartBtn) return;
+
+        // Quick view modal has its own add-to-cart logic.
+        // Avoid double-handling through global delegation.
+        if (addToCartBtn.closest('#quick-view-modal')) {
+          return;
+        }
         
         // Check if this is a product card button (has a product-card ancestor)
         const productCard = addToCartBtn.closest('.product-card');
@@ -183,13 +253,19 @@
           // 1. productType != 0 (always show modal)
           // 2. productType == 0 AND variants count > 0 (show modal for variant selection)
           if (productType !== 0 || (productType === 0 && variantsCount > 0)) {
-            // Show modal
             e.preventDefault();
             e.stopPropagation();
             this.showAddToCartModal(productCard, addToCartBtn);
+            return;
           }
-          // Type == 0 && variants == 0: Don't prevent default - let product-card's own handler work
-          // The product-card.liquid script will handle type 0 products with no variants directly
+
+          // Type == 0 && variants == 0: direct add for simple products
+          e.preventDefault();
+          e.stopPropagation();
+          const productId = addToCartBtn.getAttribute('data-product-id');
+          if (productId) {
+            this.addToCart(productId, 1);
+          }
         } else {
           // Direct add for non-product-card buttons (e.g., product page)
           e.preventDefault();
@@ -236,7 +312,7 @@
         // Only update button state if not skipping (e.g., when called from modal)
         let btn = null;
         if (!skipButtonUpdate) {
-          btn = document.querySelector(`[data-product-id="${productId}"]`);
+          btn = document.querySelector(`.add-to-cart-btn[data-product-id="${productId}"]`);
           if (btn) {
             btn.disabled = true;
             btn.innerHTML = '<span class="loading-spinner"></span> Adding...';
@@ -401,25 +477,26 @@
             }, 2000);
           }
         } else {
+          // Helper function to open login modal with fallbacks
+          const openLogin = () => {
+            if (this.openLoginModal && typeof this.openLoginModal === 'function') {
+              this.openLoginModal();
+              return true;
+            } else if (window.Theme && window.Theme.openLoginModal && typeof window.Theme.openLoginModal === 'function') {
+              window.Theme.openLoginModal();
+              return true;
+            } else {
+              const loginTrigger = document.querySelector('[data-login-modal-trigger]');
+              if (loginTrigger) {
+                loginTrigger.click();
+                return true;
+              }
+              return false;
+            }
+          };
+          
           // Check if authentication is required
           if (data.requiresAuth) {
-            // Helper function to open login modal with fallbacks
-            const openLogin = () => {
-              if (this.openLoginModal && typeof this.openLoginModal === 'function') {
-                this.openLoginModal();
-                return true;
-              } else if (window.Theme && window.Theme.openLoginModal && typeof window.Theme.openLoginModal === 'function') {
-                window.Theme.openLoginModal();
-                return true;
-              } else {
-                const loginTrigger = document.querySelector('[data-login-modal-trigger]');
-                if (loginTrigger) {
-                  loginTrigger.click();
-                  return true;
-                }
-                return false;
-              }
-            };
             openLogin();
             // Reset button state
             if (!skipButtonUpdate && btn) {
@@ -428,6 +505,21 @@
             }
             return;
           }
+          
+          // If not explicitly marked as requiresAuth, check if user is logged in
+          // If not logged in, open login modal instead of showing error
+          const isLoggedIn = document.cookie.includes('O2VENDIsUserLoggedin=true') || 
+                            document.cookie.includes('O2VENDUserToken=');
+          if (!isLoggedIn) {
+            openLogin();
+            // Reset button state
+            if (!skipButtonUpdate && btn) {
+              btn.innerHTML = 'Add to Cart';
+              btn.disabled = false;
+            }
+            return;
+          }
+          
           throw new Error(data.error || data.message || 'Failed to add product to cart');
         }
       } catch (error) {
@@ -461,7 +553,7 @@
           openLogin();
           // Reset button state (only if not skipping updates)
           if (!skipButtonUpdate) {
-            const btn = document.querySelector(`[data-product-id="${productId}"]`);
+            const btn = document.querySelector(`.add-to-cart-btn[data-product-id="${productId}"]`);
             if (btn) {
               btn.innerHTML = 'Add to Cart';
               btn.disabled = false;
@@ -470,11 +562,27 @@
           return;
         }
         
-        this.showNotification(error.message || 'Error adding product to cart', 'error');
+        // Check if user is not logged in - if so, open login modal instead of showing error
+        const isLoggedIn = document.cookie.includes('O2VENDIsUserLoggedin=true') || 
+                          document.cookie.includes('O2VENDUserToken=');
+        if (!isLoggedIn) {
+          openLogin();
+          // Reset button state (only if not skipping updates)
+          if (!skipButtonUpdate) {
+            const btn = document.querySelector(`.add-to-cart-btn[data-product-id="${productId}"]`);
+            if (btn) {
+              btn.innerHTML = 'Add to Cart';
+              btn.disabled = false;
+            }
+          }
+          return;
+        }
+        
+        this.showNotification(error.message || 'Failed to add product to cart. Please try again.', 'error');
         
         // Reset button state (only if not skipping updates)
         if (!skipButtonUpdate) {
-          const btn = document.querySelector(`[data-product-id="${productId}"]`);
+          const btn = document.querySelector(`.add-to-cart-btn[data-product-id="${productId}"]`);
           if (btn) {
             btn.innerHTML = 'Add to Cart';
             btn.disabled = false;
@@ -629,23 +737,40 @@
     // Product actions (quick view, wishlist, etc.)
     initProductActions() {
       // Quick view functionality
-      const quickViewBtns = document.querySelectorAll('.quick-view-btn');
+      // Guard against attaching duplicate listeners when async sections re-initialize
+      const quickViewBtns = document.querySelectorAll('.quick-view-btn:not([data-quick-view-initialized="true"])');
       
       quickViewBtns.forEach(btn => {
+        btn.setAttribute('data-quick-view-initialized', 'true');
         btn.addEventListener('click', (e) => {
           e.preventDefault();
           const productId = btn.getAttribute('data-product-id');
+          const productCard = btn.closest('.product-card') || btn.closest('[data-product-id]');
+
+          if (productCard) {
+            const rawType = productCard.dataset ? productCard.dataset.productType : '';
+            const parsedType = rawType !== '' ? parseInt(rawType, 10) : NaN;
+            const rawVariantsCount = productCard.dataset ? productCard.dataset.variantsCount : '';
+            const parsedVariantsCount = rawVariantsCount !== '' ? parseInt(rawVariantsCount, 10) : NaN;
+
+            if (!Number.isNaN(parsedType) && !Number.isNaN(parsedVariantsCount) && (parsedType !== 0 || parsedVariantsCount > 0)) {
+              this.showAddToCartModal(productCard, btn);
+              return;
+            }
+          }
           
           if (productId) {
-            this.openQuickView(productId);
+            this.openQuickView(productId, productCard);
           }
         });
       });
 
       // Wishlist functionality
-      const wishlistBtns = document.querySelectorAll('.wishlist-btn');
+      // Same pattern to avoid duplicate listeners on dynamically loaded content
+      const wishlistBtns = document.querySelectorAll('.wishlist-btn:not([data-wishlist-initialized="true"])');
       
       wishlistBtns.forEach(btn => {
+        btn.setAttribute('data-wishlist-initialized', 'true');
         btn.addEventListener('click', (e) => {
           e.preventDefault();
           const productId = btn.getAttribute('data-product-id');
@@ -657,13 +782,118 @@
       });
     },
 
-    async openQuickView(productId) {
+    async openQuickView(productId, productCard = null) {
+      let domFallbackProduct = null;
       try {
-        // Show loading state
+        // First, try to build product data from the DOM card itself.
+        // This avoids unnecessary API calls and ensures consistency with what the user sees.
+        if (productCard) {
+          const titleEl = productCard.querySelector('.product-title, .product-card-title, .product-card__title-link, .product-card__title, .product-title-link');
+          const imageEl = productCard.querySelector('.product-card__image--primary, .product-card__image, .product-image, img');
+          const priceEl = productCard.querySelector('.product-price-current, .product-card__price-current, .price-current, .product-price [data-price-current]');
+
+          const title =
+            (productCard.dataset && productCard.dataset.title) ||
+            (titleEl ? titleEl.textContent.trim() : '');
+          const imageSrc =
+            (productCard.dataset && productCard.dataset.image) ||
+            (imageEl ? imageEl.getAttribute('src') || imageEl.src : '');
+          const priceText =
+            (productCard.dataset && productCard.dataset.priceString) ||
+            (priceEl ? priceEl.textContent.trim() : '');
+          const linkEl = productCard.querySelector('.product-card__link, .product-card__title-link, a[href]');
+          const href = linkEl ? linkEl.getAttribute('href') : '';
+          const productUrl =
+            (productCard.dataset && (productCard.dataset.productUrl || productCard.dataset.url)) ||
+            href ||
+            '';
+          const rawProductType = productCard.dataset ? productCard.dataset.productType : '';
+          const parsedProductType = rawProductType !== '' ? parseInt(rawProductType, 10) : NaN;
+          const productType = Number.isNaN(parsedProductType) ? 0 : parsedProductType;
+          const rawVariantsCount = productCard.dataset ? productCard.dataset.variantsCount : '';
+          const parsedVariantsCount = rawVariantsCount !== '' ? parseInt(rawVariantsCount, 10) : NaN;
+          const variantsCount = Number.isNaN(parsedVariantsCount) ? 0 : parsedVariantsCount;
+          const hasProductTypeMetadata = !Number.isNaN(parsedProductType);
+          const hasVariantMetadata = !Number.isNaN(parsedVariantsCount);
+          const shouldFetchFullProduct = true;
+          const baseProductId = (productCard.dataset && productCard.dataset.baseProductId) || productId;
+          const availability = productCard.dataset && productCard.dataset.availability
+            ? String(productCard.dataset.availability).toLowerCase()
+            : '';
+          const isInStock = availability === 'in-stock' || availability === 'available';
+          const showCallForPricing = productCard && productCard.dataset
+            ? (productCard.dataset.showCallForPricing === 'true' || productCard.dataset.showCallForPricing === '1')
+            : false;
+
+          const rawPrice = productCard.dataset && productCard.dataset.price ? parseFloat(productCard.dataset.price) : NaN;
+          let numericPrice = Number.isNaN(rawPrice) ? 0 : rawPrice;
+
+          if (!numericPrice && priceText) {
+            const normalized = priceText.replace(/[^0-9.,-]/g, '').replace(',', '');
+            const parsed = parseFloat(normalized);
+            if (!Number.isNaN(parsed)) {
+              numericPrice = parsed;
+            }
+          }
+          const isCallForPricingFromText = /call\s*for\s*pricing/i.test(priceText || '');
+          const resolvedShowCallForPricing = showCallForPricing || isCallForPricingFromText;
+
+          if (title || imageSrc || numericPrice || priceText) {
+            domFallbackProduct = {
+              productId: productId,
+              id: productId,
+              title: title || '',
+              name: title || '',
+              url: productUrl || '',
+              productUrl: productUrl || '',
+              productType: Number.isNaN(productType) ? 0 : productType,
+              variantsCount: Number.isNaN(variantsCount) ? 0 : variantsCount,
+              baseProductId: baseProductId,
+              availability: availability,
+              inStock: isInStock,
+              available: isInStock,
+              images: imageSrc ? [imageSrc] : [],
+              prices: {
+                price: numericPrice || 0,
+                priceString: priceText || ''
+              },
+              showCallForPricing: resolvedShowCallForPricing,
+              description: ''
+            };
+
+            if (!shouldFetchFullProduct) {
+              this.showQuickViewModal(domFallbackProduct);
+              return;
+            }
+          }
+        }
+
+        // Fallback: Fetch full product data from API if DOM data is insufficient
         this.showNotification('Loading product...', 'info');
         
-        const response = await fetch(`/webstoreapi/products/${productId}`);
-        const product = await response.json();
+        const response = await fetch(`/webstoreapi/products/${productId}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+          }
+        });
+
+        if (!response.ok) {
+          // Try to log structured error if present
+          let errorPayload = null;
+          try {
+            errorPayload = await response.json();
+          } catch (_) {
+            // ignore JSON parse errors here
+          }
+          console.error('[QuickView] API response not OK:', response.status, errorPayload || await response.text());
+          throw new Error(errorPayload?.error || `Failed to load product (${response.status})`);
+        }
+
+        const result = await response.json();
+        // Endpoint returns: { success: true, data: product }
+        const product = result && result.success ? result.data : null;
         
         if (product) {
           this.showQuickViewModal(product);
@@ -671,12 +901,68 @@
           throw new Error('Product not found');
         }
       } catch (error) {
-        console.error('Error loading product:', error);
+        console.error('[QuickView] Error loading product:', error);
+        if (domFallbackProduct) {
+          this.showQuickViewModal(domFallbackProduct);
+          return;
+        }
         this.showNotification('Error loading product', 'error');
       }
     },
 
     showQuickViewModal(product) {
+      // Ensure only a single quick view modal exists at a time
+      this.closeQuickViewModal();
+
+      const productTitle = product.title || product.name || product.slug || 'Product';
+      const productImage = this.getImageUrls(product)[0] || '';
+      const rawUrl =
+        product.url ||
+        product.Url ||
+        product.productUrl ||
+        product.link ||
+        product.Link ||
+        product.slug ||
+        product.id ||
+        product.productId ||
+        '';
+      const normalizedUrl = String(rawUrl || '').trim();
+      const productUrl = !normalizedUrl
+        ? '#'
+        : (/^https?:\/\//i.test(normalizedUrl)
+          ? normalizedUrl
+          : `/${normalizedUrl.replace(/^\/+/, '')}`);
+      const fallbackImage =
+        'data:image/svg+xml;utf8,' +
+        encodeURIComponent(
+          '<svg xmlns="http://www.w3.org/2000/svg" width="600" height="600" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>'
+        );
+      const rawPriceString = product.prices?.priceString || product.priceString || '';
+      const rawPriceValue = product.prices?.price ?? product.price ?? null;
+      const showCallForPricing = this.isCallForPricingEnabled(product);
+      const displayPrice = showCallForPricing
+        ? 'Call for pricing'
+        : (rawPriceString
+          ? rawPriceString
+          : (rawPriceValue !== null && rawPriceValue !== undefined
+            ? this.formatMoneyProductCard(rawPriceValue)
+            : ''));
+      const rawType = product.productType ?? product.type ?? 0;
+      const productType = Number.isNaN(Number(rawType)) ? 0 : Number(rawType);
+      const apiVariants = Array.isArray(product.variations)
+        ? product.variations
+        : (Array.isArray(product.variants) ? product.variants : []);
+      const rawVariantCount = product.variantsCount ?? product.variationCount ?? apiVariants.length ?? 0;
+      const variantsCount = Number.isNaN(Number(rawVariantCount)) ? 0 : Number(rawVariantCount);
+      const hasVariants = variantsCount > 0;
+      const rawAvailability = (product.availability || product.stockStatus || '').toString().toLowerCase();
+      const isInStock = (product.inStock !== false && product.available !== false) &&
+        (product.stockQuantity === undefined || product.stockQuantity === null || Number(product.stockQuantity) > 0) &&
+        rawAvailability !== 'out-of-stock' && rawAvailability !== 'sold-out';
+      const availabilityText = isInStock ? 'In Stock' : 'Out of Stock';
+      const addToCartLabel = isInStock ? 'Add to Cart' : 'Out of Stock';
+      const quickDescription = product.shortDescription || product.short_description || product.description || '';
+
       // Create modal HTML
       const modalHTML = `
         <div class="quick-view-modal" id="quick-view-modal">
@@ -689,17 +975,17 @@
             </button>
             <div class="quick-view-body">
               <div class="quick-view-image">
-                <img src="${product.images?.[0] || '/assets/placeholder-product.jpg'}" alt="${product.title}">
+                <img src="${productImage || fallbackImage}" alt="${productTitle}">
               </div>
               <div class="quick-view-info">
-                <h2 class="quick-view-title">${product.title}</h2>
-                <div class="quick-view-price">${this.formatMoney(product.prices?.priceString || product.prices?.price || product.price)}</div>
-                <div class="quick-view-description">${product.description || ''}</div>
+                <h2 class="quick-view-title">${productTitle}</h2>
+                <div class="quick-view-price">${displayPrice}</div>
+                <div class="quick-view-description">${quickDescription}</div>
                 <div class="quick-view-actions">
-                  <button class="btn btn-primary add-to-cart-btn" data-product-id="${product.productId || product.id}">
-                    Add to Cart
+                  <button class="btn btn-primary add-to-cart-btn" data-product-id="${product.productId || product.id}" ${!isInStock ? 'disabled' : ''}>
+                    ${addToCartLabel}
                   </button>
-                  <a href="/${product.slug || product.id}" class="btn btn-outline">
+                  <a href="${productUrl}" class="btn btn-outline quick-view-view-details">
                     View Details
                   </a>
                 </div>
@@ -729,11 +1015,32 @@
       
       // Add to cart functionality
       const addToCartBtn = modal.querySelector('.add-to-cart-btn');
-      addToCartBtn.addEventListener('click', (e) => {
+      addToCartBtn.addEventListener('click', async (e) => {
         e.preventDefault();
-        this.addToCart(product.productId || product.id, 1);
+        e.stopPropagation();
+
+        if (!isInStock) {
+          this.showNotification('This product is currently out of stock', 'warning');
+          return;
+        }
+
+        const baseProductId = product.baseProductId || product.productId || product.id;
         this.closeQuickViewModal();
+
+        if (productType !== 0 || variantsCount > 0) {
+          this.showAddToCartModal(baseProductId, addToCartBtn, product);
+          return;
+        }
+
+        await this.addToCart(product.productId || product.id, 1, true);
       });
+
+      const viewDetailsBtn = modal.querySelector('.quick-view-view-details');
+      if (viewDetailsBtn) {
+        viewDetailsBtn.addEventListener('click', () => {
+          this.closeQuickViewModal();
+        });
+      }
     },
 
     closeQuickViewModal() {
@@ -745,7 +1052,39 @@
     },
 
     async toggleWishlist(productId, btn) {
+      const openLogin = () => {
+        if (this.openLoginModal && typeof this.openLoginModal === 'function') {
+          this.openLoginModal();
+          return;
+        }
+        if (window.Theme && window.Theme.openLoginModal && typeof window.Theme.openLoginModal === 'function') {
+          window.Theme.openLoginModal();
+          return;
+        }
+        const loginTrigger = document.querySelector('[data-login-modal-trigger]');
+        if (loginTrigger) loginTrigger.click();
+      };
+
+      const isAuthError = (message = '') => {
+        const lower = String(message).toLowerCase();
+        return (
+          lower.includes('auth') ||
+          lower.includes('sign in') ||
+          lower.includes('signin') ||
+          lower.includes('login') ||
+          lower.includes('unauthorized')
+        );
+      };
+
       try {
+        // Avoid avoidable API call when user is clearly not logged in.
+        const isLoggedIn = document.cookie.includes('O2VENDIsUserLoggedin=true') ||
+                          document.cookie.includes('O2VENDUserToken=');
+        if (!isLoggedIn) {
+          openLogin();
+          return;
+        }
+
         const isInWishlist = btn.classList.contains('in-wishlist');
         
         const response = await fetch('/webstoreapi/wishlist/toggle', {
@@ -758,8 +1097,29 @@
             productId: productId
           })
         });
+        const contentType = response.headers.get('content-type') || '';
+        const isHtml = contentType.includes('text/html');
 
-        const data = await response.json();
+        if (!response.ok && isHtml && (response.status === 401 || response.status === 404)) {
+          openLogin();
+          return;
+        }
+
+        let data;
+        try {
+          data = await response.json();
+        } catch (parseError) {
+          if (!response.ok && (response.status === 401 || response.status === 404)) {
+            openLogin();
+            return;
+          }
+          throw parseError;
+        }
+
+        if ((!response.ok || !data.success) && (data.requiresAuth || response.status === 401 || response.status === 404 || isAuthError(data.error || data.message))) {
+          openLogin();
+          return;
+        }
 
         if (data.success) {
           if (isInWishlist) {
@@ -776,6 +1136,10 @@
         }
       } catch (error) {
         console.error('Error updating wishlist:', error);
+        if (isAuthError(error && error.message)) {
+          openLogin();
+          return;
+        }
         this.showNotification('Error updating wishlist', 'error');
       }
     },
@@ -1044,26 +1408,84 @@
       const formatted = num.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
       return currencySymbol + formatted;
     },
+
+    isCallForPricingEnabled(entity) {
+      if (!entity || typeof entity !== 'object') return false;
+      const value = entity.showCallForPricing ??
+        entity.ShowCallForPricing ??
+        entity.isCallForPricing ??
+        entity.IsCallForPricing;
+      return value === true || value === 'true' || value === 1 || value === '1';
+    },
+
+    // Normalize mixed image payloads (string/object) to a usable URL.
+    resolveImageUrl(image) {
+      if (!image) return '';
+      if (typeof image === 'string') return image.trim();
+      if (typeof image !== 'object') return '';
+      return (
+        image.url ||
+        image.Url ||
+        image.src ||
+        image.Src ||
+        image.imageUrl ||
+        image.ImageUrl ||
+        image.thumbnailImage1?.url ||
+        image.thumbnailImage1?.Url ||
+        image.ThumbnailImage1?.url ||
+        image.ThumbnailImage1?.Url ||
+        ''
+      );
+    },
+
+    // Collect all possible image URLs from product/variant payload shapes.
+    getImageUrls(entity) {
+      if (!entity || typeof entity !== 'object') return [];
+      const urls = [];
+      const addUrl = (value) => {
+        const url = this.resolveImageUrl(value);
+        if (url && !urls.includes(url)) urls.push(url);
+      };
+
+      if (Array.isArray(entity.images)) {
+        entity.images.forEach(addUrl);
+      }
+      addUrl(entity.thumbnailImage1);
+      addUrl(entity.ThumbnailImage1);
+      addUrl(entity.thumbnailImage);
+      addUrl(entity.ThumbnailImage);
+      addUrl(entity.imageUrl);
+      addUrl(entity.ImageUrl);
+      addUrl(entity.image);
+
+      return urls;
+    },
     
     // Show add to cart modal for product cards
-    async showAddToCartModal(productCard, addToCartBtn) {
+    async showAddToCartModal(productCard, addToCartBtn, productData = null) {
       const modal = document.getElementById('add-to-cart-modal');
       if (!modal) {
         console.error('[AddToCartModal] Modal element not found');
         return;
       }
-      
-      // Extract product data from card
-      const baseProductId = productCard.dataset.productId;
+
+      const isElement = productCard && productCard.nodeType === 1;
+      const baseProductId = isElement ? productCard.dataset.productId : String(productCard || '');
+
       // Support both product-card classes and generic product classes
-      const productTitle = productCard.querySelector('.product-card__title-link')?.textContent?.trim() || 
-                           productCard.querySelector('.product-card__title')?.textContent?.trim() ||
-                           productCard.querySelector('.product-title-link')?.textContent?.trim() || 
-                           productCard.querySelector('.product-title')?.textContent?.trim() || '';
-      const productImage = productCard.querySelector('.product-card__image--primary') ||
-                           productCard.querySelector('.product-card__image') ||
-                           productCard.querySelector('.product-image');
-      const baseImageSrc = productImage?.src || '';
+      const productTitle = isElement
+        ? (productCard.querySelector('.product-card__title-link')?.textContent?.trim() ||
+           productCard.querySelector('.product-card__title')?.textContent?.trim() ||
+           productCard.querySelector('.product-title-link')?.textContent?.trim() ||
+           productCard.querySelector('.product-title')?.textContent?.trim() ||
+           '')
+        : (productData?.title || productData?.name || productData?.slug || '');
+      const productImage = isElement
+        ? (productCard.querySelector('.product-card__image--primary') ||
+           productCard.querySelector('.product-card__image') ||
+           productCard.querySelector('.product-image'))
+        : null;
+      const baseImageSrc = productImage?.src || this.getImageUrls(productData || {})[0] || '';
       
       // Fetch full product data using getProductById API endpoint (routes/api.js:3455)
       // This endpoint calls req.apiClient.getProductById() to get complete product details
@@ -1118,19 +1540,7 @@
       if (fullProductData && apiVariants && apiVariants.length > 0) {
         // Transform API variants to match expected format (same as product-card JSON structure)
         const transformedVariants = apiVariants.map(variant => {
-          // Extract image URLs (handle both thumbnailImage1 and images array)
-          const imageUrls = [];
-          if (variant.thumbnailImage1?.url) {
-            imageUrls.push(variant.thumbnailImage1.url);
-          } else if (variant.ThumbnailImage1?.Url) {
-            imageUrls.push(variant.ThumbnailImage1.Url);
-          }
-          if (variant.images && Array.isArray(variant.images)) {
-            variant.images.forEach(img => {
-              if (img.url && !imageUrls.includes(img.url)) imageUrls.push(img.url);
-              else if (img.Url && !imageUrls.includes(img.Url)) imageUrls.push(img.Url);
-            });
-          }
+          const imageUrls = this.getImageUrls(variant);
           
           // Determine availability - check multiple possible fields
           const inStock = variant.inStock !== false && variant.inStock !== undefined ? variant.inStock : true;
@@ -1148,14 +1558,7 @@
         });
         
         // Get base product image
-        let baseImage = baseImageSrc;
-        if (fullProductData.images && fullProductData.images.length > 0) {
-          baseImage = fullProductData.images[0].url || fullProductData.images[0].Url || baseImageSrc;
-        } else if (fullProductData.thumbnailImage?.url) {
-          baseImage = fullProductData.thumbnailImage.url;
-        } else if (fullProductData.thumbnailImage?.Url) {
-          baseImage = fullProductData.thumbnailImage.Url;
-        }
+        const baseImage = this.getImageUrls(fullProductData)[0] || baseImageSrc;
         
         variantData = {
           variants: transformedVariants,
@@ -1164,7 +1567,7 @@
         };
       } else {
         // Priority 2: Fall back to script tag data
-        const variantDataScript = productCard.querySelector('.product-card-variant-data[data-product-id="' + baseProductId + '"]');
+        const variantDataScript = (isElement ? productCard : document).querySelector('.product-card-variant-data[data-product-id="' + baseProductId + '"]');
         if (variantDataScript) {
           try {
             variantData = JSON.parse(variantDataScript.textContent);
@@ -1597,13 +2000,12 @@
       // Update image
       const modalImage = modal.querySelector('#add-to-cart-modal-image');
       if (modalImage && variant.images && variant.images.length > 0 && variant.images[0]) {
-        
-        const variantImageUrl = typeof variant.images[0] === 'string' 
-          ? variant.images[0] 
-          : (variant.images[0].url || variant.images[0].Url || variant.images[0]);
-        modalImage.src = variantImageUrl;
-        // Store variant image on modal for later use when adding to cart
-        modal.dataset.variantImageUrl = variantImageUrl;
+        const variantImageUrl = this.resolveImageUrl(variant.images[0]);
+        if (variantImageUrl) {
+          modalImage.src = variantImageUrl;
+          // Store variant image on modal for later use when adding to cart
+          modal.dataset.variantImageUrl = variantImageUrl;
+        }
       } else if (modalImage && variantData.baseProductImage) {
         modalImage.src = variantData.baseProductImage;
         // Clear variant image if using base product image
@@ -1906,7 +2308,7 @@
 
     debounce(func, wait) {
       let timeout;
-      return function executedFunction(...args) {
+      return (...args) => {
         const later = () => {
           clearTimeout(timeout);
           func(...args);
@@ -1918,11 +2320,9 @@
 
     throttle(func, limit) {
       let inThrottle;
-      return function() {
-        const args = arguments;
-        const context = this;
+      return (...args) => {
         if (!inThrottle) {
-          func.apply(context, args);
+          func.apply(null, args);
           inThrottle = true;
           setTimeout(() => inThrottle = false, limit);
         }
@@ -2284,9 +2684,6 @@
         });
       }
 
-      // Preload critical resources
-      this.preloadCriticalResources();
-      
       // Optimize animations for performance
       this.optimizeAnimations();
     },
@@ -2406,6 +2803,49 @@
       let userGUIDForOtp = null;
       let userGUIDForPhoneOtp = null;
       let loginPhoneIti = null;
+      const intlTelInputCssUrl = 'https://cdn.jsdelivr.net/npm/intl-tel-input@23.0.0/build/css/intlTelInput.min.css';
+      const intlTelInputJsUrl = 'https://cdn.jsdelivr.net/npm/intl-tel-input@23.0.0/build/js/intlTelInput.min.js';
+      let intlTelInputLoadPromise = null;
+
+      const ensureIntlTelInputLoaded = () => {
+        if (typeof window.intlTelInput !== 'undefined') {
+          return Promise.resolve(true);
+        }
+        if (intlTelInputLoadPromise) {
+          return intlTelInputLoadPromise;
+        }
+
+        intlTelInputLoadPromise = new Promise((resolve) => {
+          const onLoaded = () => resolve(typeof window.intlTelInput !== 'undefined');
+          const onFailed = () => resolve(false);
+
+          if (!document.querySelector('link[data-iti-login="true"]')) {
+            const cssLink = document.createElement('link');
+            cssLink.rel = 'stylesheet';
+            cssLink.href = intlTelInputCssUrl;
+            cssLink.setAttribute('data-iti-login', 'true');
+            document.head.appendChild(cssLink);
+          }
+
+          const existingScript = document.querySelector('script[data-iti-login="true"]');
+          if (existingScript) {
+            existingScript.addEventListener('load', onLoaded, { once: true });
+            existingScript.addEventListener('error', onFailed, { once: true });
+            setTimeout(onLoaded, 2500);
+            return;
+          }
+
+          const script = document.createElement('script');
+          script.src = intlTelInputJsUrl;
+          script.defer = true;
+          script.setAttribute('data-iti-login', 'true');
+          script.onload = onLoaded;
+          script.onerror = onFailed;
+          document.head.appendChild(script);
+        });
+
+        return intlTelInputLoadPromise;
+      };
 
       const setStep = (step) => {
         stepLabels.forEach(label => {
@@ -2511,7 +2951,7 @@
           
           // Only add geoIpLookup if not on localhost (to avoid CORS issues)
           if (!isLocalhost) {
-            itiOptions.geoIpLookup = function(callback) {
+            itiOptions.geoIpLookup = (callback) => {
               // Quick timeout to avoid hanging
               const timeout = setTimeout(() => {
                 callback('in');
@@ -2587,8 +3027,11 @@
           showView('email-otp');
         } else if (method === 'phone-otp') {
           showView('phone-otp');
-          // Initialize phone input when phone OTP method is selected
-          setTimeout(initializeLoginPhoneInput, 100);
+          // Initialize phone input when phone OTP method is selected.
+          // Load intl-tel-input on demand on pages where it's not globally included.
+          ensureIntlTelInputLoaded().finally(() => {
+            setTimeout(initializeLoginPhoneInput, 100);
+          });
         }
       };
 
@@ -3202,7 +3645,7 @@
       const currentPath = window.location.pathname;
       const navItems = document.querySelectorAll('.mobile-bottom-nav__item');
       
-      navItems.forEach(function(item) {
+      navItems.forEach((item) => {
         const href = item.getAttribute('href');
         const dataItem = item.getAttribute('data-nav-item');
         
@@ -3433,7 +3876,7 @@ style.textContent = `
     font-size: 20px;
     font-weight: 600;
     color: #000;
-    margin-bottom: 20px;
+    margin-bottom: 14px;
   }
 
   .quick-view-description {

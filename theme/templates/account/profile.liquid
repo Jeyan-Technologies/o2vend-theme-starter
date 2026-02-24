@@ -185,7 +185,7 @@
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', function () {
+document.addEventListener('DOMContentLoaded', () => {
 
   /* ===============================
      Button Loading Utility
@@ -212,14 +212,15 @@ document.addEventListener('DOMContentLoaded', function () {
     iti = intlTelInput(phoneInput, {
       utilsScript: 'https://cdn.jsdelivr.net/npm/intl-tel-input@23.0.0/build/js/utils.js',
       initialCountry: 'auto',
-      geoIpLookup: function (callback) {
+      geoIpLookup: (callback) => {
         fetch('https://ipapi.co/json/')
           .then(res => res.json())
           .then(data => callback(data.country_code ? data.country_code.toLowerCase() : 'us'))
           .catch(() => callback('us'));
       },
       separateDialCode: true,
-      nationalMode: false
+      nationalMode: false,
+      dropdownContainer: document.body
     });
   }
 
@@ -229,13 +230,13 @@ document.addEventListener('DOMContentLoaded', function () {
   const profileForm = document.getElementById('profile-form');
 
   if (profileForm) {
-    profileForm.addEventListener('submit', async function (e) {
+    profileForm.addEventListener('submit', async (e) => {
       e.preventDefault();
 
       const submitBtn = document.getElementById('save-profile-btn');
       setButtonLoading(submitBtn, true);
 
-      const formData = new FormData(this);
+      const formData = new FormData(profileForm);
 
       let phoneNumber = formData.get('phone');
       if (iti) {
@@ -285,14 +286,14 @@ document.addEventListener('DOMContentLoaded', function () {
   const deletionModalCancel = document.getElementById('deletion-modal-cancel');
   const deletionModalConfirm = document.getElementById('deletion-modal-confirm');
   const deletionReasonTextarea = document.getElementById('deletion-reason');
-  const deletionReasonError = document.getElementById('deletion-reason-error');
+  const deletionReasonErrEl = document.getElementById('deletion-reason-error');
 
   // Show modal
   function showDeletionModal() {
     if (deletionModal) {
       deletionModal.style.display = 'flex';
       deletionReasonTextarea.value = '';
-      deletionReasonError.style.display = 'none';
+      deletionReasonErrEl.style.display = 'none';
       deletionReasonTextarea.focus();
       document.body.style.overflow = 'hidden';
     }
@@ -329,17 +330,18 @@ document.addEventListener('DOMContentLoaded', function () {
     
     // Validate reason is provided
     if (!reason) {
-      deletionReasonError.style.display = 'block';
+      deletionReasonErrEl.style.display = 'block';
       deletionReasonTextarea.focus();
       return;
     }
     
-    deletionReasonError.style.display = 'none';
+    deletionReasonErrEl.style.display = 'none';
     setConfirmButtonLoading(true);
 
     try {
       const response = await fetch('/webstoreapi/customer/account/delete-request', {
         method: 'POST',
+        credentials: 'same-origin',
         headers: {
           'Content-Type': 'application/json',
           'X-Requested-With': 'XMLHttpRequest'
@@ -353,9 +355,22 @@ document.addEventListener('DOMContentLoaded', function () {
         // Show success message from the API
         const successMessage = responseData.data?.message || responseData.message || 'Account deletion request submitted successfully.';
         alert(successMessage);
-        
-        // Logout the user after showing the message
-        window.location.href = '/webstoreapi/customer/logout';
+
+        // Logout via API and then redirect to home as logged-out user.
+        try {
+          await fetch('/webstoreapi/customer/logout', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: {
+              'Accept': 'application/json',
+              'X-Requested-With': 'XMLHttpRequest'
+            }
+          });
+        } catch (logoutError) {
+          console.warn('Logout after deletion failed, redirecting to home anyway:', logoutError);
+        }
+
+        window.location.replace('/');
       } else {
         alert(responseData.error || responseData.message || 'Error requesting account deletion');
         setConfirmButtonLoading(false);
@@ -386,7 +401,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // Close modal on overlay click
   if (deletionModal) {
-    deletionModal.addEventListener('click', function(e) {
+    deletionModal.addEventListener('click', (e) => {
       if (e.target === deletionModal) {
         hideDeletionModal();
       }
@@ -394,7 +409,7 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   // Close modal on Escape key
-  document.addEventListener('keydown', function(e) {
+  document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && deletionModal && deletionModal.style.display === 'flex') {
       hideDeletionModal();
     }
@@ -402,9 +417,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // Hide error when user starts typing
   if (deletionReasonTextarea) {
-    deletionReasonTextarea.addEventListener('input', function() {
-      if (this.value.trim()) {
-        deletionReasonError.style.display = 'none';
+    deletionReasonTextarea.addEventListener('input', () => {
+      if (deletionReasonTextarea.value.trim()) {
+        deletionReasonErrEl.style.display = 'none';
       }
     });
   }

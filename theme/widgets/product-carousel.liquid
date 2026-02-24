@@ -2,32 +2,51 @@
   assign widget_settings = widget.settings
   assign widget_data = widget.data
 
-  comment
-    Dynamic Widget: Products come from widget_data.products (enriched by WidgetService)
-    Settings come from widget_settings
-  endcomment
+  # Products
   assign products = widget_data.products
+
+  # Heading / Description
   assign heading = widget_settings.title
   assign description = widget_settings.subtitle
+
+  # Show title logic
   assign show_widget_title_raw = widget_settings.showWidgetTitle | default: 'Yes'
+
   if show_widget_title_raw == null or show_widget_title_raw == blank or show_widget_title_raw == 'null'
     assign show_widget_title = true
+  elsif show_widget_title_raw == 'Yes' or show_widget_title_raw == true
+    assign show_widget_title = true
   else
-    if show_widget_title_raw == 'Yes'
-      assign show_widget_title = true
-    elsif show_widget_title_raw == true
-      assign show_widget_title = true
-    else
-      assign show_widget_title = false
-    endif
+    assign show_widget_title = false
   endif
+
+  # Title alignment
   assign widget_title_alignment_raw = widget_settings.widgetTitleAlignment | default: 'center'
   assign widget_title_alignment = widget_title_alignment_raw | downcase
+
   if widget_title_alignment != 'left' and widget_title_alignment != 'right' and widget_title_alignment != 'center'
     assign widget_title_alignment = 'center'
   endif
+
+  # Background
   assign background_color = widget_settings.backgroundColor
+
+  # Priority Count (clamped 0–12)
+  assign priority_count = widget_settings.priorityCount | default: widget_settings.prioritizeCount | default: widget_settings.priority | default: 1 | plus: 0
+
+  if priority_count > 12
+    assign priority_count = 12
+  endif
+
+  if priority_count < 0
+    assign priority_count = 0
+  endif
 %}
+{% assign is_hero_priority_widget = false %}
+{% if is_hero_first == true or is_hero_first == 'true' or is_hero_first == 1 or is_hero_first == '1' %}
+  {% assign is_hero_priority_widget = true %}
+{% endif %}
+
 
 <section class="widget widget-product-carousel" data-widget-id="{{ widget.id }}" data-carousel-widget{% if background_color and background_color != blank and background_color != 'null' %} style="background-color: {{ background_color }};"{% endif %}>
   <div class="carousel-container">
@@ -73,7 +92,33 @@
           <div class="carousel-track" data-carousel-track>
             {% for product in products %}
               <div class="carousel-slide" data-slide-index="{{ forloop.index0 }}">
-                {% render 'snippets/product-card', product: product, widget: widget %}
+                {% comment %} Determine product first image for preload (simple fallback) {% endcomment %}
+                {% assign product_image = nil %}
+                {% if product.thumbnailImage1 and product.thumbnailImage1.url %}
+                  {% assign product_image = product.thumbnailImage1.url %}
+                {% elsif product.images and product.images.size > 0 %}
+                  {% assign first_image = product.images | first %}
+                  {% if first_image.url %}
+                    {% assign product_image = first_image.url %}
+                  {% endif %}
+                {% elsif product.thumbnailImage and product.thumbnailImage.url %}
+                  {% assign product_image = product.thumbnailImage.url %}
+                {% endif %}
+
+                {% if forloop.index0 < priority_count %}
+                  {% comment %} Preload only prioritized card image; avoid aggressive document/fetch preloads that can hurt LCP {% endcomment %}
+                  {% if product_image and is_hero_priority_widget %}
+                    <link rel="preload" as="image" href="{{ product_image }}" fetchpriority="high">
+                  {% endif %}
+
+                  {% if is_hero_priority_widget %}
+                    {% render 'snippets/product-card', product: product, widget: widget, loading: 'eager', image_fetchpriority: 'high' %}
+                  {% else %}
+                    {% render 'snippets/product-card', product: product, widget: widget, loading: 'eager' %}
+                  {% endif %}
+                {% else %}
+                  {% render 'snippets/product-card', product: product, widget: widget %}
+                {% endif %}
               </div>
             {% endfor %}
           </div>
@@ -364,7 +409,7 @@
   </style>
 
   <script>
-  (function() {
+  (() => {
     // Wait for DOM
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', initCarousel);

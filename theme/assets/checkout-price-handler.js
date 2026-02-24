@@ -3,8 +3,17 @@
  * Handles price change detection, polling, and user notifications on the checkout page
  */
 
-(function() {
+(() => {
   'use strict';
+
+  const percentDecode = (s) => {
+    if (typeof s !== 'string') return s || '';
+    try {
+      return s.replace(/\+/g, ' ').replace(/%([0-9A-Fa-f]{2})/g, (_, h) => String.fromCharCode(parseInt(h, 16)));
+    } catch {
+      return s;
+    }
+  };
 
   // Configuration
   const POLL_INTERVAL = 45000; // Poll every 45 seconds
@@ -36,7 +45,7 @@
     for (let cookie of cookies) {
       const [name, value] = cookie.trim().split('=');
       if (name === 'checkout_token' || name === 'checkoutToken') {
-        return decodeURIComponent(value);
+        return percentDecode(value);
       }
     }
 

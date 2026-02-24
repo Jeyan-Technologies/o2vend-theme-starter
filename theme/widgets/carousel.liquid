@@ -41,6 +41,10 @@
 
 {% assign show_widget_device_lower = show_widget_device | default: '' | downcase | strip %}
 {% assign needs_device_wrapper = false %}
+{% assign is_hero_priority_widget = false %}
+{% if is_hero_first == true or is_hero_first == 'true' or is_hero_first == 1 or is_hero_first == '1' %}
+  {% assign is_hero_priority_widget = true %}
+{% endif %}
 {% if show_widget_device_lower == 'mobile' or show_widget_device_lower == 'desktop' %}
   {% assign needs_device_wrapper = true %}
 {% endif %}
@@ -61,7 +65,8 @@
       <div class="modern-carousel__viewport" data-carousel-viewport>
         <div class="modern-carousel__track" data-carousel-track>
           {% for item in items %}
-            <article class="modern-carousel__slide{% if forloop.first %} is-active{% endif %}" data-slide="{{ forloop.index0 }}">
+            {% assign target_url = item.targetUrl | default: item.TargetUrl | default: item.target_url | default: item.cta_link %}
+            <article class="modern-carousel__slide{% if forloop.first %} is-active{% endif %}{% if target_url and target_url != 'null' and target_url != '' %} has-target{% endif %}" data-slide="{{ forloop.index0 }}" {% if target_url and target_url != 'null' and target_url != '' %}data-target-url="{{ target_url }}"{% endif %}>
               {% assign image_url = item.imageUrl | default: item.ImageUrl | default: item.image | default: item.Image %}
               
               {% if image_url and image_url != 'null' %}
@@ -70,12 +75,16 @@
                 {% else %}
                   {% assign image_src = image_url | asset_url %}
                 {% endif %}
-                
+                {% if forloop.first and is_hero_priority_widget %}
+                  <link rel="preload" as="image" href="{{ image_src }}" fetchpriority="high">
+                {% endif %}
                 <div class="modern-carousel__image-wrapper">
-                  <img src="{{ image_src }}" 
-                       alt="{{ item.caption | default: item.Caption | default: item.title | default: 'Carousel image' }}" 
+                  <img src="{{ image_src }}"
+                       alt="{{ item.caption | default: item.Caption | default: item.title | default: 'Carousel image' }}"
                        class="modern-carousel__image"
-                       loading="{% if forloop.first %}eager{% else %}lazy{% endif %}">
+                       loading="{% if forloop.first %}eager{% else %}lazy{% endif %}"
+                       decoding="async"
+                       {% if forloop.first and is_hero_priority_widget %}fetchpriority="high"{% endif %}>
                 </div>
               {% endif %}
               
@@ -209,6 +218,8 @@
 :root {
   --carousel-radius: 20px;
   --carousel-padding: 60px;
+  --carousel-padding-mobile: 24px;
+  --carousel-bottom-margin: 40px;
   --carousel-gap: 24px;
   --transition-smooth: cubic-bezier(0.4, 0, 0.2, 1);
   --color-white: #ffffff;
@@ -271,6 +282,10 @@
   display: flex;
   overflow: hidden;
   border-radius: var(--border-radius-medium);
+}
+
+.modern-carousel__slide.has-target {
+  cursor: pointer;
 }
 
 .modern-carousel__image-wrapper {
@@ -654,6 +669,8 @@
 @media screen and (max-width: 768px) {
   :root {
     --carousel-radius: 16px;
+    --carousel-padding-mobile: 20px;
+    --carousel-bottom-margin: 24px;
   }
 
   .modern-carousel__content {
@@ -766,7 +783,7 @@
 </style>
 
 <script>
-  document.addEventListener('DOMContentLoaded', function() {
+  document.addEventListener('DOMContentLoaded', () => {
     const carouselEl = document.querySelector('[data-widget-id="{{ widget.id }}"]');
     if (!carouselEl) return;
 
@@ -934,5 +951,25 @@
         }
       }
     }
+
+    // Make whole slide clickable (if slide has data-target-url). Ignore clicks that happen on anchors, buttons or form elements.
+    slides.forEach(slide => {
+      const url = slide.dataset.targetUrl;
+      if (!url) return;
+
+      slide.addEventListener('click', (e) => {
+        // If click was on an interactive element (link/button/input), don't handle here
+        if (e.target.closest('a, button, input, textarea')) return;
+
+        const cta = slide.querySelector('.modern-carousel__cta');
+        const ctaTarget = cta ? cta.getAttribute('target') : null;
+
+        if (ctaTarget === '_blank') {
+          window.open(url, '_blank');
+        } else {
+          window.location.href = url;
+        }
+      });
+    });
   });
 </script>

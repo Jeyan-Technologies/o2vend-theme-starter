@@ -404,15 +404,15 @@
 }
 
 /* intl-tel-input styling for login modal */
-.login-phone-input {
+.login-modal .login-phone-input {
   padding-left: 3.5rem;
 }
 
-.iti {
+.login-modal .iti {
   width: 100%;
 }
 
-.iti__flag-container {
+.login-modal .iti__flag-container {
   z-index: var(--z-10);
   z-index: 1;
   position: relative;
@@ -420,7 +420,7 @@
   cursor: pointer;
 }
 
-.iti__selected-flag {
+.login-modal .iti__selected-flag {
   padding: 0 var(--space-3) 0 var(--space-2);
   border-right: 1px solid var(--color-gray-200);
   padding: 0 0.75rem 0 0.5rem;
@@ -436,16 +436,16 @@
   -webkit-user-select: none;
 }
 
-.iti__selected-flag:hover {
+.login-modal .iti__selected-flag:hover {
   background-color: var(--color-gray-100);
 }
 
-.iti__selected-flag:active {
+.login-modal .iti__selected-flag:active {
   background-color: #e5e7eb;
 }
 
 /* Ensure country dropdown appears above modal */
-.iti__country-list {
+.login-modal .iti__country-list {
   z-index: var(--z-popover);
   box-shadow: var(--shadow-md);
   border: 1px solid var(--color-gray-200);
@@ -472,7 +472,7 @@
   pointer-events: auto !important;
 }
 
-.iti__country {
+.login-modal .iti__country {
   padding: var(--space-2) var(--space-3);
   padding: 0.75rem; /* Increased padding for better touch targets */
   cursor: pointer;
@@ -484,28 +484,28 @@
   pointer-events: auto;
 }
 
-.iti__country:hover,
-.iti__country.iti__highlight {
+.login-modal .iti__country:hover,
+.login-modal .iti__country.iti__highlight {
   background-color: #dbeafe;
 }
 
-.iti__country:active {
+.login-modal .iti__country:active {
   background-color: #bfdbfe;
 }
 
 /* Mobile-specific improvements */
 @media (max-width: 640px) {
-  .iti__selected-flag {
+  .login-modal .iti__selected-flag {
     min-height: 48px; /* Larger tap target on mobile */
     padding: 0 1rem 0 0.75rem;
   }
   
-  .iti__country {
+  .login-modal .iti__country {
     min-height: 48px; /* Larger tap target on mobile */
     padding: 0.875rem 1rem;
   }
   
-  .iti__country-list {
+  .login-modal .iti__country-list {
     max-height: 250px; /* More space on mobile */
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
   }

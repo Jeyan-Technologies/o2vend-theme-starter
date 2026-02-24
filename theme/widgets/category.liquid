@@ -12,10 +12,45 @@
     Dynamic Widget: Category comes from widget_data.category (enriched by WidgetService)
     Settings come from widget_settings
   endcomment
+  assign heading = widget_settings.title | default: widget.Title | default: widget.title
+  assign subtitle = widget_settings.subtitle | default: widget.Subtitle | default: widget.subtitle
   assign background_color = widget_settings.backgroundColor
   assign text_color = widget_settings.textColor | default: '#ffffff'
-  assign show_container = widget_settings.showContainer
-  assign show_bottom_margin = widget_settings.showWidgetBottomMargin
+  assign show_container_raw = widget_settings.showContainer | default: widget_settings.ShowContainer | default: true
+  if show_container_raw == null or show_container_raw == blank or show_container_raw == 'null'
+    assign show_container = true
+  else
+    if show_container_raw == 'Yes' or show_container_raw == true or show_container_raw == 'true' or show_container_raw == 1 or show_container_raw == '1'
+      assign show_container = true
+    else
+      assign show_container = false
+    endif
+  endif
+  assign show_bottom_margin_raw = widget_settings.showWidgetBottomMargin | default: widget_settings.ShowWidgetBottomMargin | default: true
+  if show_bottom_margin_raw == null or show_bottom_margin_raw == blank or show_bottom_margin_raw == 'null'
+    assign show_bottom_margin = true
+  else
+    if show_bottom_margin_raw == 'Yes' or show_bottom_margin_raw == true or show_bottom_margin_raw == 'true' or show_bottom_margin_raw == 1 or show_bottom_margin_raw == '1'
+      assign show_bottom_margin = true
+    else
+      assign show_bottom_margin = false
+    endif
+  endif
+  assign show_widget_title_raw = widget_settings.showWidgetTitle | default: widget_settings.ShowWidgetTitle | default: true
+  if show_widget_title_raw == null or show_widget_title_raw == blank or show_widget_title_raw == 'null'
+    assign show_widget_title = true
+  else
+    if show_widget_title_raw == 'Yes' or show_widget_title_raw == true or show_widget_title_raw == 'true' or show_widget_title_raw == 1 or show_widget_title_raw == '1'
+      assign show_widget_title = true
+    else
+      assign show_widget_title = false
+    endif
+  endif
+  assign widget_title_alignment_raw = widget_settings.widgetTitleAlignment | default: widget_settings.WidgetTitleAlignment | default: 'left'
+  assign widget_title_alignment = widget_title_alignment_raw | downcase
+  if widget_title_alignment != 'left' and widget_title_alignment != 'right' and widget_title_alignment != 'center'
+    assign widget_title_alignment = 'left'
+  endif
   
  
   assign category_slug = category.slug | default: category.Slug | default: category.handle
@@ -59,6 +94,19 @@
 
 {% if category %}
   <section class="widget widget-category-banner" data-widget-id="{{ widget.id }}">
+    {% if show_widget_title %}
+      {% if heading or subtitle %}
+        <header class="widget-header" style="text-align: {{ widget_title_alignment }};">
+          {% if heading and heading != blank %}
+            <h2 class="widget-title">{{ heading }}</h2>
+          {% endif %}
+          {% if subtitle and subtitle != blank %}
+            <p class="widget-subtitle">{{ subtitle }}</p>
+          {% endif %}
+        </header>
+      {% endif %}
+    {% endif %}
+
     <a href="{{ category_url }}" class="category-banner{% unless category_image %} category-banner--no-image{% endunless %}">
       
       {% if category_image %}
@@ -69,7 +117,7 @@
                width="1400" 
                height="400" 
                loading="lazy"
-               onerror="this.style.display='none';">
+               data-img-fallback="hide">
         </div>
         <div class="category-banner__overlay"></div>
         <div class="category-banner__content category-banner__content--overlay">
@@ -129,13 +177,29 @@
       .widget-category-banner {
         width: 100%;
         padding: 0 {{ settings.container_padding | default: 16 }}px;
-        {% if show_bottom_margin == 'Yes' %}
+        {% if show_bottom_margin %}
           margin-bottom: {{ settings.spacing_large | default: 32 }}px;
-        {% elsif show_bottom_margin == 'No' %}
-          margin-bottom: 0;
         {% else %}
-          margin-bottom: {{ settings.spacing_component | default: 24 }}px;
+          margin-bottom: 0;
         {% endif %}
+      }
+
+      .widget-category-banner .widget-header {
+        margin-bottom: 16px;
+      }
+
+      .widget-category-banner .widget-title {
+        font-size: 1.4rem;
+        font-weight: 500;
+        line-height: 1.3;
+        margin: 0 0 6px 0;
+        color: #111;
+      }
+
+      .widget-category-banner .widget-subtitle {
+        font-size: 14px;
+        margin: 0;
+        color: #6b7280;
       }
       
       /* ===== WITH IMAGE: Full Banner ===== */
@@ -360,9 +424,6 @@
         
         .category-banner {
           height: 200px;
-        }
-        
-        
         }
         
         .category-banner__content--overlay {

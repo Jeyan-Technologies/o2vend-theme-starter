@@ -48,7 +48,7 @@
           <strong>#{{ order.orderNumber }}</strong>
         </div>
         <div class="order-info">
-          <div><i class="far fa-calendar"></i> {{ order.createdAt | date: '%d-%m-%Y %H:%M' }}</div>
+          <div><i class="far fa-calendar"></i> {{ order.createdAt | date: '%d-%m-%Y' }}</div>
           <div><span class="status-badge status-{{ order.status | downcase | replace: ' ', '-' }}">{{ order.status }}</span></div>
         </div>
       {% endif %}
@@ -148,10 +148,13 @@
                 <div class="summary-row"><span>Discount{% if orderItem.couponCode %} ({{ orderItem.couponCode }}){% endif %}</span><span>-{{ orderItem.discount  | money_with_settings: shop.settings }}</span></div>
                 {% endif %}
                 <div class="summary-row"><span>Shipping</span><span>{% if orderItem.shipping > 0 %}{{ orderItem.shipping  | money_with_settings: shop.settings }}{% else %}FREE{% endif %}</span></div>
+                {% if orderItem.paymentFeeAmount and orderItem.paymentFeeAmount > 0 %}
+                <div class="summary-row"><span>Payment Fee</span><span>{{ orderItem.paymentFeeAmount  | money_with_settings: shop.settings }}</span></div>
+                {% endif %}
                 <div class="summary-row"><span>Tax</span><span>{{ orderItem.tax  | money_with_settings: shop.settings }}</span></div>
                 <div class="summary-row total-row"><strong>Total</strong><strong>{{ orderItem.total  | money_with_settings: shop.settings }}</strong></div>
               </div>
-              <div class="payment-method"><span>Payment:</span> <strong>{{ orderItem.paymentMethod | default: 'Online Payment' }}</strong></div>
+              <div class="payment-method"><span>Payment:</span> <strong>{{ orderItem.paymentMethod | default: 'Cash on Delivery' }}</strong></div>
             </div>
           </aside>
         </div>
@@ -265,10 +268,13 @@
               <div class="summary-row"><span>Discount{% if order.couponCode %} ({{ order.couponCode }}){% endif %}</span><span>-{{ order.discount  | money_with_settings: shop.settings }}</span></div>
               {% endif %}
               <div class="summary-row"><span>Shipping</span><span>{% if order.shipping > 0 %}{{ order.shipping  | money_with_settings: shop.settings }}{% else %}FREE{% endif %}</span></div>
+              {% if order.paymentFeeAmount and order.paymentFeeAmount > 0 %}
+              <div class="summary-row"><span>Payment Fee</span><span>{{ order.paymentFeeAmount  | money_with_settings: shop.settings }}</span></div>
+              {% endif %}
               <div class="summary-row"><span>Tax</span><span>{{ order.tax  | money_with_settings: shop.settings }}</span></div>
               <div class="summary-row total-row"><strong>Total</strong><strong>{{ order.total  | money_with_settings: shop.settings }}</strong></div>
             </div>
-            <div class="payment-method"><span>Payment:</span> <strong>{{ order.paymentMethod | default: 'Online Payment' }}</strong></div>
+            <div class="payment-method"><span>Payment:</span> <strong>{{ order.paymentMethod | default: 'Cash on Delivery' }}</strong></div>
           </div>
         </aside>
       </div>
@@ -540,11 +546,12 @@ body {
 
 .order-item {
   display: grid;
-  grid-template-columns: 80px 1fr auto;
+  grid-template-columns: 80px minmax(0, 1fr) auto;
   gap: 16px;
   background: #f9fafb;
   padding: 16px;
   border-radius: 8px;
+  align-items: center;
 }
 
 .item-image {
@@ -575,6 +582,7 @@ body {
   font-weight: 600;
   margin: 0 0 6px;
   color: #111;
+  overflow-wrap: anywhere;
 }
 
 .item-info div {
@@ -585,9 +593,12 @@ body {
 .item-total {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   font-size: 15px;
   font-weight: 700;
   color: #111;
+  white-space: nowrap;
+  text-align: right;
 }
 
 /* =========================================================
@@ -722,12 +733,14 @@ body {
 
 @media (max-width: 768px) {
   .order-item {
-    grid-template-columns: 60px 1fr;
+    grid-template-columns: 60px minmax(0, 1fr) auto;
+    gap: 12px;
   }
   .item-total {
-    grid-column: 2;
-    margin-top: 6px;
-    justify-content: flex-start;
+    grid-column: 3;
+    margin-top: 0;
+    justify-content: flex-end;
+    align-self: center;
   }
   .action-buttons {
     flex-direction: column;
@@ -743,6 +756,23 @@ body {
   .multiple-orders-badge {
     font-size: 14px;
     padding: 10px 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .order-item {
+    grid-template-columns: 52px minmax(0, 1fr);
+  }
+
+  .item-image {
+    width: 52px;
+    height: 52px;
+  }
+
+  .item-total {
+    grid-column: 2;
+    justify-content: flex-start;
+    margin-top: 4px;
   }
 }
 </style>

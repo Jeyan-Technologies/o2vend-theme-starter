@@ -95,7 +95,7 @@
             <a href="{{ cat_url }}" class="widget-category-list__link">
               <div class="widget-category-list__media">
                 {% if cat_image != blank and cat_image != nil and cat_image != 'null' %}
-                  <img src="{{ cat_image }}" alt="{{ cat_name }}" width="300" height="300" loading="lazy" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                  <img src="{{ cat_image }}" alt="{{ cat_name }}" width="300" height="300" loading="lazy" data-img-fallback="next" data-img-fallback-display="flex">
                   <span class="widget-category-list__placeholder widget-category-list__placeholder--fallback" style="display: none;" aria-hidden="true">
                     <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                       <path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z"/>

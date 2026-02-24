@@ -4,7 +4,7 @@
  * Ensures cart badge updates across all components
  */
 
-(function() {
+(() => {
   'use strict';
 
   const CartManager = {

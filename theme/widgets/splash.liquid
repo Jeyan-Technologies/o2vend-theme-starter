@@ -301,11 +301,11 @@
 </style>
 
 <script>
-(function() {
+(() => {
   console.log('[Splash] Script loaded for widget {{ splash_id }}');
   
   // Wait for DOM to be ready
-  function initSplash() {
+  const initSplash = () => {
     console.log('[Splash] initSplash called');
     
     // Try multiple selectors
@@ -330,31 +330,31 @@
     
     // Show splash after delay
     console.log('[Splash] Setting timeout for', delaySeconds, 'second(s)...');
-    setTimeout(function() {
+    setTimeout(() => {
       console.log('[Splash] TIMEOUT FIRED - Showing popup NOW!');
       splashWidget.style.display = 'flex';
       splashWidget.classList.add('active');
       // Trigger animation after a frame
-      setTimeout(function() {
+      setTimeout(() => {
         splashWidget.classList.add('visible');
         console.log('[Splash] Added visible class');
       }, 50);
     }, delaySeconds * 1000);
     
-    // Close function
-    function closeSplash() {
+    // Close handler
+    const closeSplash = () => {
       console.log('[Splash] Closing popup');
       splashWidget.classList.remove('visible');
-      setTimeout(function() {
+      setTimeout(() => {
         splashWidget.classList.remove('active');
         splashWidget.style.display = 'none';
       }, 300);
-    }
+    };
     
     // Close button click
     const closeBtn = splashWidget.querySelector('[data-splash-close]');
     if (closeBtn) {
-      closeBtn.addEventListener('click', function(e) {
+      closeBtn.addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();
         closeSplash();
@@ -362,19 +362,19 @@
     }
     
     // Close on overlay click
-    splashWidget.addEventListener('click', function(e) {
+    splashWidget.addEventListener('click', (e) => {
       if (e.target === splashWidget) {
         closeSplash();
       }
     });
     
     // Close on Escape key
-    document.addEventListener('keydown', function(e) {
+    document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape' && splashWidget.classList.contains('active')) {
         closeSplash();
       }
     });
-  }
+  };
   
   // Initialize when DOM is ready
   if (document.readyState === 'loading') {

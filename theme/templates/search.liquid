@@ -83,33 +83,49 @@
         {% if search.results_count > 0 %}
         <div class="search-filters">
           <div class="filter-group">
-            <label for="search-type" class="filter-label">Search in:</label>
+            <label for="price-min" class="filter-label">Min Price</label>
+            <input id="price-min" type="number" min="0" class="filter-select" value="{{ search.filters.price_min | default: '' }}" placeholder="0">
+          </div>
+
+          <div class="filter-group">
+            <label for="price-max" class="filter-label">Max Price</label>
+            <input id="price-max" type="number" min="0" class="filter-select" value="{{ search.filters.price_max | default: '' }}" placeholder="No limit">
+          </div>
+
+          <div class="filter-group">
+            <label for="results-sort" class="filter-label">Sort by</label>
             <div class="filter-select-wrapper">
-              <select id="search-type" name="type" class="filter-select">
-                <option value="all" {% if search.type == 'all' %}selected{% endif %}>All</option>
-                <option value="products" {% if search.type == 'products' %}selected{% endif %}>Products</option>
-                <option value="collections" {% if search.type == 'collections' %}selected{% endif %}>Collections</option>
-                <option value="pages" {% if search.type == 'pages' %}selected{% endif %}>Pages</option>
+              <select id="results-sort" class="filter-select">
+                <option value="featured" {% if search.sort == 'featured' %}selected{% endif %}>Featured</option>
+                <option value="price-asc" {% if search.sort == 'price' and search.order == 'asc' %}selected{% endif %}>Price: Low to High</option>
+                <option value="price-desc" {% if search.sort == 'price' and search.order == 'desc' %}selected{% endif %}>Price: High to Low</option>
+                <option value="name-asc" {% if search.sort == 'name' and search.order == 'asc' %}selected{% endif %}>Name: A to Z</option>
+                <option value="name-desc" {% if search.sort == 'name' and search.order == 'desc' %}selected{% endif %}>Name: Z to A</option>
+                <option value="newest" {% if search.sort == 'created' and search.order == 'desc' %}selected{% endif %}>Date: New to Old</option>
               </select>
               <svg class="filter-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <polyline points="6,9 12,15 18,9"></polyline>
               </svg>
             </div>
           </div>
-          
+
           <div class="filter-group">
-            <label for="search-sort" class="filter-label">Sort by:</label>
-            <div class="filter-select-wrapper">
-              <select id="search-sort" name="sort" class="filter-select">
-                <option value="relevance" {% if search.sort == 'relevance' %}selected{% endif %}>Relevance</option>
-                <option value="price-asc" {% if search.sort == 'price-asc' %}selected{% endif %}>Price: Low to High</option>
-                <option value="price-desc" {% if search.sort == 'price-desc' %}selected{% endif %}>Price: High to Low</option>
-                <option value="name-asc" {% if search.sort == 'name-asc' %}selected{% endif %}>Name: A to Z</option>
-                <option value="name-desc" {% if search.sort == 'name-desc' %}selected{% endif %}>Name: Z to A</option>
-              </select>
-              <svg class="filter-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="6,9 12,15 18,9"></polyline>
-              </svg>
+            <label class="filter-label">Availability</label>
+            <label class="filter-option">
+              <input id="filter-in-stock" type="checkbox" {% if search.filters.in_stock %}checked{% endif %}>
+              <span class="filter-option-text">In Stock</span>
+            </label>
+            <label class="filter-option">
+              <input id="filter-on-sale" type="checkbox" {% if search.filters.on_sale %}checked{% endif %}>
+              <span class="filter-option-text">On Sale</span>
+            </label>
+          </div>
+
+          <div class="filter-group">
+            <label class="filter-label">Actions</label>
+            <div style="display:flex; gap:8px; flex-wrap:wrap;">
+              <button type="button" class="btn btn-primary btn-sm" id="apply-filters">Apply</button>
+              <button type="button" class="btn btn-outline btn-sm" id="clear-filters">Clear</button>
             </div>
           </div>
         </div>
@@ -125,7 +141,7 @@
               <h2 class="section-title">Products</h2>
               <div class="products-grid">
                 {% for product in search.results.products %}
-                  {% include 'snippets/product-card-simple', product: product %}
+                  {% render 'snippets/product-card', product: product %}
                 {% endfor %}
               </div>
             </section>
@@ -1259,7 +1275,7 @@
 </style>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', () => {
   // Search form enhancement
   const searchForm = document.querySelector('.search-form');
   const searchInput = document.querySelector('.search-input');
@@ -1271,7 +1287,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Handle search form submission
-    searchForm.addEventListener('submit', function(e) {
+    searchForm.addEventListener('submit', (e) => {
       const query = searchInput.value.trim();
       if (!query) {
         e.preventDefault();
@@ -1283,7 +1299,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     // Clear search on Escape key
-    searchInput.addEventListener('keydown', function(e) {
+    searchInput.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
         this.value = '';
         this.blur();
@@ -1291,47 +1307,86 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
   
-  // Filter change handlers
-  const searchType = document.getElementById('search-type');
-  const searchSort = document.getElementById('search-sort');
-  
-  if (searchType) {
-    searchType.addEventListener('change', function() {
-      updateSearchURL();
-    });
-  }
-  
-  if (searchSort) {
-    searchSort.addEventListener('change', function() {
-      updateSearchURL();
-    });
-  }
-  
-  function updateSearchURL() {
-    const url = new URL(window.location);
+  // Filter and sort handlers (aligned with products listing UX)
+  const priceMin = document.getElementById('price-min');
+  const priceMax = document.getElementById('price-max');
+  const filterInStock = document.getElementById('filter-in-stock');
+  const filterOnSale = document.getElementById('filter-on-sale');
+  const resultsSort = document.getElementById('results-sort');
+  const applyFiltersBtn = document.getElementById('apply-filters');
+  const clearFiltersBtn = document.getElementById('clear-filters');
+
+  const applySearchFilters = () => {
+    const url = new URL(window.location.href);
     const params = new URLSearchParams(url.search);
-    
-    if (searchType && searchType.value !== 'all') {
-      params.set('type', searchType.value);
-    } else {
-      params.delete('type');
+
+    const query = (searchInput?.value || params.get('q') || '').trim();
+    if (query) {
+      params.set('q', query);
     }
-    
-    if (searchSort && searchSort.value !== 'relevance') {
-      params.set('sort', searchSort.value);
+
+    if (priceMin && priceMin.value) params.set('price_min', priceMin.value);
+    else params.delete('price_min');
+
+    if (priceMax && priceMax.value) params.set('price_max', priceMax.value);
+    else params.delete('price_max');
+
+    if (filterInStock && filterInStock.checked) params.set('in_stock', 'true');
+    else params.delete('in_stock');
+
+    if (filterOnSale && filterOnSale.checked) params.set('on_sale', 'true');
+    else params.delete('on_sale');
+
+    const selectedSort = resultsSort ? resultsSort.value : 'featured';
+    if (selectedSort === 'price-asc') {
+      params.set('sort', 'price');
+      params.set('order', 'asc');
+    } else if (selectedSort === 'price-desc') {
+      params.set('sort', 'price');
+      params.set('order', 'desc');
+    } else if (selectedSort === 'name-asc') {
+      params.set('sort', 'name');
+      params.set('order', 'asc');
+    } else if (selectedSort === 'name-desc') {
+      params.set('sort', 'name');
+      params.set('order', 'desc');
+    } else if (selectedSort === 'newest') {
+      params.set('sort', 'created');
+      params.set('order', 'desc');
     } else {
-      params.delete('sort');
+      params.set('sort', 'featured');
+      params.set('order', 'desc');
     }
-    
+
+    params.set('page', '1');
     url.search = params.toString();
     window.location.href = url.toString();
+  };
+
+  if (applyFiltersBtn) {
+    applyFiltersBtn.addEventListener('click', applySearchFilters);
+  }
+
+  if (clearFiltersBtn) {
+    clearFiltersBtn.addEventListener('click', () => {
+      const url = new URL(window.location.href);
+      const params = new URLSearchParams(url.search);
+      const query = params.get('q') || (searchInput?.value || '');
+      params.forEach((_, key) => params.delete(key));
+      if (query) params.set('q', query);
+      window.location.href = `${url.pathname}?${params.toString()}`;
+    });
+  }
+
+  if (resultsSort) {
+    resultsSort.addEventListener('change', applySearchFilters);
   }
   
   // Search suggestions (mock implementation)
   let suggestionTimeout;
   if (searchInput) {
-    searchInput.addEventListener('input', function() {
-      const query = this.value.trim();
+    searchInput.addEventListener('input', (e) => {
+      const query = e.target.value.trim();
       clearTimeout(suggestionTimeout);
       
       if (query.length >= 2) {
@@ -1370,10 +1425,10 @@ document.addEventListener('DOMContentLoaded', function() {
   // Add keyboard navigation for search tags
   const searchTags = document.querySelectorAll('.search-tag');
   searchTags.forEach(tag => {
-    tag.addEventListener('keypress', function(e) {
+    tag.addEventListener('keypress', (e) => {
       if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
-        this.click();
+        tag.click();
       }
     });
   });

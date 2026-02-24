@@ -3,7 +3,7 @@
  * Handles modal interactions, API calls, and zone selection
  */
 
-(function() {
+(() => {
   'use strict';
 
   // DOM elements - will be set in init()

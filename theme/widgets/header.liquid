@@ -169,11 +169,11 @@
 
 <script>
   // Handle announcement bar close button
-  (function() {
+  (() => {
     const announcementCloseBtn = document.querySelector('[data-announcement-close]');
     if (announcementCloseBtn) {
-      announcementCloseBtn.addEventListener('click', function() {
-        const announcement = this.closest('.widget-header-announcement__bar');
+      announcementCloseBtn.addEventListener('click', () => {
+        const announcement = announcementCloseBtn.closest('.widget-header-announcement__bar');
         if (announcement) {
           announcement.classList.add('hidden');
           // Store in sessionStorage to remember it's closed for this session

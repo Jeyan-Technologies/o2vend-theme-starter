@@ -534,10 +534,6 @@
   will-change: transform;
 }
 
-.lazy-load-enabled img {
-  loading: lazy;
-}
-
 /* Loading states */
 .loading-skeleton {
   background: linear-gradient(90deg, var(--color-gray-200) 25%, var(--color-gray-100) 50%, var(--color-gray-200) 75%);
@@ -2838,9 +2834,12 @@ h3 { font-size: var(--text-7xl); }
   color: var(--color-info-dark);
 }
 
-.status-badge.status-shipped,
+
 .status-badge.status-delivered {
   background: var(--color-success-light);
+  color: var(--color-success-dark);
+}
+.status-badge.status-shipped{
   color: var(--color-success-dark);
 }
 
@@ -3267,30 +3266,12 @@ h3 { font-size: var(--text-7xl); }
 img {
   max-width: 100%;
   height: auto;
-  loading: lazy;
 }
  
 .hero-image,
 .product-image {
   object-fit: cover;
   object-position: center;
-}
- 
-/* Font Loading Optimization */
-@font-face {
-  font-family: 'Inter';
-  font-style: normal;
-  font-weight: 400 700;
-  font-display: swap;
-  src: url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-}
- 
-@font-face {
-  font-family: 'Playfair Display';
-  font-style: normal;
-  font-weight: 400 700;
-  font-display: swap;
-  src: url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&display=swap');
 }
  
 /* Accessibility Improvements */

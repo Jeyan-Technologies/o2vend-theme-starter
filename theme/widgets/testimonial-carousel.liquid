@@ -8,11 +8,9 @@
   endcomment
   
   assign content_data = widget_data.content | default: widget.content
-  assign testimonials = content_data | default: widget_data.testimonials
+  assign testimonials = content_data.items | default: content_data.Items | default: []
   
-  if content_data.size > 0 and content_data.first.Title
-    assign testimonials = content_data
-  endif
+
 
   assign heading = widget_settings.title | default: 'What Our Customers Say'
   assign subtitle = widget_settings.subtitle
@@ -20,7 +18,15 @@
   assign text_color = widget_settings.textColor
   assign hide_dots = widget_settings.hideDot | default: false
   assign hide_arrows = widget_settings.hideArrow | default: false
-  assign show_widget_title_raw = widget_settings.showWidgetTitle | default: 'Yes'
+    assign priority_count_raw = widget_settings.priorityCount | default: widget_settings.prioritizeCount | default: widget_settings.priority
+  assign priority_count = priority_count_raw | default: 1
+  if priority_count > 12
+    assign priority_count = 12
+  endif
+  if priority_count < 0
+    assign priority_count = 0
+  endif
+  assign show_widget_title_raw = widget_settings.showWidgetTitle | default: 'Yes' 
   if show_widget_title_raw == null or show_widget_title_raw == blank or show_widget_title_raw == 'null'
     assign show_widget_title = true
   else
@@ -38,6 +44,10 @@
     assign widget_title_alignment = 'center'
   endif
 %}
+{% assign is_hero_priority_widget = false %}
+{% if is_hero_first == true or is_hero_first == 'true' or is_hero_first == 1 or is_hero_first == '1' %}
+  {% assign is_hero_priority_widget = true %}
+{% endif %}
 
 <section class="widget widget-testimonial-carousel" data-widget-id="{{ widget.id }}" data-testimonial-carousel{% if background_color and background_color != blank and background_color != 'null' %} style="background-color: {{ background_color }};"{% endif %}>
   <div class="testimonial-carousel-container">
@@ -103,68 +113,61 @@
               {% elsif item.image and item.image != 'null' and item.image != blank %}
                 {% assign item_image = item.image %}
               {% endif %}
+
+              {% comment %} Preload any slide image and background image for prioritized slides {% endcomment %}
+              {% if item_image and item_image != blank and forloop.index0 < priority_count and is_hero_priority_widget %}
+                {% if item_image contains 'http://' or item_image contains 'https://' %}
+                  {% assign _preload_img = item_image %}
+                {% else %}
+                  {% assign _preload_img = item_image | asset_url %}
+                {% endif %}
+                <link rel="preload" as="image" href="{{ _preload_img }}" fetchpriority="high">
+              {% endif %}
+
               
-              <div class="testimonial-carousel-slide" data-slide-index="{{ forloop.index0 }}">
-                <blockquote class="testimonial-card">
-                  <!-- Quote Icon -->
-                  <div class="testimonial-card__quote-icon">
-                    {% if item_icon_html and item_icon_html != 'null' and item_icon_html != blank %}
-                      {{ item_icon_html }}
-                    {% else %}
-                      <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor" opacity="0.15">
-                        <path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z"/>
-                      </svg>
-                    {% endif %}
-                  </div>
-                  
-                  <!-- Rating Stars -->
-                  {% if item_rating and item_rating > 0 %}
-                    <div class="testimonial-card__rating">
-                      {% for i in (1..5) %}
-                        {% if i <= item_rating %}
-                          <svg class="star star--filled" width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-                          </svg>
+
+              <div class="testimonial-carousel-slide{% if forloop.index0 < priority_count %} testimonial-carousel-slide--priority{% endif %}" data-slide-index="{{ forloop.index0 }}" {% if forloop.index0 < priority_count %}data-priority="high"{% endif %}>
+                <blockquote class="testimonial-card testimonial-card--revamped">
+                  <div class="testimonial-card__body">
+                    <div class="testimonial-card__meta">
+                      <div class="testimonial-card__quote-icon">
+                        {% if item_icon_html and item_icon_html != 'null' and item_icon_html != blank %}
+                          {{ item_icon_html }}
                         {% else %}
-                          <svg class="star star--empty" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                          <svg width="40" height="40" viewBox="0 0 24 24" fill="currentColor" opacity="0.06">
+                            <path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z"/>
                           </svg>
                         {% endif %}
-                      {% endfor %}
+                      </div>
+
+                        <h3 class="testimonial-card__title">{{ item_title }}</h3>
+                     
                     </div>
-                  {% endif %}
+
                   
-                  <!-- Title -->
-                  {% if item_title and item_title != blank %}
-                    <h3 class="testimonial-card__title">{{ item_title }}</h3>
-                  {% endif %}
+                      <p class="testimonial-card__text">{{ item_description }}</p>
                   
-                  <!-- Quote/Description -->
-                  {% if item_description and item_description != blank %}
-                    <p class="testimonial-card__text">"{{ item_description }}"</p>
-                  {% endif %}
-                  
-                  <!-- Author Info -->
+                  </div>
+
                   <footer class="testimonial-card__footer">
-                    {% if item_image and item_image != blank %}
-                      <div class="testimonial-card__avatar">
-                        <img src="{{ item_image }}" alt="{{ person_name }}" width="48" height="48" loading="lazy" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                        <span class="testimonial-card__avatar-fallback" style="display: none;">
-                          {{ person_name | slice: 0 | upcase }}
-                        </span>
-                      </div>
-                    {% elsif person_name and person_name != blank %}
-                      <div class="testimonial-card__avatar testimonial-card__avatar--initials">
-                        <span>{{ person_name | slice: 0 | upcase }}</span>
-                      </div>
-                    {% endif %}
-                    
-                    <div class="testimonial-card__author">
+                    <div class="testimonial-card__author-avatar">
+                      {% assign _initial_source = person_name | default: company_name %}
+                      {% assign _initial = _initial_source | default: '' %}
+                      {% assign _initial = _initial | slice: 0,1 | upcase %}
+                      {% if item_image and item_image != blank %}
+                        <img class="testimonial-card__avatar-img" src="{{ item_image }}" alt="{{ person_name }}" loading="{% if forloop.index0 < priority_count %}eager{% else %}lazy{% endif %}" {% if forloop.index0 < priority_count and is_hero_priority_widget %}fetchpriority="high"{% endif %} data-img-fallback="query:.testimonial-card__avatar-fallback--large">
+                        <div class="testimonial-card__avatar-fallback--large" style="display:none;">{{ _initial }}</div>
+                      {% else %}
+                        <div class="testimonial-card__avatar-fallback--large" style="display:flex;">{{ _initial }}</div>
+                      {% endif %}
+                    </div>
+
+                    <div class="testimonial-card__author-info">
                       {% if person_name and person_name != blank %}
-                        <span class="testimonial-card__name">{{ person_name }}</span>
+                        <div class="testimonial-card__name">{{ person_name }}</div>
                       {% endif %}
                       {% if company_name and company_name != blank %}
-                        <span class="testimonial-card__company">{{ company_name }}</span>
+                        <div class="testimonial-card__company">{{ company_name }}</div>
                       {% endif %}
                     </div>
                   </footer>
@@ -374,6 +377,32 @@
     
     .widget-testimonial-carousel .testimonial-card:hover {
       transform: translateY(-4px);
+    }
+
+    /* Revamped card styles */
+    .widget-testimonial-carousel .testimonial-card--revamped {
+      padding: 22px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      border-left: 4px solid rgba(0,0,0,0.06);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.04);
+      background: #fff;
+    }
+    .widget-testimonial-carousel .testimonial-card__body { padding-right: 8px; }
+    .widget-testimonial-carousel .testimonial-card__quote-icon { font-size: 36px; color: rgba(0,0,0,0.06); margin-bottom: 6px; }
+    .widget-testimonial-carousel .testimonial-card__rating--small { color: #fbbf24; font-size: 14px; margin-bottom: 6px; }
+    .widget-testimonial-carousel .testimonial-card__title { font-size: 18px; margin: 0 0 8px; }
+    .widget-testimonial-carousel .testimonial-card__text { font-size: 16px; color: #111; font-style: italic; margin: 0; }
+    .widget-testimonial-carousel .testimonial-card__footer { display: flex; align-items: center; gap: 12px; margin-top: 12px; }
+    .widget-testimonial-carousel .testimonial-card__author-avatar img { width: 64px; height: 64px; border-radius: 50%; object-fit: cover; box-shadow: 0 4px 12px rgba(0,0,0,0.06); }
+    .widget-testimonial-carousel .testimonial-card__avatar-fallback--large { width:64px; height:64px; border-radius:50%; display:flex; align-items:center; justify-content:center; background:linear-gradient(135deg,#667eea 0%,#764ba2 100%); color:#fff; font-weight:700; }
+    .widget-testimonial-carousel .testimonial-card__author-info .testimonial-card__name { font-weight: 700; }
+    .widget-testimonial-carousel .testimonial-card__author-info .testimonial-card__company { color: #6b7280; font-size: 13px; }
+    @media (max-width: 768px) {
+      .widget-testimonial-carousel .testimonial-card--revamped { padding: 18px }
+      .widget-testimonial-carousel .testimonial-card__author-avatar img { width:48px; height:48px }
+      .widget-testimonial-carousel .testimonial-card__avatar-fallback--large { width:48px; height:48px }
     }
     
     .widget-testimonial-carousel .testimonial-card__quote-icon {
@@ -590,7 +619,7 @@
   </style>
 
   <script>
-  (function() {
+  (() => {
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', initTestimonialCarousel);
     } else {
@@ -600,13 +629,13 @@
     function initTestimonialCarousel() {
       const widget = document.querySelector('[data-widget-id="{{ widget.id }}"][data-testimonial-carousel]');
       if (!widget) return;
-      
-      const track = widget.querySelector('[data-carousel-track]');
       const viewport = widget.querySelector('[data-carousel-viewport]');
-      const prevBtns = widget.querySelectorAll('[data-carousel-prev]');
-      const nextBtns = widget.querySelectorAll('[data-carousel-next]');
+      const track = widget.querySelector('[data-carousel-track]');
+      const slides = Array.from(widget.querySelectorAll('.testimonial-carousel-slide'));
+      const prevBtns = Array.from(widget.querySelectorAll('[data-carousel-prev]'));
+      const nextBtns = Array.from(widget.querySelectorAll('[data-carousel-next]'));
       const dotsContainer = widget.querySelector('[data-carousel-dots]');
-      const slides = widget.querySelectorAll('.testimonial-carousel-slide');
+    
       
       if (!track || slides.length === 0) return;
       
@@ -624,7 +653,7 @@
       }
       
       function getCurrentPage() {
-        if (!track.scrollWidth || track.scrollWidth <= viewport.clientWidth) return 0;
+        if (!track.scrollWidth || !viewport || track.scrollWidth <= viewport.clientWidth) return 0;
         const scrollRatio = track.scrollLeft / (track.scrollWidth - viewport.clientWidth);
         return Math.round(scrollRatio * (getPageCount() - 1));
       }
@@ -655,7 +684,7 @@
       
       function updateArrows() {
         const atStart = track.scrollLeft <= 5;
-        const atEnd = track.scrollLeft >= track.scrollWidth - viewport.clientWidth - 5;
+        const atEnd = !viewport ? true : (track.scrollLeft >= track.scrollWidth - viewport.clientWidth - 5);
         
         prevBtns.forEach(btn => btn.disabled = atStart);
         nextBtns.forEach(btn => btn.disabled = atEnd);

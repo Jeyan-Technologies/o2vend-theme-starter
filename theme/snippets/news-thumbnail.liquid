@@ -33,7 +33,7 @@
 {% assign news_category = news_item.category | default: news_item.Category %}
 
 <div class="news-thumbnail">
-  <a href="/news/{{ news_slug }}" class="news-thumbnail__link">
+  <a href="/{{ news_slug }}" class="news-thumbnail__link">
     {% if news_image and news_image != blank %}
       <div class="news-thumbnail__image">
         {% if news_image contains 'http://' or news_image contains 'https://' %}

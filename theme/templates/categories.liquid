@@ -10,7 +10,7 @@
            data-widget-type="{{ widget.type }}"
            data-widget-position="{{ widget.Position | default: widget.position | default: forloop.index }}">
         {% if widget and widget.template_path %}
-          {% render widget.template_path, widget: widget, settings: settings, shop: shop %}
+          {% render widget.template_path, widget: widget, settings: settings, shop: shop, is_hero_first: forloop.first %}
         {% endif %}
       </div>
     {% endfor %}
@@ -380,7 +380,7 @@
 </style>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', () => {
   // Parse URL parameters
   const urlParams = new URLSearchParams(window.location.search);
   
@@ -449,7 +449,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Toggle sort dropdown
   if (sortToggle && sortMenu) {
-    sortToggle.addEventListener('click', function(e) {
+    sortToggle.addEventListener('click', (e) => {
       e.stopPropagation();
       sortMenu.classList.toggle('active');
       sortToggle.setAttribute('aria-expanded', sortMenu.classList.contains('active'));
@@ -457,7 +457,7 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   // Close sort dropdown when clicking outside
-  document.addEventListener('click', function(e) {
+  document.addEventListener('click', (e) => {
     if (sortDropdown && !sortDropdown.contains(e.target)) {
       sortMenu.classList.remove('active');
       sortToggle.setAttribute('aria-expanded', 'false');
@@ -468,7 +468,7 @@ document.addEventListener('DOMContentLoaded', function() {
   if (sortMenu) {
     const sortOptions = sortMenu.querySelectorAll('.sort-option');
     sortOptions.forEach(option => {
-      option.addEventListener('click', function() {
+      option.addEventListener('click', () => {
         const sortValue = this.getAttribute('data-sort');
         const orderValue = this.getAttribute('data-order');
         const label = this.getAttribute('data-label');
@@ -499,11 +499,11 @@ document.addEventListener('DOMContentLoaded', function() {
   const collectionCards = document.querySelectorAll('.collection-card');
   
   collectionCards.forEach(card => {
-    card.addEventListener('mouseenter', function() {
+    card.addEventListener('mouseenter', () => {
       this.style.transform = 'translateY(-8px)';
     });
     
-    card.addEventListener('mouseleave', function() {
+    card.addEventListener('mouseleave', () => {
       this.style.transform = 'translateY(0)';
     });
   });

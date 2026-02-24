@@ -360,14 +360,14 @@
 
 <script>
   // Wait for DOM to be ready
-  (function() {
+  (() => {
     'use strict';
     
     function initErrorPage() {
       const retryButton = document.getElementById('retry-button');
       
       if (retryButton) {
-        retryButton.addEventListener('click', function() {
+        retryButton.addEventListener('click', () => {
           // Reload the page
           window.location.reload();
         });

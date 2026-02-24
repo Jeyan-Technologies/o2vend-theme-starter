@@ -27,7 +27,7 @@
 
 {%- comment -%} Debug: Log widget rendering information {%- endcomment -%}
 <script>
-  (function() {
+  (() => {
     console.log('[FooterSection] Footer section rendering');
     console.log('[FooterSection] Footer widgets count:', {{ footer_widgets.size | default: 0 }});
     console.log('[FooterSection] Footer menu widget found:', {{ footer_menu_widget | default: nil | json }});

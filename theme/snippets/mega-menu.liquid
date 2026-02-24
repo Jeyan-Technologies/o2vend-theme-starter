@@ -232,7 +232,7 @@
 
   .header-menu-nav__submenu {
     position: absolute;
-    top: calc(100% + var(--space-2));
+  top: 100%;
     left: 0;
     display: none;
     flex-direction: column;
@@ -408,7 +408,7 @@
 </style>
 
 <script>
-(function() {
+(() => {
   'use strict';
   
   // Prevent multiple initializations
@@ -482,7 +482,7 @@
         toggle.dataset.menuListenerAttached = 'true';
         
         // Toggle button click handler (only on mobile)
-        toggle.addEventListener('click', function(e) {
+        toggle.addEventListener('click', (e) => {
           // Double check we're on mobile
           if (window.innerWidth > 768) {
             console.log('[HeaderMenu] Ignoring toggle click on desktop');
@@ -507,7 +507,7 @@
         
         // Close button handler
         if (drawerClose) {
-          drawerClose.addEventListener('click', function(e) {
+          drawerClose.addEventListener('click', (e) => {
             e.preventDefault();
             e.stopPropagation();
             console.log('[HeaderMenu] Close button clicked');
@@ -520,7 +520,7 @@
         
         // Close on Escape key (only add once)
         if (!window.__headerMenuEscapeHandler) {
-          window.__headerMenuEscapeHandler = function(e) {
+          window.__headerMenuEscapeHandler = (e) => {
             if (e.key === 'Escape' && window.innerWidth <= 768) {
               const currentDrawer = document.getElementById('header-menu-mobile-drawer');
               if (currentDrawer && currentDrawer.classList.contains('active')) {
@@ -534,7 +534,7 @@
         
         // Close on outside click (only add once)
         if (!window.__headerMenuOverlayHandler) {
-          window.__headerMenuOverlayHandler = function(e) {
+          window.__headerMenuOverlayHandler = (e) => {
             if (window.innerWidth > 768) return;
             const currentDrawer = document.getElementById('header-menu-mobile-drawer');
             if (currentDrawer && currentDrawer.classList.contains('active')) {
@@ -830,7 +830,7 @@
         const newLink = link.cloneNode(true);
         link.parentNode.replaceChild(newLink, link);
         
-        newLink.addEventListener('click', function(e) {
+        newLink.addEventListener('click', (e) => {
           const submenu = item.querySelector('.header-menu-nav__mobile-drawer-sublist');
           if (submenu) {
             e.preventDefault();
@@ -887,7 +887,7 @@
   }
 
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', () => {
       init();
       normalizeServerRenderedLinks();
     });

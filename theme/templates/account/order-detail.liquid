@@ -61,6 +61,12 @@
                 <span>Order Total</span>
                 <span>{{ order.orderTotal | money_with_settings: shop.settings }}</span>
               </div>
+              {% if order.paymentMethod %}
+              <div class="payment-row">
+                <span>Payment Method</span>
+                <span>{{ order.paymentMethod }}</span>
+              </div>
+              {% endif %}
             </div>
 
             <!-- ITEMS -->

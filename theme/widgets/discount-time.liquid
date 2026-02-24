@@ -275,7 +275,7 @@
 
   {% if end_on != '' %}
     <script>
-      (function() {
+      (() => {
         function initCountdown() {
           const widget = document.querySelector('[data-widget-id="{{ widget.id }}"]');
           if (!widget) {
